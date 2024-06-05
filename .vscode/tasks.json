@@ -1,0 +1,35 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "copy-to-spacedev",
+            "isBackground": false,
+            "command": "${workspaceFolder}/.vscode/copy_to_spacedev.sh",
+            "type": "shell",
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            }
+        },
+        {
+            "label": "copy-to-spacedev-no-purge",
+            "isBackground": false,
+            "command": "${workspaceFolder}/.vscode/copy_to_spacedev.sh",
+            "type": "shell",
+            "args": ["--disable_purge"],
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": false,
+                "clear": false
+            }
+        },
+
+    ]
+}
