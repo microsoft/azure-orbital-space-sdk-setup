@@ -214,7 +214,6 @@ function wait_for_workers(){
 
     info_log "...background processes finished successfully."
 
-
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
@@ -229,8 +228,6 @@ function main() {
     local VER_CFSSL_no_v="${VER_CFSSL:1}"
     _download_app --app "cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl"
     _download_app --app "cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson"
-
-
 
     _download_app --app "jq" --url "https://github.com/jqlang/jq/releases/download/jq-${VER_JQ:?}/jq-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq"
     _download_app --app "yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq"
