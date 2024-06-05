@@ -104,6 +104,7 @@ function _download_app() {
 
     info_log "App '${app_name}' not found at '${destination}'.  Adding to download queue"
 
+    # Spin up a background task that will download the file to the destination
     (
         set -e
         trap "" HUP
@@ -120,6 +121,8 @@ function _download_app() {
 
     # Add the PID to the array so we can wait for it to finish
     WORKER_PIDS+=($!)
+
+    # Add the log file name to the array so we can match it up with the worker pid
     LOG_FILES+=("${TEMP_DIR}/${app_name}.log")
 
 }
@@ -134,15 +137,23 @@ function stage_k3s(){
     local k3s_uri_filename="k3s"
     local url_encoded_k3s_vers=""
 
+    # The k3s version has special characters that need to be URL encoded
     url_encoded_k3s_vers=$(jq -rn --arg x "${VER_K3S:?}" '$x|@uri')
 
     if [[ "${ARCHITECTURE}" == "arm64" ]]; then
         k3s_uri_filename="k3s-arm64"
     fi
 
+    # Download k3s
     _download_app --app "k3s" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/${k3s_uri_filename}" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s"
+
+    # Download k3s install script
     _download_app --app "k3s_install.sh" --url "https://get.k3s.io/" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh"
+
+    # Download k3s airgap images
     _download_app --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
+
+    # Download kubectl
     _download_app --app "kubectl" --url "https://dl.k8s.io/release/${VER_KUBECTL}/bin/linux/${ARCHITECTURE}/kubectl" --destination "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
@@ -162,7 +173,6 @@ function stage_helm(){
     fi
 
     # Helm has to be downloaded and untarred, so we run it explicitly
-
     local tmp_filename="${DEST_STAGE_DIR}/tmp/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
     local download_uri="https://get.helm.sh/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
 
@@ -195,9 +205,11 @@ function wait_for_workers(){
     worker_failed=false
     local index=0
 
+    # Loop through the array of worker PIDs and wait for them to finish
     for pid in "${WORKER_PIDS[@]}"; do
         wait "$pid"
         RETURN_CODE=$?
+        # An error was detected.  Write it out and the log file associated with it
         if [[ $RETURN_CODE -gt 0 ]]; then
             worker_failed=true
             error_log "Failure detected in background worker.  Return code: ${RETURN_CODE}.  Log File: '${LOG_FILES[$index]}'"
@@ -222,9 +234,11 @@ function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEST_STAGE_DIR
 
+    # Provision a temp directory to store the logs for the background tasks
     run_a_script "mktemp -d" TEMP_DIR --disable_log
     write_parameter_to_log TEMP_DIR
 
+    # Download CFSSL, jq, yq, regctl
     local VER_CFSSL_no_v="${VER_CFSSL:1}"
     _download_app --app "cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl"
     _download_app --app "cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson"
@@ -233,13 +247,16 @@ function main() {
     _download_app --app "yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq"
     _download_app --app "regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl"
 
+    # Download k3s, kubectl, the airgap images, and the install script
     stage_k3s
 
-    # Run helm last since it's not running in the background task.
+    # Run helm last since it's not running in the background task
     stage_helm
 
+    # Wait for any background tasks to finish
     wait_for_workers
 
+    # Cleanup the temp directory that was used for the logs of the background tasks
     run_a_script "rm -rf ${TEMP_DIR}" --disable_log
 
     info_log "------------------------------------------"
