@@ -37,11 +37,12 @@ function install_3p_apps() {
     _install_app --app "helm" --source "${source_dir}/helm/${VER_HELM}/helm" --destination "/usr/local/bin/helm"
 
 
-    # if [[ "${HOST_ARCHITECTURE}" != "${ARCHITECTURE}" ]]; then
-    #     info_log "Cleaning alternative architecture download..."
-    #     run_a_script "rm -rf ${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}"
-    #     run_a_script "rm -rf ${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}"
-    # fi
+    if [[ "${HOST_ARCHITECTURE}" != "${ARCHITECTURE}" ]]; then
+        info_log "Cleaning alternative architecture download..."
+        run_a_script "rm -rf ${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}"
+        run_a_script "rm -rf ${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}"
+        info_log "Successfully cleaned up alternative architecture download"
+    fi
 }
 
 
