@@ -36,6 +36,7 @@ MAX_WAIT_SECS=300
 NEEDS_SUDO=false
 ROOT_TTY="/dev/null"
 CURRENT_TTY="$(tty)"
+INSTALL_APPS=true
 
 ############################################################
 # Arguments
@@ -57,6 +58,11 @@ while [[ "$#" -gt 0 ]]; do
         --log_dir)
             shift
             LOG_DIR=$1
+            LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
+            ;;
+        --skip_installs)
+            shift
+            INSTALL_APPS=false
             ;;
     esac
     shift
@@ -70,8 +76,10 @@ _script_start
 _log_init
 _calculate_host_architecture
 
-_install_3p_apps
-_generate_spacefx_config_json
+if [[ "${INSTALL_APPS}" == true ]]; then
+    _install_3p_apps
+    _generate_spacefx_config_json
 
-_update_regctl_config
-_check_for_core_registry_hosts_entry
+    _update_regctl_config
+    _check_for_core_registry_hosts_entry
+fi

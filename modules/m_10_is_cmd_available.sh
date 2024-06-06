@@ -11,11 +11,11 @@ function is_cmd_available() {
     local cmd_to_test=$1
     local result_variable=$2
     local cmd_result="false"
-    run_a_script "command -v '${cmd_to_test}'" check_for_cmd --ignore_error --no_sudo --disable_log
+    run_a_script "whereis -b ${cmd_to_test}" check_for_cmd --no_sudo --disable_log
 
-    if [[ -n "${check_for_cmd}" ]]; then
-        cmd_result="true"
+    if [[ $check_for_cmd != "$cmd_to_test:" ]]; then
+        eval "$result_variable='true'"
+    else
+        eval "$result_variable='false'"
     fi
-
-    eval "$result_variable='$cmd_result'"
 }

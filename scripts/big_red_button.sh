@@ -10,7 +10,7 @@
 #  "bash ./scripts/big_red_button.sh"
 # shellcheck disable=SC1091
 # shellcheck disable=SC2068
-source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log
+source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log --skip_installs
 
 ############################################################
 # Help                                                     #
@@ -106,6 +106,7 @@ function purge_docker() {
     info_log "START: ${FUNCNAME[0]}"
 
     is_cmd_available "docker" has_cmd
+
     # shellcheck disable=SC2154
     if [[ "${has_cmd}" == false ]]; then
         info_log "...docker not found.  Nothing do to"
