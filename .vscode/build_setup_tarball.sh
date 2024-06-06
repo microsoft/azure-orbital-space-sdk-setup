@@ -190,12 +190,11 @@ function main() {
     setup_directories
     copy_to_local_tmp
     create_tar_ball
-    # run_a_script "cat ${SPACEFX_DIR}/tmp/config/spacefx-config.json"
 
-    # run_a_script "cp ${OUTPUT_DIR}/${OUTPUT_FILENAME} ${SPACEFX_DIR}/${OUTPUT_FILENAME}"
+    run_a_script "cp ${OUTPUT_DIR}/${OUTPUT_FILENAME} ${SPACEFX_DIR}/${OUTPUT_FILENAME}"
 
-    # run_a_script "bash ${SPACEFX_DIR}/build/push_build_artifacts.sh --artifact ${SPACEFX_DIR}/${OUTPUT_FILENAME} --artifact-version ${VERSION} --architecture amd64 --destination-repo ${DEST_REPO}"
-    # run_a_script "bash ${SPACEFX_DIR}/build/push_build_artifacts.sh --artifact ${SPACEFX_DIR}/${OUTPUT_FILENAME} --artifact-version ${VERSION} --architecture arm64 --destination-repo ${DEST_REPO}"
+    run_a_script "bash ${SPACEFX_DIR}/build/push_build_artifact.sh --artifact ${SPACEFX_DIR}/${OUTPUT_FILENAME} --artifact-version ${VERSION} --architecture amd64 --annotation-config azure-orbital-space-sdk-setup.yaml"
+    run_a_script "bash ${SPACEFX_DIR}/build/push_build_artifact.sh --artifact ${SPACEFX_DIR}/${OUTPUT_FILENAME} --artifact-version ${VERSION} --architecture arm64 --annotation-config azure-orbital-space-sdk-setup.yaml"
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"

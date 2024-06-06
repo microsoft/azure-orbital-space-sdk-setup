@@ -82,7 +82,7 @@ function push_to_repository(){
     info_log "Pushing '${image_name}'..."
 
     run_a_script "docker push ${image_name}"
-    run_a_script "regctl image mod ${image_name} --replace --label-to-annotation"
+    run_a_script "regctl image mod ${image_name} --replace --label-to-annotation" --disable_log
     info_log "...successfully pushed '${image_name}'"
 
     info_log "END: ${FUNCNAME[0]}"
@@ -196,7 +196,7 @@ function set_annotation_to_image(){
 
     if [[ -n "${manifest_entries}" ]]; then
         info_log "...manifest found.  Setting annotations to '${image_name}'..."
-        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace"
+        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace" --disable_log
         info_log "...successfully set annotations for '${image_name}'."
     else
         info_log "Image '${image_name}' not found.  Nothing to do"
@@ -237,7 +237,7 @@ function remove_annotations_from_image(){
 
     if [[ -n "${annotation_string}" ]]; then
         info_log "Removing annotations from '${image_name}'..."
-        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace"
+        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace" --disable_log
         info_log "...successfully removed annotations for '${image_name}'."
     else
         info_log "No annotations found for '${image_name}'.  Nothing to do"

@@ -181,7 +181,7 @@ function update_annotations_for_new_artifact(){
     local annotation_arch_prefix="org.spacefx.artifact.${ARCHITECTURE}"
     info_log "Querying for current annotations..."
 
-    run_a_script "regctl manifest get ${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG} --format '{{json .}}' | jq -r '.annotations | to_entries[] | @base64 '" current_annotations
+    run_a_script "regctl manifest get ${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG} --format '{{json .}}' | jq -r '.annotations | to_entries[] | @base64 '" current_annotations --disable_log
 
     local annotations=()
     for annotation in $current_annotations; do
