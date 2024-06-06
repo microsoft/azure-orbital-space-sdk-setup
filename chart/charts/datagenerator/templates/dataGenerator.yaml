@@ -1,0 +1,6 @@
+{{- $globalValues := .Values.global }}
+{{- range $key, $serviceValues := .Values.dataGenerators }}
+{{- if $serviceValues.enabled }}
+{{- include "spacefx.dataGenerator" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- end }}

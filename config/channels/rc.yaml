@@ -1,0 +1,3 @@
+config:
+  channel: rc
+  tagSuffix: -rc

@@ -1,0 +1,15 @@
+apiVersion: v2
+name: spacefx
+description: A Helm chart for deploying the Azure Orbital Space Framework to a Kubernetes cluster
+type: application
+version: 0.10.0
+appVersion: "0.10.0"
+dependencies:
+  - name: csi-driver-smb
+    version: 1.14.0
+    repository: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
+    condition: subcharts.smb.enabled
+  - name: dapr
+    version: 1.9.6
+    repository: https://dapr.github.io/helm-charts
+    condition: subcharts.dapr.enabled

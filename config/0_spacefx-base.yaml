@@ -1,0 +1,65 @@
+config:
+  channel: stable
+  buildArtifacts:
+  extraBuildArtifacts:
+  charts:
+    - group: dapr
+      dev:
+        enabled: true
+      prod:
+        enabled: true
+      version: 1.9.6
+      namespace: dapr-system
+      containers:
+        - registry: docker.io
+          repository: daprio/dapr
+          tag: 1.9.6
+        - registry: docker.io
+          repository: daprio/daprd
+          tag: 1.9.6
+    - group: smb
+      dev:
+        enabled: true
+      prod:
+        enabled: true
+      version: 1.14.0
+      containers:
+        - registry: registry.k8s.io
+          repository: sig-storage/livenessprobe
+          tag: v2.12.0
+        - registry: registry.k8s.io
+          repository: sig-storage/csi-node-driver-registrar
+          tag: v2.10.0
+        - registry: registry.k8s.io
+          repository: sig-storage/smbplugin
+          tag: v1.14.0
+        - registry: registry.k8s.io
+          repository: sig-storage/csi-provisioner
+          tag: v4.0.0
+    - group: buildservice
+      dev:
+        enabled: true
+      prod:
+        enabled: true
+      version: 1.20.1
+      containers:
+        - registry: gcr.io
+          repository: kaniko-project/executor
+          tag: v1.20.1-slim
+    - group: nvidia_gpu
+      dev:
+        enabled: false
+      prod:
+        enabled: false
+      version: 0.14.4
+      containers:
+        - registry: nvcr.io
+          repository: nvidia/k8s-device-plugin
+          tag: v0.14.4
+  containerRegistries:
+    - url: ghcr.io/microsoft
+      repositoryPrefix: azure-orbital-space-sdk
+      push_enabled: true
+      pull_enabled: true
+      login_enabled: true
+  hostDirectoryMounts:

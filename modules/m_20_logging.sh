@@ -149,6 +149,7 @@ function _script_start(){
     write_parameter_to_log PWD
     write_parameter_to_log SPACEFX_DIR
     write_parameter_to_log SPACEFX_VERSION
+    write_parameter_to_log SPACEFX_CHANNEL
     write_parameter_to_log LOG_FILE
     write_parameter_to_log LOG_LEVEL
 }

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: spacefx.datagenerator
+description: A Helm chart for deploying the data generators used by the SpaceFX platform
+type: application
+version: 0.10.0
+appVersion: "0.10.0"

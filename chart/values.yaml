@@ -1,0 +1,354 @@
+global:
+  architecture: amd64
+  appConfig:
+    heartBeatPulseTimingMS: 2000
+    heartBeatReceivedToleranceMS: 10000
+    resourceMonitorEnabled: false
+    resourceMonitorTimingMS: 5000
+    resourceScavengerEnabled: true
+    resourceScavengerTimingMS: 30000
+  containerCommand: dotnet
+  containerRegistry: registry.spacefx.local:5000
+  containerRegistryInternal: core-registry.core.svc.cluster.local:5000
+  dapr:
+    logLevel: debug
+  debugShim:
+    command: bash
+    keepAliveRelativePath: .git/cache/_keepAlive.sh
+    resources:
+      memory:
+        limit: 16G
+        request: 64M
+      cpu:
+        limit: 8000m
+        request: 15m
+    logging:
+    - name: Default
+      level: Information
+    - name: Microsoft.AspNetCore.Hosting.Diagnostics
+      level: Error
+    - name: Microsoft.AspNetCore.Routing.EndpointMiddleware
+      level: Error
+    - name: Microsoft.Azure.SpaceFx
+      level: Debug
+    - name: Microsoft.Azure.SpaceFx.Core.Utils.SideCar
+      level: Debug
+    - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
+      level: Debug
+  devEnvironment: false
+  nvidia:
+    gpuLimitsName: nvidia.com/gpu
+    gpuLimitsValue: 1
+    runTimeClass: nvidia
+  xferDirectoryQuota: 10G
+  xferVolumes:
+    - xfer
+    - plugins
+  imagePullPolicy: Always
+  spacefxDirectories:
+    base: /var/spacedev
+    plugins: plugins
+    xfer: xfer
+  servicesPrefix:
+  spacefxSecretDirectory: /etc/spacefx_config
+  spacefxVersion: 0.10.0
+  logging:
+    - name: Default
+      level: Error
+    - name: Microsoft.AspNetCore
+      level: None
+    - name: System.Net.Http
+      level: None
+    - name: Microsoft.AspNetCore.Routing.EndpointMiddleware
+      level: None
+    - name: Microsoft.AspNetCore.Hosting.Diagnostics
+      level: None
+    - name: Microsoft.Azure.SpaceFx
+      level: Information
+    - name: Microsoft.Azure.SpaceFx.Core.Utils.SideCar
+      level: Error
+    - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
+      level: Error
+  resources:
+    memory:
+      limit: 2G
+      request: 64M
+    cpu:
+      limit: 4000m
+      request: 15m
+  namespaces:
+    enabled: false
+    list:
+      - namespace: core
+      - namespace: hostsvc
+      - namespace: payload-app
+      - namespace: platformsvc
+  registryRedirect:
+    enabled: false
+    endpoint: localhost:5000
+    redirects:
+      - registry: registry.spacefx.local
+      - registry: docker.io
+      - registry: registry.k8s.io
+      - registry: gcr.io
+      - registry: spacefx.azurecr.io
+subcharts:
+  dapr:
+    enabled: false
+  smb:
+    enabled: false
+  nvidia:
+    enabled: false
+services:
+  core:
+    buildservice:
+      serviceNamespace: core
+      enabled: false
+      targetService:
+        appName: exampleapp
+        repository: example
+        tag: v1.0.0
+      repository: kaniko-project/executor
+      tag: v1.20.1-slim
+      dockerFile: Dockerfile.svc
+      contextDir: build/dotnet
+    registry:
+      appName: core-registry
+      containerCommand:
+        - /usr/bin/registry
+      containerArgs:
+        - serve
+        - /etc/docker/registry/config.yml
+      serviceNamespace: core
+      prod:
+        enabled: false
+        hasBase: false
+      dev:
+        enabled: false
+        hasBase: false
+      enabled: false
+      repository: core-registry
+      targetPort: 5000
+      tlsCertificate: /certs/registry.spacefx.local.crt
+      tlsKey: /certs/registry.spacefx.local.key
+      resources:
+        memory:
+          limit: 1G
+          request: 8M
+        cpu:
+          limit: 1000m
+          request: 10m
+    switchboard:
+      appName: core-switchboard
+      serviceNamespace: core
+      prod:
+        enabled: true
+        hasBase: false
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      repository: core-switchboard
+    fileserver:
+      appName: core-fileserver
+      logLevel: info
+      maximumNumberOfLogs: 15
+      pollingTimeSecs: 5
+      repository: core-fileserver
+      serviceNamespace: core
+      prod:
+        enabled: true
+        hasBase: false
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+  platform:
+    mts:
+      appConfig:
+        - name: messageResponseTimeoutMS
+          value: 15000
+      appName: platform-mts
+      debugShim: false
+      repository: platform-mts
+      serviceNamespace: platformsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/platform-mts
+    deployment:
+      appName: platform-deployment
+      debugShim: false
+      repository: platform-deployment
+      appConfig:
+        - name: enableYamlDebug
+          value: false
+        - name: scheduleDirectory
+          value: schedule
+        - name: purgeScheduleOnBoot
+          value: false
+        - name: scheduleDirectoryPollingMS
+          value: 3000
+        - name: scheduleDirectoryCopyTimeoutMS
+          value: 15000
+        - name: scheduleServicePollingMS
+          value: 3000
+        - name: defaultLimitMemory
+          value: 2Gi
+        - name: defaultLimitCPU
+          value: 2000m
+        - name: defaultRequestMemory
+          value: 25Mi
+        - name: defaultRequestCPU
+          value: 10m
+        - name: defaultAppMaxRuntime
+          value: 01:00:00
+        - name: buildServiceEnabled
+          value: true
+      payloadAppInjections:
+        annotations:
+          "azure.spacefx/start-time": "SPACEFX-TEMPLATE_APP_START_TIME"
+          "azure.spacefx/max-duration": "SPACEFX-TEMPLATE_APP_MAX_DURATION"
+          "azure.spacefx/app-schedule": "SPACEFX-TEMPLATE_APP_SCHEDULE"
+          "azure.spacefx/payload-app-context": "SPACEFX-TEMPLATE_APP_CONTEXT"
+        labels:
+          "app": "SPACEFX-TEMPLATE_APP_NAME"
+          "azure.spacefx/platform-deployment": "true"
+          "azure.spacefx/recurring": "false"
+          "azure.spacefx/app-name": "SPACEFX-TEMPLATE_APP_NAME"
+          "azure.spacefx/app-group": "SPACEFX-TEMPLATE_APP_GROUP"
+          "azure.spacefx/app-namespace": "SPACEFX-TEMPLATE_APP_NAMESPACE"
+          "azure.spacefx/tracking-id": "SPACEFX-TEMPLATE_TRACKING_ID"
+          "azure.spacefx/customer-tracking-id": "SPACEFX-TEMPLATE_CUSTOMER_TRACKING_ID"
+          "azure.spacefx/correlation-id": "SPACEFX-TEMPLATE_CORRELATION_ID"
+        environmentVariables:
+          - name: "SPACEFX_APP"
+            value: "SPACEFX-TEMPLATE_APP_NAME"
+          - name: "SPACEFX_PLATFORM_DEPLOYMENT"
+            value: "true"
+          - name: "SPACEFX_RECURRING_DEPLOYMENT"
+            value: "false"
+          - name: "SPACEFX_APP_GROUP"
+            value: "SPACEFX-TEMPLATE_APP_GROUP"
+          - name: "SPACEFX_APP_NAMESPACE"
+            value: "SPACEFX-TEMPLATE_APP_NAMESPACE"
+          - name: "SPACEFX_TRACKING_ID"
+            value: "SPACEFX-TEMPLATE_TRACKING_ID"
+          - name: "SPACEFX_CUSTOMER_TRACKING_ID"
+            value: "SPACEFX-TEMPLATE_CUSTOMER_TRACKING_ID"
+          - name: "SPACEFX_CORRELATION_ID"
+            value: "SPACEFX-TEMPLATE_CORRELATION_ID"
+          - name: "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
+            value: "1"
+          - name: "DOTNET_USE_POLLING_FILE_WATCHER"
+            value: "true"
+          - name: "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE"
+            value: "false"
+      serviceNamespace: platformsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/platform-deployment
+    vth:
+      appConfig:
+        - name: enableRoutingToMTS
+          value: true
+      appName: vth
+      debugShim: false
+      repository: vth
+      serviceNamespace: platformsvc
+      prod:
+        enabled: false
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/vth
+  host:
+    sensor:
+      appConfig:
+        - name: enableRoutingToMTS
+          value: true
+        - name: messageResponseTimeoutMS
+          value: 15000
+      appName: hostsvc-sensor
+      debugShim: false
+      repository: hostsvc-sensor
+      serviceNamespace: hostsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/hostsvc-sensor
+    link:
+      appConfig:
+        - name: fileMoverPollingMS
+          value: 5000
+        - name: leaveSourceFilePropertyValue
+          value: false
+      appName: hostsvc-link
+      debugShim: false
+      repository: hostsvc-link
+      serviceNamespace: hostsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      xferVolumes:
+        - allxfer
+      workingDir: /workspaces/hostsvc-link
+    logging:
+      appConfig:
+        - name: logFileMaxSizeKB
+          value: 5120
+        - name: logFileMaxTTL
+          value: 00:05:00
+        - name: writeTelemetryToLog
+          value: true
+      appName: hostsvc-logging
+      debugShim: false
+      repository: hostsvc-logging
+      serviceNamespace: hostsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/hostsvc-logging
+    position:
+      appName: hostsvc-position
+      debugShim: false
+      repository: hostsvc-position
+      serviceNamespace: hostsvc
+      prod:
+        enabled: true
+        hasBase: true
+      dev:
+        enabled: true
+        hasBase: false
+      enabled: false
+      workingDir: /workspaces/hostsvc-position
+  payloadapp:
+    payloadapp:
+      appName: payloadapp
+      serviceNamespace: payload-app
+      repository: payloadapp
+      enabled: false
+      workingDir: /workspaces/payloadapp

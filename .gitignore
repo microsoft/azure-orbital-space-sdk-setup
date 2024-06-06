@@ -1,3 +1,4 @@
 spacedev_cache
 *.log
 tmp
+output

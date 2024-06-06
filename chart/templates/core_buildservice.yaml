@@ -1,0 +1,56 @@
+{{- if .Values.services.core.buildservice.enabled }}
+{{- $serviceValues := .Values.services.core.buildservice }}
+{{- $globalValues := .Values.global }}
+{{- $buildName := printf "buildsvc-%s" $serviceValues.targetService.appName }}
+{{- $imgName := printf "%s/%s:%s" $globalValues.containerRegistry $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
+{{- $destinationContainerRegistry := include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues "containerRegistry" $globalValues.containerRegistryInternal) }}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ $buildName | quote }}
+  namespace: {{ $serviceValues.serviceNamespace }}
+  labels:
+    microsoft.azureorbital/serviceName: {{ $serviceValues.targetService.appName | quote }}
+    microsoft.azureorbital/buildService: "true"
+spec:
+  backoffLimit: 0
+  completions: 1
+  parallelism: 1
+  ttlSecondsAfterFinished: 300
+  template:
+    spec:
+      containers:
+        - name: "buildservice"
+          image: {{ $imgName | quote }}
+          volumeMounts:
+           - name: spacedev-host-dir
+             mountPath: {{ $globalValues.spacefxDirectories.base }}
+          args: ["--dockerfile={{ $serviceValues.dockerFile }}",
+            "--context=dir://{{ $globalValues.spacefxDirectories.base }}/{{ $serviceValues.contextDir }}",
+            "--destination={{ include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues "containerRegistry" $globalValues.containerRegistryInternal) }}/{{ $serviceValues.targetService.repository }}:{{ $serviceValues.targetService.tag }}",
+            "--build-arg=SERVICE_NAME={{ $serviceValues.targetService.appName }}",
+            "--build-arg=CONTAINER_REGISTRY={{ include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues "containerRegistry" $globalValues.containerRegistryInternal) }}",
+            "--build-arg=SERVICE_VERSION={{ $globalValues.spacefxVersion }}",
+            "--build-arg=SPACEFX_VERSION={{ $globalValues.spacefxVersion }}",
+            "--build-arg=SERVICE_BUILDDATE={{ now | date "20060102T150405" }}",
+            "--build-arg=ARCHITECTURE={{ $globalValues.architecture }}",
+            "--snapshot-mode=redo",
+            "--custom-platform=linux/{{ $globalValues.architecture }}",
+            "--insecure",
+            "--insecure-pull",
+            "--insecure-registry={{ $globalValues.containerRegistryInternal }}",
+            "--registry-mirror={{ $globalValues.containerRegistryInternal }}",
+            "--single-snapshot",
+            "--skip-tls-verify",
+            "--skip-tls-verify-pull",
+            "--skip-tls-verify-registry",
+            "--verbosity=trace"]
+      restartPolicy: Never
+      volumes:
+          - name: spacedev-host-dir
+            hostPath:
+              path: {{ $globalValues.spacefxDirectories.base }}
+              type: Directory
+# build-service generation end
+{{- end }}

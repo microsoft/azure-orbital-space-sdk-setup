@@ -1,0 +1,27 @@
+global:
+  containerRegistry: registry.spacefx.local:5000
+  spacefxVersion: 0.10.0
+  servicesPrefix:
+  resources:
+    memory:
+      limit: 2G
+      request: 64M
+    cpu:
+      limit: 500m
+      request: 15m
+dataGenerators:
+  imageProvider:
+    enabled: false
+    repository: tool-image-provider
+    serviceNamespace: platformsvc
+    targetPort: 8080
+  starviewer:
+    enabled: false
+    repository: tool-star-viewer
+    serviceNamespace: platformsvc
+    targetPort: 8080
+  planetaryComputer:
+    enabled: false
+    repository: tool-planetary-computer-geotiff
+    serviceNamespace: platformsvc
+    targetPort: 8080
