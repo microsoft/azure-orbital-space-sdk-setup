@@ -1,0 +1,1 @@
+echo "running deploy_spacefx.sh" > /var/spacedev/deploy.log
