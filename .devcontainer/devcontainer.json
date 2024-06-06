@@ -11,6 +11,10 @@
 		"./features/spacefx-dev": {
 		}
 	},
+	"hostRequirements": {
+		"cpus": 8,
+		"memory": "8gb"
+	},
 	// Configure tool-specific properties.
 	"customizations": {
 		// Configure properties specific to VS Code.
