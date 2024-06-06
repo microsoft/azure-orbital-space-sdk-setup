@@ -59,18 +59,20 @@ function build_dest_directory() {
 
     mkdir -p "/host_var/tmp/spacefx-dev"
 
+    SPACEFX_DIR_FOR_HOST="${SPACEFX_DIR/\//\/host_}"
+
     echo "Creating /spacefx-dev/.env file..."
     tee /spacefx-dev/.env -a > /dev/null << UPDATE_END
 export _REMOTE_USER=${_REMOTE_USER}
 export _REMOTE_USER_HOME=${_REMOTE_USER_HOME}
 export _CONTAINER_USER=${_CONTAINER_USER}
 export K3S_VERSION=${K3S_VERSION}
-export KUBECTL_VERSION=${KUBECTL_VERSION}
-export USE_CRI_DOCKERD=${USE_CRI_DOCKERD}
 export ARCHITECTURE=${ARCHITECTURE}
 export HOST_INTERFACE_CONTAINER=${HOST_INTERFACE_CONTAINER}
 export K3S_ARCHITECTURE=${K3S_ARCHITECTURE}
 export HOST_INTERFACE_CONTAINER_BASE=${HOST_INTERFACE_CONTAINER_BASE}
+export SPACEFX_DIR=${SPACEFX_DIR}
+export SPACEFX_DIR_FOR_HOST=${SPACEFX_DIR_FOR_HOST}
 UPDATE_END
 
 

@@ -10,3 +10,9 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Source /etc/os-release to get OS info
 source /etc/os-release
+
+source /spacefx-dev/.env
+
+ln -s ${SPACEFX_DIR_FOR_HOST} ${SPACEFX_DIR}
+
+cp /azure-orbital-space-sdk-setup/* ${SPACEFX_DIR_FOR_HOST} -r
