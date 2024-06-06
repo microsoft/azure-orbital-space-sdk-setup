@@ -1,0 +1,507 @@
+#!/bin/bash
+
+############################################################
+# Find the first container registry with push access enabled
+############################################################
+function get_registry_with_push_access() {
+    local return_result_var=$1
+    if [[ -z "${return_result_var}" ]]; then
+        exit_with_error "Please supply a return variable name for results"
+    fi
+    run_a_script "jq -r '.config.containerRegistries[] | select(.push_enabled == true) | .url' ${SPACEFX_DIR}/tmp/config/spacefx-config.json | head -n 1" container_registry_with_push_access --ignore_error --disable_log
+    eval "$return_result_var='$container_registry_with_push_access'"
+}
+
+############################################################
+# Find the first container registry with push access enabled
+############################################################
+function get_registry_with_push_access() {
+    local return_result_var=$1
+    if [[ -z "${return_result_var}" ]]; then
+        exit_with_error "Please supply a return variable name for results"
+    fi
+    run_a_script "jq -r '.config.containerRegistries[] | select(.push_enabled == true) | .url' ${SPACEFX_DIR}/tmp/config/spacefx-config.json | head -n 1" container_registry_with_push_access --ignore_error --disable_log
+    eval "$return_result_var='$container_registry_with_push_access'"
+}
+
+############################################################
+# Pull the registry image locally
+############################################################
+function find_registry_for_image(){
+    local container_image="$1"
+    local return_result_var=$2
+    if [[ -z "${return_result_var}" ]]; then
+        exit_with_error "Please supply a return variable name for results"
+    fi
+
+    info_log "Locating registry for '${container_image}'..."
+
+    run_a_script "jq -r '.config.containerRegistries[] | select(.pull_enabled == true) | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" container_registries --disable_log
+
+    REGISTRY_IMAGE_NAME=""
+
+    for row in $container_registries; do
+        parse_json_line --json "${row}" --property ".url" --result container_registry
+
+        info_log "Checking container registry '${container_registry}' for image '${container_image}'..."
+
+        login_to_container_registry ${container_registry}
+        run_a_script "regctl image manifest ${container_registry}/${container_image}" --ignore_error --disable_log
+
+        if [[ "${RETURN_CODE}" -eq 0 ]]; then
+            info_log "...image '${container_image}' FOUND in container registry '${container_registry}'"
+            REGISTRY_IMAGE_NAME="${container_registry}"
+            break;
+        else
+            info_log "...image '${container_image}' NOT FOUND in container registry '${container_registry}'"
+        fi
+    done
+
+    eval "$return_result_var='$REGISTRY_IMAGE_NAME'"
+}
+
+
+############################################################
+# Push a local image to a repository
+############################################################
+function push_to_repository(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image_name=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image_name=$1
+            ;;
+        esac
+        shift
+    done
+
+    info_log "Pushing '${image_name}'..."
+
+    run_a_script "docker push ${image_name}"
+    run_a_script "regctl image mod ${image_name} --replace --label-to-annotation"
+    info_log "...successfully pushed '${image_name}'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Push a local image to a repository
+############################################################
+function gen_and_push_manifest(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image_name=""
+    local _annotations=()
+    local _gen_manifest_annotations=""
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image_name=$1
+            ;;
+        --annotation)
+            shift
+            _annotations+=($1)
+            ;;
+        esac
+        shift
+    done
+
+    run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+    if [[ "${has_annotations}" == "true" ]]; then
+        run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+        for gh_annotation in $gh_annotations; do
+            parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+            _annotations+=("${decoded_annotation}")
+        done
+    fi
+
+    for annotationpart in "${_annotations[@]}"; do
+        _gen_manifest_annotations="${_gen_manifest_annotations} --annotation=${annotationpart}"
+    done
+
+
+
+    info_log "Checking if prior manifest '${image_name}' exists..."
+    run_a_script "regctl manifest get ${image_name} --format '{{json .}}'" manifest_entries --ignore_error
+
+    if [[ -z "${manifest_entries}" ]]; then
+        info_log "...manifest not found.  Creating '${image_name}'..."
+        run_a_script "regctl index create ${image_name} \
+                                        ${annotation_string} \
+                                        --media-type application/vnd.docker.distribution.manifest.list.v2+json"
+
+        info_log "...repulling the manifest..."
+        run_a_script "regctl manifest get ${image_name} --format '{{json .}}'" manifest_entries --ignore_error
+
+        info_log "...successfully created index '${image_name}'."
+    fi
+
+    add_annotation_to_image --image "${image_name}" --full_annotation_string "${_gen_manifest_annotations}"
+
+
+    info_log "Manifest '${image_name}' found"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Set annotations on an image by replacing any existing annotations
+############################################################
+function set_annotation_to_image(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image_name=""
+    local annotations=()
+    local annotation_string=""
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image_name=$1
+            ;;
+        --annotation)
+            shift
+            annotations+=($1)
+            ;;
+        --full_annotation_string)
+            shift
+            annotation_string=$1
+        esac
+        shift
+    done
+
+
+    if [[ -z "${annotation_string}" ]]; then
+        if [[ -n "${GITHUB_ANNOTATION}" ]]; then
+            annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+        fi
+
+        for annotationpart in "${annotations[@]}"; do
+            if [[ -n "${annotationpart}" ]]; then
+                annotation_string="${annotation_string} --annotation=${annotationpart}"
+            fi
+        done
+    fi
+
+    info_log "Checking if prior manifest '${image_name}' exists..."
+    run_a_script "regctl manifest head ${image_name}" manifest_entries --ignore_error
+
+    if [[ -n "${manifest_entries}" ]]; then
+        info_log "...manifest found.  Setting annotations to '${image_name}'..."
+        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace"
+        info_log "...successfully set annotations for '${image_name}'."
+    else
+        info_log "Image '${image_name}' not found.  Nothing to do"
+    fi
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Set annotations on an image by replacing any existing annotations
+############################################################
+function remove_annotations_from_image(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image_name=""
+    local annotation_string=""
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image_name=$1
+            ;;
+        esac
+        shift
+    done
+
+
+    run_a_script "regctl manifest get ${image_name} --format '{{json .}}' | jq -r '.annotations | to_entries[] | @base64 '" current_annotations --ignore_error
+
+    for annotation in $current_annotations; do
+        parse_json_line --json "${annotation}" --property ".key" --result annotation_key
+        parse_json_line --json "${annotation}" --property ".value" --result annotation_value
+
+        # Remove the annotation by setting it to empty
+        annotation_string="${annotation_string} --annotation=${annotation_key}="
+    done
+
+    if [[ -n "${annotation_string}" ]]; then
+        info_log "Removing annotations from '${image_name}'..."
+        run_a_script "regctl image mod ${image_name} ${annotation_string}  --replace"
+        info_log "...successfully removed annotations for '${image_name}'."
+    else
+        info_log "No annotations found for '${image_name}'.  Nothing to do"
+    fi
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Add an annotation to an image while preserving any previous annotations
+############################################################
+function add_annotation_to_image(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image_name=""
+    local _add_annotations=()
+    local _add_annotation_string=""
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image_name=$1
+            ;;
+        --annotation)
+            shift
+            _add_annotations+=($1)
+            ;;
+        --full_annotation_string)
+            shift
+            _add_annotation_string=$1
+        esac
+        shift
+    done
+
+    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
+        _add_annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    fi
+
+    info_log "Checking if prior manifest '${image_name}' exists..."
+    run_a_script "regctl manifest head ${image_name}" manifest_entries --ignore_error
+
+    if [[ -z "${manifest_entries}" ]]; then
+        info_log "Image '${image_name}' not found.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "...manifest found.  Querying for current annotations to '${image_name}'..."
+
+    run_a_script "regctl manifest get ${image} --format '{{json .}}' | jq -r '.annotations | to_entries[] | @base64 '" current_annotations --ignore_error
+
+    for annotation in $current_annotations; do
+        parse_json_line --json "${annotation}" --property ".key" --result annotation_key
+        parse_json_line --json "${annotation}" --property ".value" --result annotation_value
+        _add_annotation_string="${_add_annotation_string} --annotation=${prev_annotationpart}"
+    done
+
+    for annotationpart in "${_add_annotations[@]}"; do
+        if [[ -n "${annotationpart}" ]]; then
+            _add_annotation_string="${_add_annotation_string} --annotation=${annotationpart}"
+        fi
+    done
+
+    trace_log "Full annotation string: ${_add_annotation_string}"
+
+    set_annotation_to_image --image "${image_name}" --full_annotation_string "${_add_annotation_string}"
+
+    info_log "...successfully added annotations for '${image_name}'."
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Add new container image to manifest
+############################################################
+function add_image_to_manifest(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local main_image_tag=""
+    local child_image_tag=""
+    local container_registry=""
+    local repository=""
+    local annotations=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --container_registry)
+            shift
+            container_registry=$1
+            ;;
+        --repository)
+            shift
+            repository=$1
+            ;;
+        --main_image_tag)
+            shift
+            main_image_tag=$1
+            ;;
+        --child_image_tag)
+            shift
+            child_image_tag=$1
+            ;;
+         --annotation)
+            shift
+            annotations+=($1)
+            ;;
+        esac
+        shift
+    done
+
+    local annotation_string=""
+
+    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
+        annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    fi
+
+    for annotationpart in "${annotations[@]}"; do
+        annotation_string="${annotation_string} --desc-annotation=${annotationpart}"
+    done
+
+
+    info_log "Adding '${container_registry}/${repository}:${child_image_tag}' to '${container_registry}/${repository}:${main_image_tag}'"
+    run_a_script "regctl index add ${container_registry}/${repository}:${main_image_tag} --ref ${container_registry}/${repository}:${child_image_tag} ${annotation_string}"
+    info_log "...successfully added '${container_registry}/${repository}:${child_image_tag}' to '${container_registry}/${repository}:${main_image_tag}'"
+
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+
+############################################################
+# Update a parent image to redirect to a destination image
+############################################################
+function add_redirect_to_image(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local image=""
+    local destination_image=""
+    local annotations=()
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --image)
+            shift
+            image=$1
+            ;;
+        --destination_image)
+            shift
+            destination_image=$1
+            ;;
+         --annotation)
+            shift
+            annotations+=($1)
+            ;;
+        esac
+        shift
+    done
+
+    local annotation_string=""
+
+    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
+        annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    fi
+
+    for annotationpart in "${annotations[@]}"; do
+        annotation_string="${annotation_string} --desc-annotation=${annotationpart}"
+    done
+
+    info_log "Adding redirect from '${image}' to '${destination_image}' for '${ARCHITECTURE}'"
+
+    debug_log "Querying for manifest for parent image '${image}'..."
+    run_a_script "regctl manifest get ${image} --format '{{json .}}'" image_manifest
+
+
+    debug_log "Checking for '${ARCHITECTURE}' in manifest..."
+    run_a_script "jq -r '.manifests[] | select(.platform.architecture == \"${ARCHITECTURE}\") | .digest'  <<< \${image_manifest}" arch_digest
+
+    if [[ -n "${arch_digest}" ]]; then
+        debug_log "Removing previous redirect for '${ARCHITECTURE}'..."
+        run_a_script "regctl index delete ${image} --digest ${arch_digest}"
+        debug_log "...successfull removed previous redirect for '${ARCHITECTURE}'."
+    else
+        debug_log "No previous redirects found for '${ARCHITECTURE}'."
+    fi
+
+    info_log "Adding '${destination_image}' to '${image}'"
+    run_a_script "regctl index add ${image} --ref ${destination_image} ${annotation_string} --desc-platform=linux/${ARCHITECTURE}"
+    info_log "...successfully added '${destination_image}' to '${image}'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Convert the filename to a repository name for dynamically loading / finding build artifacts
+############################################################
+function calculate_repo_name_from_filename() {
+    local filename=""
+    local return_result_var=""
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --filename)
+            shift
+            filename=$1
+            ;;
+        --result)
+            shift
+            return_result_var=$1
+            ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${filename}" ]]; then
+        exit_with_error "Please supply a filename to convert to a repository"
+    fi
+
+    if [[ -z "${return_result_var}" ]]; then
+        exit_with_error "Please supply a return variable name for results"
+    fi
+
+    run_a_script "basename ${filename}" base_filename --disable_log
+
+    trace_log "Converting filename '${base_filename}' to a repository name..."
+
+    # Get the filename and extension of the filename
+    local return_dest_repo_suffix="${base_filename}"
+    local extension="${base_filename##*.}"
+
+
+    # Convert to lowercase
+    return_dest_repo_suffix="${return_dest_repo_suffix,,}"
+    extension="${extension,,}"
+
+    # Remove the extension
+    return_dest_repo_suffix=${return_dest_repo_suffix//"${extension}"/}
+
+    # Check if we're pushing a wheel and if so, convert the dashes to periods
+    if [[ $extension == "whl" ]]; then
+        return_dest_repo_suffix=${return_dest_repo_suffix//-/.}
+    fi
+
+    # Remove any references to spacefx version embedded from dotnet (which adds the -a)
+    return_dest_repo_suffix=${return_dest_repo_suffix//"${SPACEFX_VERSION}-a"/}
+
+    # Remove any references to spacefx version
+    return_dest_repo_suffix=${return_dest_repo_suffix//"${SPACEFX_VERSION}"/}
+
+
+    # Update any double periods to a single periods
+    return_dest_repo_suffix=${return_dest_repo_suffix//../.}
+
+    # Check if the last character is a period and if so, remove it
+    if [[ "${return_dest_repo_suffix: -1}" == "." ]]; then
+        return_dest_repo_suffix="${return_dest_repo_suffix%?}"
+    fi
+
+    # Replace all periods "." with slashes "/"
+    return_dest_repo_suffix=${return_dest_repo_suffix//./\/}
+
+    trace_log "...returning calculated repository: 'buildartifacts/${extension}/${return_dest_repo_suffix}'"
+
+    eval "$return_result_var='buildartifacts/${extension}/${return_dest_repo_suffix}'"
+}

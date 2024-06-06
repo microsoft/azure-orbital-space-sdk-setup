@@ -24,7 +24,7 @@ function show_help() {
    # Display Help
    echo "Main entry point to download all dependencies and artifacts to use the Microsoft Azure Orbital Space SDK in an airgapped, non-internet connected environment."
    echo
-   echo "Syntax: bash ./scripts/stage/stage_spacefx.sh [--architecture arm64 | amd64]"
+   echo "Syntax: bash ./scripts/stage_spacefx.sh [--architecture arm64 | amd64]"
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
@@ -69,10 +69,6 @@ function main() {
     info_log "Staging third party apps..."
     run_a_script "${SPACEFX_DIR}/scripts/stage/stage_3p_apps.sh --architecture ${ARCHITECTURE}"
     info_log "...successfully staged third party apps"
-
-    info_log "Installing third party apps..."
-    install_3p_apps
-    info_log "...successfully installed third party apps"
 
 
     info_log "------------------------------------------"

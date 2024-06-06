@@ -131,3 +131,52 @@ function run_a_script() {
     rm "$script_temp_file"
 
 }
+
+
+
+############################################################
+# Parses a base64-encoded json string row and returns the value requested
+############################################################
+function parse_json_line() {
+    local base_64_encoded=""
+    local property=""
+    local result_variable=""
+    local result_value=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --json)
+                shift
+                base_64_encoded=$1
+                ;;
+            --property)
+                shift
+                property=$1
+            ;;
+            --result)
+                shift
+                result_variable=$1
+                ;;
+            *) echo "Unknown parameter '$1'"; show_help ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${base_64_encoded}" ]]; then
+        exit_with_error "Missing parameter --json"
+    fi
+
+    if [[ -z "${property}" ]]; then
+        exit_with_error "Missing parameter --property"
+    fi
+
+    if [[ -z "${result_variable}" ]]; then
+        exit_with_error "Missing parameter --result_variable"
+    fi
+
+    eval "$result_variable=''"
+
+    result_value=$(echo $base_64_encoded | base64 -d | jq -r "${property}")
+
+    eval "$result_variable='$result_value'"
+}

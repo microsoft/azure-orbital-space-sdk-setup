@@ -1,0 +1,20 @@
+{
+    "CA": {
+        "expiry": "43800h",
+        "pathlen": 0
+    },
+    "CN": "ca.spacefx.local",
+    "key": {
+        "algo": "rsa",
+        "size": 2048
+    },
+    "names": [
+        {
+            "C": "US",
+            "ST": "Washington",
+            "L": "Redmond",
+            "O": "Azure",
+            "OU": "SpaceFX"
+        }
+    ]
+}

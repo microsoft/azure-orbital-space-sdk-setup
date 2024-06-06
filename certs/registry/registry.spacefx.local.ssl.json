@@ -1,0 +1,24 @@
+{
+    "CN": "registry.spacefx.local",
+    "hosts": [
+      "*.registry.spacefx.local",
+      "registry.spacefx.local",
+      "localhost",
+      "*.registry.spacefx.local:5000",
+      "registry.spacefx.local:5000",
+      "localhost:5000",
+      "core-registry.core.svc.cluster.local",
+      "core-registry.core.svc.cluster.local:5000"
+    ],
+    "key": {
+      "algo": "rsa",
+      "size": 2048
+    },
+    "names": [{
+        "C": "US",
+        "ST": "Washington",
+        "L": "Redmond",
+        "O": "Azure",
+        "OU": "SpaceFX"
+    }]
+  }

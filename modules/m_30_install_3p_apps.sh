@@ -3,7 +3,7 @@
 ############################################################
 # Install 3p apps to the target host
 ############################################################
-function install_3p_apps() {
+function _install_3p_apps() {
     local need_apps_installed=false
 
     info_log "Checking if third party apps are installed and available..."
@@ -105,3 +105,4 @@ function _stage_3p_apps(){
         run_a_script "${SPACEFX_DIR}/scripts/stage/stage_3p_apps.sh --architecture ${HOST_ARCHITECTURE}"
     fi
 }
+

@@ -1,0 +1,14 @@
+{{- if .Values.global.namespaces.enabled }}
+{{- $mainContext := .Values }}
+{{- range .Values.global.namespaces.list }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ .namespace }}
+  labels:
+    name: {{ .namespace }}
+  annotations:
+    "helm.sh/resource-policy": "keep"
+{{- end }}
+{{- end }}

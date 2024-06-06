@@ -1,0 +1,23 @@
+{{- if .Values.global.registryRedirect.enabled }}
+{{- $serviceValues := .Values.global.registryRedirect }}
+{{- $globalValues := .Values.global }}
+mirrors:
+{{- range $serviceValues.redirects }}
+  {{ .registry }}:
+    endpoint:
+      - "https://{{ $serviceValues.endpoint }}"
+{{- end }}
+configs:
+  "registry.spacefx.local":
+    tls:
+      cert_file: {{ $globalValues.spacefxDirectories.base }}/certs/registry/registry.spacefx.local.crt
+      key_file:  {{ $globalValues.spacefxDirectories.base }}/certs/registry/registry.spacefx.local.key
+      ca_file:   {{ $globalValues.spacefxDirectories.base }}/certs/ca/ca.spacefx.local.crt
+      insecure_skip_verify: true
+  "{{ $serviceValues.endpoint }}":
+    tls:
+      cert_file: {{ $globalValues.spacefxDirectories.base }}/certs/registry/registry.spacefx.local.crt
+      key_file:  {{ $globalValues.spacefxDirectories.base }}/certs/registry/registry.spacefx.local.key
+      ca_file:   {{ $globalValues.spacefxDirectories.base }}/certs/ca/ca.spacefx.local.crt
+      insecure_skip_verify: true
+{{- end }}

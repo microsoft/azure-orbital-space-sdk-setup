@@ -1,0 +1,111 @@
+{{- if .Values.services.core.fileserver.enabled }}
+{{- $serviceValues := .Values.services.core.fileserver }}
+{{- $globalValues := .Values.global }}
+{{- include "spacefx.service_account" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- $allServices := dict }}
+{{- range $key, $value := .Values.services.platform }}
+{{- $password := randAlphaNum 16 }}
+{{- $_ := set $value "password" $password }}
+{{- $_ := set $allServices $value.appName $value }}
+{{- end }}
+{{- range $key, $value := .Values.services.host }}
+{{- $password := randAlphaNum 16 }}
+{{- $_ := set $value "password" $password }}
+{{- $_ := set $allServices $value.appName $value }}
+{{- end }}
+{{- range $key, $val := $allServices }}
+{{- include "spacefx.service_account" (dict "serviceValues" $val "globalValues" $globalValues) }}
+{{- include "spacefx.fileserver.clientapp.creds" (dict "serviceValues" $val "username" $val.appName "password" $val.password ) }}
+{{- end }}
+{{- $imgName := printf "%s/%s:%s" (include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues)) $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $serviceValues.appName }}-config
+  namespace: {{ $serviceValues.serviceNamespace | quote }}
+  labels:
+    app: {{ $serviceValues.appName | quote }}
+    microsoft.azureorbital/serviceName: {{ $serviceValues.appName | quote }}
+    type: "Secret"
+  annotations:
+    "helm.sh/resource-policy": "keep"
+type: Opaque
+data:
+  maximumNumOfLogs: {{ $serviceValues.maximumNumberOfLogs | quote | b64enc }}
+  xferDirectoryQuota: {{ $globalValues.xferDirectoryQuota | quote | b64enc }}
+  spacefxDirectory: {{ $globalValues.spacefxDirectories.base | quote | b64enc }}
+  spacefxSecretDirectory: {{ $globalValues.spacefxSecretDirectory | quote | b64enc }}
+  logLevel: {{ $serviceValues.logLevel | quote | b64enc }}
+  pollingTimeSecs: {{ $serviceValues.pollingTimeSecs | quote | b64enc }}
+{{- range $key, $val := $allServices }}
+  user-{{ $val.appName }}: {{ $val.password | b64enc }}
+{{- end }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ $serviceValues.appName | quote }}
+  namespace: {{ $serviceValues.serviceNamespace | quote }}
+  labels:
+    app: {{ $serviceValues.appName | quote }}
+spec:
+  type: ClusterIP
+  selector:
+    app: {{ $serviceValues.appName | quote }}
+  ports:
+    - port: 445
+      name: {{ $serviceValues.appName | quote }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $serviceValues.appName | quote }}
+  namespace: {{ $serviceValues.serviceNamespace | quote }}
+  labels:
+    app: {{ $serviceValues.appName | quote }}
+    microsoft.azureorbital/appName: {{ $serviceValues.appName | quote }}
+    type: "Deployment"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ $serviceValues.appName | quote }}
+  template:
+    metadata:
+      name: {{ $serviceValues.appName | quote }}
+      labels:
+        app: {{ $serviceValues.appName | quote }}
+    spec:
+      serviceAccountName: {{  $serviceValues.appName | quote }}
+      containers:
+        - name: {{ $serviceValues.appName | quote }}
+          image: {{ $imgName | quote }}
+          imagePullPolicy: {{ $globalValues.imagePullPolicy }}
+          env:
+            - name: SPACEFX_DIR
+              value: {{ $globalValues.spacefxDirectories.base }}
+            - name: SPACEFX_SECRET_DIR
+              value: {{ $globalValues.spacefxSecretDirectory }}
+          {{- include "spacefx.resourceLimits" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 10  }}
+          volumeMounts:
+            - name: spacedev-host-dir
+              mountPath: {{ $globalValues.spacefxDirectories.base }}
+            - name: {{ $serviceValues.appName }}-config
+              mountPath: {{ $globalValues.spacefxSecretDirectory }}
+          ports:
+            - name: fileserver
+              containerPort: 445
+      volumes:
+        - name: spacedev-host-dir
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}
+            type: DirectoryOrCreate
+        - name: {{ $serviceValues.appName }}-config
+          secret:
+            secretName: {{ $serviceValues.appName }}-config
+{{ range $key, $val := $allServices }}
+{{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}
+{{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}
+{{- end }}
+{{- end }}
