@@ -1,0 +1,26 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+{
+	"name": "spacefx-dev",
+	"image": "mcr.microsoft.com/devcontainers/base:ubuntu22.04",
+	"runArgs": [
+		"--name",
+		"spacefx-dev"
+	],
+	"features": {
+		"./features/spacefx-dev": {
+		}
+	},
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"rogalmic.bash-debug"
+			]
+		}
+	},
+	"remoteUser": "root",
+	"initializeCommand": "${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output_dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup"
+}

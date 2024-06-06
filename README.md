@@ -1,14 +1,49 @@
 # Azure Orbital Space SDK - Setup
 
-> This repo has been populated by an initial template to help get you started. Please
-> make sure to update the content to build a great experience for community-building.
 
-As the maintainer of this project, please make a few updates:
 
-- Improving this README.MD file to provide a great experience
-- Updating SUPPORT.MD with content about this project's support experience
-- Understanding the security reporting process in SECURITY.MD
-- Remove this section from the README
+## Build and Deploying DevContainer Feature
+
+This devcontainer feature can be built and deployed using the devcontainer CLI.
+
+### Install devcontainer CLI
+```bash
+sudo apt install npm
+sudo npm cache clean -f
+sudo npm install -g n
+sudo n stable
+sudo npm install -g @devcontainers/cli
+```
+
+### Build devcontainer feature
+```bash
+REGISTRY=ghcr.io/microsoft
+VERSION=0.11.0
+
+# No other changes needed below this line
+FEATURE=azure-orbital-space-sdk/devcontainer-feature
+ARTIFACT_PATH=./output/devcontainer-feature/devcontainer-feature-spacefx-dev.tgz
+
+# Validate the output directory exists and clean it out if there is content already present
+mkdir -p "./output/devcontainer-feature"
+rm ./output/devcontainer-feature/*
+
+# Copy the scripts ino the entry point for the devcontainer feature
+./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+
+# Build the devcontaienr feature
+devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/devcontainer-feature
+
+# Push the devcontainer feature tarball to the registry
+oras push ${REGISTRY}/${FEATURE}:${VERSION} \
+    --config /dev/null:application/vnd.devcontainers \
+    --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
+            ${ARTIFACT_PATH}:application/vnd.devcontainers.layer.v1+tar
+
+
+```
+
+
 
 ## Contributing
 
