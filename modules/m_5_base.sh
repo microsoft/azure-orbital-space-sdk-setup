@@ -81,21 +81,30 @@ function run_a_script() {
         run_cmd="${run_script}"
     fi
 
+
     # Setup a temp file to capture the output from the command
     script_temp_file=$(mktemp)
+    script_temp_std_file="${script_temp_file}.stdout"
 
-    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: '${script_temp_file}')..."
+
+    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_file})..."
 
     (
         trap "" HUP
         exec 0</dev/null
-        exec 1> >(tee $output_tty > "$script_temp_file")
-        exec 2>/dev/null
-        eval "${run_cmd}"
+        exec 1> >(tee $output_tty > "$script_temp_std_file")
+        exec 2>&1
+        eval "${run_cmd}" > $script_temp_file
     ) &
 
     # Save the PID to a variable so we can process it
     bg_pid=$!
+
+    if [[ "${log_enabled}" == true ]]; then
+        tail -f "$script_temp_std_file" &
+        tail_pid=$!
+    fi
+
 
     # The user requested to run the script in the background.  Return the PID, the output file, and exit
     if [[ "${run_in_background}" == true ]]; then
@@ -106,24 +115,14 @@ function run_a_script() {
         return
     fi
 
-    # Docker is a special case where we need to follow the log output
-    if [[ $string_variable == *"docker"* ]]; then
-        # Capture the output of the script in the background
-        tail -f "$script_temp_file" &
-        tail_pid=$!
-    fi
-
-
-
     # Add the PID to the array so we can wait for it to finish
     bg_pids+=($bg_pid)
     for pid in "${bg_pids[@]}"; do
         wait "$pid"
         if [[ -n "${tail_pid}" ]]; then
-            kill $tail_pid
+            kill "${tail_pid}" > /dev/null
             tail_pid=""
         fi
-
         RETURN_CODE=$?
     done
 
@@ -141,7 +140,9 @@ function run_a_script() {
     fi
 
     # Cleanup by removing the temp file
-    rm "$script_temp_file"
+    [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
+    [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
+
 
 }
 

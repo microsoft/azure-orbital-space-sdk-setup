@@ -40,7 +40,7 @@ function show_help() {
    echo "options:"
    echo "--artifact | -f                      [REQUIRED] Path to the artifact to push.  Must reside within ${SPACEFX_DIR}"
    echo "--artifact-version | -v              [OPTIONAL] Semantic version of the artifact to use if no entry found in config.buildArtifacts or config.extraBuildArtifacts"
-   echo "--annotation-config | -a             [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
+   echo "--annotation-config                  [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--architecture | -a                  [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
    echo "--destination-repo | -d              [OPTIONAL] Override the calculated destination repo for dynamic artifacts.  Note: this will require manual pull to correctly download the artifact"
    echo "--help | -h                          [OPTIONAL] Help script (this screen)"
@@ -61,7 +61,7 @@ while [[ "$#" -gt 0 ]]; do
             shift
             ARTIFACT=$1
         ;;
-        -a | --annotation-config)
+        --annotation-config)
             shift
             ANNOTATION_CONFIG=$1
             if [[ ! -f "${SPACEFX_DIR}/config/github/annotations/${ANNOTATION_CONFIG}" ]]; then

@@ -27,6 +27,7 @@ IMAGE_TAG=""
 REPO_DIR=""
 BUILD_ARGS=""
 EXTRA_PKGS=""
+ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 
 ############################################################
@@ -43,6 +44,7 @@ function show_help() {
    echo "--image-tag | -t                   [REQUIRED] The image tag for the final container image.  Will be suffixed with the processor architecture.  (i.e. 0.0.1_arm64)."
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
    echo "--dockerfile | -d                  [REQUIRED] Relative path to the docker file within repo-dir"
+   echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
@@ -56,6 +58,14 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
+        --annotation-config)
+            shift
+            ANNOTATION_CONFIG=$1
+            if [[ ! -f "${SPACEFX_DIR}/config/github/annotations/${ANNOTATION_CONFIG}" ]]; then
+                echo "Annotation configuration file '${ANNOTATION_CONFIG}' not found in '${SPACEFX_DIR}/config/github/annotations'"
+                show_help
+            fi
+        ;;
         -b|--build-arg)
             shift
             BUILD_ARGS="${BUILD_ARGS} --build-arg ${1}"
@@ -107,6 +117,8 @@ function update_devcontainer_json(){
     info_log "START: ${FUNCNAME[0]}"
 
     run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" devcontainer_json --disable_log
+
+    echo "${devcontainer_json}"
 
     # update the parameters so we don't build the cluster
     run_a_script "jq '.configuration.features |= with_entries(select(.key | contains(\"spacefx-dev\")) | .value += {\"cluster_enabled\": \"false\"})' <<< \${devcontainer_json}" devcontainer_json --disable_log
@@ -324,7 +336,6 @@ function main() {
 
     write_parameter_to_log DEST_REPO
 
-    check_prerequisites
     provision_emulator
 
 
@@ -352,7 +363,7 @@ function main() {
                             --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
 
     add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
-                            --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${APP_VERSION}_${ARCHITECTURE}" \
+                            --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
                             --annotation "org.spacefx.item_type=containerimage" \
                             --annotation "org.spacefx.app_name=${APP_NAME}" \
                             --annotation "org.spacefx.app_name=${APP_NAME}" \
@@ -362,7 +373,7 @@ function main() {
                             --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
 
     # Only push if we're using a different app_version that spacefx
-    if [[ "${APP_VERSION}" != "${SPACEFX_VERSION}" ]]; then
+    if [[ "${IMAGE_TAG}" != "${DEST_SPACEFX_TAG}" ]]; then
         gen_and_push_manifest --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}"
 
         set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
@@ -372,7 +383,7 @@ function main() {
 
 
         add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
-                                --destination_image "${DEST_CONTAINER_REGISTRY}/${APP_NAME}:${APP_VERSION}_${ARCHITECTURE}" \
+                                --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
                                 --annotation "org.spacefx.item_type=containerimage" \
                                 --annotation "org.spacefx.app_name=${APP_NAME}" \
                                 --annotation "org.spacefx.app_name=${APP_NAME}" \
