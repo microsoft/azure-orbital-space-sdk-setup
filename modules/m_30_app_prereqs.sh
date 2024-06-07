@@ -20,7 +20,7 @@ function _app_prereqs_validate() {
     is_cmd_available "helm" has_helm_cmd
 
 
-    if [[ $has_yq_cmd == true ]] && [[ $has_jq_cmd == true ]] && [[ $has_regctl_cmd == true ]] && [[ $has_kubectl_cmd == true ]] && [[ $has_cfssl_cmd == true ]] && [[ $has_cfssljson_cmd == true ]] && [[ $has_helm_cmd == true ]]; then
+    if [[ $has_yq_cmd == true ]] && [[ $has_jq_cmd == true ]] && [[ $has_regctl_cmd == true ]] && [[ $has_cfssl_cmd == true ]] && [[ $has_cfssljson_cmd == true ]] && [[ $has_helm_cmd == true ]]; then
         info_log "All third party apps are installed and available."
         return
     fi

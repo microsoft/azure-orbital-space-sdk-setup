@@ -87,7 +87,7 @@ function run_a_script() {
     script_temp_std_file="${script_temp_file}.stdout"
 
 
-    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_file})..."
+    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_std_file})..."
 
     (
         trap "" HUP
