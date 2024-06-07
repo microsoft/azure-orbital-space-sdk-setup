@@ -87,7 +87,8 @@ UPDATE_END
     done < <(find "/spacefx-dev" -iname "*.sh")
 
     echo "Updating /devfeature/.env file with CLUSTER_ENABLED=${CLUSTER_ENABLED}..."
-    tee /devfeature/.env -a > /dev/null << UPDATE_END
+    mkdir -p /devfeature/k3s-on-host
+    tee /devfeature/k3s-on-host/.env -a > /dev/null << UPDATE_END
 export CLUSTER_ENABLED=${CLUSTER_ENABLED}
 UPDATE_END
     echo "...Successfully updated /devfeature/.env file."
