@@ -81,11 +81,10 @@ function run_a_script() {
         run_cmd="${run_script}"
     fi
 
-    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}'..."
-
-
     # Setup a temp file to capture the output from the command
     script_temp_file=$(mktemp)
+
+    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: '${script_temp_file}')..."
 
     (
         trap "" HUP
@@ -107,10 +106,24 @@ function run_a_script() {
         return
     fi
 
+    # Docker is a special case where we need to follow the log output
+    if [[ $string_variable == *"docker"* ]]; then
+        # Capture the output of the script in the background
+        tail -f "$script_temp_file" &
+        tail_pid=$!
+    fi
+
+
+
     # Add the PID to the array so we can wait for it to finish
     bg_pids+=($bg_pid)
     for pid in "${bg_pids[@]}"; do
         wait "$pid"
+        if [[ -n "${tail_pid}" ]]; then
+            kill $tail_pid
+            tail_pid=""
+        fi
+
         RETURN_CODE=$?
     done
 

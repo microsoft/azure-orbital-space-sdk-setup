@@ -76,7 +76,7 @@ function _app_install() {
         shift
     done
 
-    if [[ -z "${app_name}" ]] || [[ -z "${source}" ]] || [[ -z "${destination}" ]] || [[ -z "${source}" ]]; then
+    if [[ -z "${app_name}" ]] || [[ -z "${source}" ]] || [[ -z "${destination}" ]] || [[ -z "${url}" ]]; then
         exit_with_error "Missing required parameters.  Please use --app, --url, --source, and --destination.  Received app_name: '${app_name}', source: '${source}', destination: '${destination}', url: '${url}'"
     fi
 
