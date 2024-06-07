@@ -232,8 +232,15 @@ function push_artifact() {
 
     local annotation_string=""
 
-    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
-        annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+    if [[ "${has_annotations}" == "true" ]]; then
+        run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+        for gh_annotation in $gh_annotations; do
+            parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+            annotations+=("${decoded_annotation}")
+        done
     fi
 
     for annotationpart in "${annotations[@]}"; do
