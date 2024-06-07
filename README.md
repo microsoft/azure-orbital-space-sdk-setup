@@ -21,18 +21,18 @@ REGISTRY=ghcr.io/microsoft
 VERSION=0.11.0
 
 # No other changes needed below this line
-FEATURE=azure-orbital-space-sdk/devcontainer-feature
-ARTIFACT_PATH=./output/devcontainer-feature/devcontainer-feature-spacefx-dev.tgz
+FEATURE=azure-orbital-space-sdk/spacefx-dev
+ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
 # Validate the output directory exists and clean it out if there is content already present
-mkdir -p "./output/devcontainer-feature"
-rm ./output/devcontainer-feature/*
+mkdir -p "./output/spacefx-dev"
+[[ -f ./output/spacefx-dev/* ]]; rm ./output/spacefx-dev/*
 
 # Copy the scripts ino the entry point for the devcontainer feature
 ./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
 # Build the devcontaienr feature
-devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/devcontainer-feature
+devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
 
 # Push the devcontainer feature tarball to the registry
 oras push ${REGISTRY}/${FEATURE}:${VERSION} \
