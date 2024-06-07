@@ -60,7 +60,7 @@ while [[ "$#" -gt 0 ]]; do
             LOG_DIR=$1
             LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
             ;;
-        --skip_installs)
+        --no_app_installs)
             shift
             INSTALL_APPS=false
             ;;

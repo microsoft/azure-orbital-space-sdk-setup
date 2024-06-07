@@ -10,7 +10,7 @@
 #  "bash ./scripts/big_red_button.sh"
 # shellcheck disable=SC1091
 # shellcheck disable=SC2068
-source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log --skip_installs
+source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log --no_app_installs
 
 ############################################################
 # Help                                                     #
