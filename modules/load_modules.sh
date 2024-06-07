@@ -15,7 +15,7 @@ source "${MODULE_DIR}/m_10_is_cmd_available.sh"
 source "${MODULE_DIR}/m_15_directories.sh"
 source "${MODULE_DIR}/m_20_logging.sh"
 source "${MODULE_DIR}/m_25_calculate_host_architecture.sh"
-source "${MODULE_DIR}/m_30_install_3p_apps.sh"
+source "${MODULE_DIR}/m_30_app_prereqs.sh"
 source "${MODULE_DIR}/m_40_regctl_config.sh"
 source "${MODULE_DIR}/m_50_spacefx-config.sh"
 source "${MODULE_DIR}/m_60_container_registries.sh"
@@ -37,6 +37,7 @@ NEEDS_SUDO=false
 ROOT_TTY="/dev/null"
 CURRENT_TTY="$(tty)"
 INSTALL_APPS=true
+INTERNET_CONNECTED=true
 
 ############################################################
 # Arguments
@@ -64,6 +65,10 @@ while [[ "$#" -gt 0 ]]; do
             shift
             INSTALL_APPS=false
             ;;
+        --no_internet)
+            shift
+            INTERNET_CONNECTED=false
+            ;;
     esac
     shift
 done
@@ -76,10 +81,8 @@ _script_start
 _log_init
 _calculate_host_architecture
 
-if [[ "${INSTALL_APPS}" == true ]]; then
-    _install_3p_apps
-    _generate_spacefx_config_json
+_app_prereqs_validate
+_generate_spacefx_config_json
 
-    _update_regctl_config
-    _check_for_core_registry_hosts_entry
-fi
+_update_regctl_config
+_check_for_core_registry_hosts_entry

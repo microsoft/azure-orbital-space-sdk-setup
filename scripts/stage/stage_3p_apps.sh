@@ -14,10 +14,8 @@ source "$(dirname "$(realpath "$0")")/../../modules/load_modules.sh" $@
 ############################################################
 # Script variables
 ############################################################
-WORKER_PIDS=()
-LOG_FILES=()
 DEST_STAGE_DIR=""
-TEMP_DIR=""
+
 
 ############################################################
 # Help                                                     #
@@ -65,68 +63,6 @@ fi
 
 DEST_STAGE_DIR="${SPACEFX_DIR}/bin/${ARCHITECTURE}"
 
-############################################################
-# Helper function to download an app to a destination
-############################################################
-function _download_app() {
-    local app_name=""
-    local url=""
-    local destination=""
-
-
-    while [[ "$#" -gt 0 ]]; do
-        case $1 in
-            --app)
-                shift
-                app_name=$1
-                ;;
-            --url)
-                shift
-                url=$1
-                ;;
-            --destination)
-                shift
-                destination=$1
-                ;;
-            *) echo "Unknown parameter '$1'"; show_help ;;
-        esac
-        shift
-    done
-
-    if [[ -z "${app_name}" ]] || [[ -z "${url}" ]] || [[ -z "${destination}" ]]; then
-        exit_with_error "Missing required parameters.  Please use --app, --url, and --destination"
-    fi
-
-    if [[ -f "${destination}" ]]; then
-        info_log "App '${app_name}' already downloaded to '${destination}'.  Nothing to do"
-        return
-    fi
-
-    info_log "App '${app_name}' not found at '${destination}'.  Adding to download queue"
-
-    # Spin up a background task that will download the file to the destination
-    (
-        set -e
-        trap "" HUP
-        exec 2> /dev/null
-        exec 0< /dev/null
-        exec 1> "${TEMP_DIR}/${app_name}.log"
-        echo "downloading ${app_name} from ${url} to ${destination}"
-        mkdir -p "$(dirname ${destination})"
-        curl --silent --fail --create-dirs --output ${destination} -L ${url}
-        chmod +x ${destination}
-        chmod 755 ${destination}
-        echo "downloaded ${app_name} from ${url} to ${destination}"
-    ) &
-
-    # Add the PID to the array so we can wait for it to finish
-    WORKER_PIDS+=($!)
-
-    # Add the log file name to the array so we can match it up with the worker pid
-    LOG_FILES+=("${TEMP_DIR}/${app_name}.log")
-
-}
-
 
 ############################################################
 # Check and download k3s
@@ -145,16 +81,16 @@ function stage_k3s(){
     fi
 
     # Download k3s
-    _download_app --app "k3s" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/${k3s_uri_filename}" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s"
+    _app_install --app "k3s" --source "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/${k3s_uri_filename}" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s"
 
     # Download k3s install script
-    _download_app --app "k3s_install.sh" --url "https://get.k3s.io/" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh"
+    _app_install --app "k3s_install.sh" --source "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh" --url "https://get.k3s.io/" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh"
 
     # Download k3s airgap images
-    _download_app --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
+    _app_install --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --source "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
 
     # Download kubectl
-    _download_app --app "kubectl" --url "https://dl.k8s.io/release/${VER_KUBECTL}/bin/linux/${ARCHITECTURE}/kubectl" --destination "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl"
+    _app_install --app "kubectl" --source "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl" --url "https://dl.k8s.io/release/${VER_KUBECTL}/bin/linux/${ARCHITECTURE}/kubectl" --destination "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -173,7 +109,7 @@ function stage_helm(){
     fi
 
     # Helm has to be downloaded and untarred, so we run it explicitly
-    local tmp_filename="${DEST_STAGE_DIR}/tmp/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
+    local tmp_filename="${destination_dir}/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
     local download_uri="https://get.helm.sh/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
 
     create_directory "${destination_dir}"
@@ -194,58 +130,20 @@ function stage_helm(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
-############################################################
-# Wait for workers to finish
-############################################################
-function wait_for_workers(){
-    info_log "START: ${FUNCNAME[0]}"
-
-    info_log "Waiting for background processes to finish..."
-
-    worker_failed=false
-    local index=0
-
-    # Loop through the array of worker PIDs and wait for them to finish
-    for pid in "${WORKER_PIDS[@]}"; do
-        wait "$pid"
-        RETURN_CODE=$?
-        # An error was detected.  Write it out and the log file associated with it
-        if [[ $RETURN_CODE -gt 0 ]]; then
-            worker_failed=true
-            error_log "Failure detected in background worker.  Return code: ${RETURN_CODE}.  Log File: '${LOG_FILES[$index]}'"
-            run_a_script "cat ${LOG_FILES[$index]}" log_output
-            error_log "${log_output}"
-        fi
-         ((index++))
-    done
-
-
-    if [[ "${worker_failed}" == true ]]; then
-        exit_with_error "Failure detected in background processes.  See above errors and retry"
-    fi
-
-    info_log "...background processes finished successfully."
-
-    info_log "FINISHED: ${FUNCNAME[0]}"
-}
-
 
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEST_STAGE_DIR
 
-    # Provision a temp directory to store the logs for the background tasks
-    run_a_script "mktemp -d" TEMP_DIR --disable_log
-    write_parameter_to_log TEMP_DIR
 
     # Download CFSSL, jq, yq, regctl
     local VER_CFSSL_no_v="${VER_CFSSL:1}"
-    _download_app --app "cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl"
-    _download_app --app "cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson"
+    _app_install --app "cfssl" --source "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl"
+    _app_install --app "cfssljson" --source "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson"
 
-    _download_app --app "jq" --url "https://github.com/jqlang/jq/releases/download/jq-${VER_JQ:?}/jq-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq"
-    _download_app --app "yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq"
-    _download_app --app "regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl"
+    _app_install --app "jq" --source "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq" --url "https://github.com/jqlang/jq/releases/download/jq-${VER_JQ:?}/jq-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq"
+    _app_install --app "yq" --source "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq"
+    _app_install --app "regctl" --source "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl"
 
     # Download k3s, kubectl, the airgap images, and the install script
     stage_k3s
@@ -254,10 +152,8 @@ function main() {
     stage_helm
 
     # Wait for any background tasks to finish
-    wait_for_workers
+    _app_install_wait_for_background_processes
 
-    # Cleanup the temp directory that was used for the logs of the background tasks
-    run_a_script "rm -rf ${TEMP_DIR}" --disable_log
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
