@@ -303,7 +303,6 @@ function main() {
         _generate_spacefx_config_json
     fi
 
-
     get_registry_with_push_access DEST_CONTAINER_REGISTRY
     write_parameter_to_log DEST_CONTAINER_REGISTRY
 

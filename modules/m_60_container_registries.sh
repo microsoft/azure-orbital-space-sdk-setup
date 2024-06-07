@@ -180,8 +180,16 @@ function set_annotation_to_image(){
 
 
     if [[ -z "${annotation_string}" ]]; then
-        if [[ -n "${GITHUB_ANNOTATION}" ]]; then
-            annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+
+        run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+        if [[ "${has_annotations}" == "true" ]]; then
+            run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+            for gh_annotation in $gh_annotations; do
+                parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+                annotations+=("${decoded_annotation}")
+            done
         fi
 
         for annotationpart in "${annotations[@]}"; do
@@ -273,9 +281,18 @@ function add_annotation_to_image(){
         shift
     done
 
-    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
-        _add_annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+
+    run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+    if [[ "${has_annotations}" == "true" ]]; then
+        run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+        for gh_annotation in $gh_annotations; do
+            parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+            _add_annotations+=("${decoded_annotation}")
+        done
     fi
+
 
     info_log "Checking if prior manifest '${image_name}' exists..."
     run_a_script "regctl manifest head ${image_name}" manifest_entries --ignore_error
@@ -351,8 +368,15 @@ function add_image_to_manifest(){
 
     local annotation_string=""
 
-    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
-        annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+    if [[ "${has_annotations}" == "true" ]]; then
+        run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+        for gh_annotation in $gh_annotations; do
+            parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+            annotations+=("${decoded_annotation}")
+        done
     fi
 
     for annotationpart in "${annotations[@]}"; do
@@ -401,8 +425,15 @@ function add_redirect_to_image(){
 
     local annotation_string=""
 
-    if [[ -n "${GITHUB_ANNOTATION}" ]]; then
-        annotations+=("org.opencontainers.image.source=${GITHUB_ANNOTATION}")
+    run_a_script "jq -r '.config | has(\"annotations\")' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_annotations --disable_log
+
+    if [[ "${has_annotations}" == "true" ]]; then
+        run_a_script "jq -r '.config.annotations[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" gh_annotations --disable_log
+
+        for gh_annotation in $gh_annotations; do
+            parse_json_line --json "${gh_annotation}" --property ".annotation" --result decoded_annotation
+            annotations+=("${decoded_annotation}")
+        done
     fi
 
     for annotationpart in "${annotations[@]}"; do
