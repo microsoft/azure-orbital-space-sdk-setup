@@ -1,0 +1,52 @@
+{
+  "name": "Microsoft Azure Orbital Space SDK - DevContainer Feature",
+  "id": "spacefx-dev",
+  "version": "0.10.0",
+  "description": "Deploys the environmental configuration used for developing payload application and plugins within the Azure Orbital Framework",
+  "documentationURL": "https://github.com/microsoft/azure-orbital-space-sdk-setup",
+  "options": {
+    "spacefx_dir": {
+      "type": "string",
+      "default": "/var/spacedev",
+      "description": "Directory to output the contents of env-config"
+    }
+  },
+  "entrypoint": "",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.csdevkit",
+        "DavidAnson.vscode-markdownlint",
+        "zxh404.vscode-proto3",
+        "mutantdino.resourcemonitor",
+        "josefpihrt-vscode.roslynator",
+        "bierner.markdown-mermaid"
+      ]
+    }
+  },
+  "mounts": [
+    {
+      "source": "/var",
+      "target": "/host_var",
+      "type": "bind"
+    },
+    {
+      "source": "/var/run/docker.sock",
+      "target": "/var/run/docker-host.sock",
+      "type": "bind"
+    }
+  ],
+  "privileged": true,
+  "containerEnv": {
+    "KUBECONFIG": "/k3s-on-host/k3s.devcontainer.yaml",
+    "INSTALLDOCKERBUILDX": "false"
+  },
+  "dependsOn":{
+    "ghcr.io/microsoft/devcontainers/features/k3s-on-host":{
+      "k3sVersion": "v1.29.3+k3s1",
+      "criDockerd": "true"
+    }
+  },
+  "updateContentCommand": "/spacefx-dev/updateContent.sh"
+}

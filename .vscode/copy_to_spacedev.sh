@@ -59,7 +59,7 @@ function main() {
   echo "...outputting to '${OUTPUT_DIR}'..."
 
   eval "sudo rsync -a --update --no-links \
-        --exclude='/tmp' \
+        --exclude='/.devcontainer' \
         --exclude='/.pipelines' \
         --exclude='/.vscode' \
         --exclude='/.git' \

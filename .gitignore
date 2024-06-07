@@ -2,3 +2,4 @@ spacedev_cache
 *.log
 tmp
 output
+.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
