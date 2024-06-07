@@ -10,6 +10,7 @@ K3S_VERSION="${K3SVERSION:-"latest"}"
 USE_CRI_DOCKERD="${CRIDOCKERD:-"true"}"
 HOST_INTERFACE_CONTAINER="host_interface"
 HOST_INTERFACE_CONTAINER_BASE="mcr.microsoft.com/devcontainers/base:ubuntu22.04"
+CLUSTER_ENABLED="${CLUSTER_ENABLED:-"true"}"
 
 # Ensure apt is in non-interactive to avoid prompts
 export DEBIAN_FRONTEND=noninteractive
@@ -66,6 +67,7 @@ function build_dest_directory() {
 export _REMOTE_USER=${_REMOTE_USER}
 export _REMOTE_USER_HOME=${_REMOTE_USER_HOME}
 export _CONTAINER_USER=${_CONTAINER_USER}
+export CLUSTER_ENABLED=${CLUSTER_ENABLED}
 export K3S_VERSION=${K3S_VERSION}
 export ARCHITECTURE=${ARCHITECTURE}
 export HOST_INTERFACE_CONTAINER=${HOST_INTERFACE_CONTAINER}
@@ -85,6 +87,10 @@ UPDATE_END
         chmod +x ${shellFile}
         chmod 777 ${shellFile}
     done < <(find "/spacefx-dev" -iname "*.sh")
+
+        tee /k3s-on-host/.env -a > /dev/null << UPDATE_END
+export CLUSTER_ENABLED=${CLUSTER_ENABLED}
+UPDATE_END
 
 }
 

@@ -9,7 +9,12 @@
       "type": "string",
       "default": "/var/spacedev",
       "description": "Directory to output the contents of env-config"
-    }
+    },
+    "cluster_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Optionally deploy a local Kubernetes cluster using k3s"
+    },
   },
   "entrypoint": "",
   "customizations": {
