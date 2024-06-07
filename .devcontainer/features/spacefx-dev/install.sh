@@ -58,8 +58,6 @@ function build_dest_directory() {
     echo "Creating /spacefx-dev directory..."
     mkdir -p "/spacefx-dev"
 
-    mkdir -p "/host_var/tmp/spacefx-dev"
-
     SPACEFX_DIR_FOR_HOST="${SPACEFX_DIR/\//\/host_}"
 
     echo "Creating /spacefx-dev/.env file..."
@@ -88,9 +86,11 @@ UPDATE_END
         chmod 777 ${shellFile}
     done < <(find "/spacefx-dev" -iname "*.sh")
 
-        tee /k3s-on-host/.env -a > /dev/null << UPDATE_END
+    echo "Updating /devfeature/.env file with CLUSTER_ENABLED=${CLUSTER_ENABLED}..."
+    tee /devfeature/.env -a > /dev/null << UPDATE_END
 export CLUSTER_ENABLED=${CLUSTER_ENABLED}
 UPDATE_END
+    echo "...Successfully updated /devfeature/.env file."
 
 }
 
