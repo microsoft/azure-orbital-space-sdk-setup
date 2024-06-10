@@ -29,14 +29,14 @@ jobs:
     - name: Build and package tar file
       shell: bash
       run: |
-        source ./env/spacefx.env
-        bash ./modules/load_modules.sh
-
-        info_log "Running ./.vscode/build_setup_tarball.sh"
-        run_a_script "./.vscode/build_setup_tarball.sh"
+        echo "Running ./.vscode/build_setup_tarball.sh"
+        bash ./.vscode/build_setup_tarball.sh
         
         sub_exit_code=${PIPESTATUS[0]}
         if [[ $sub_exit_code -gt 0 ]]; then
             echo "Previous step failed.  Troubleshoot"
+            echo "Outputting log file..."
+            cat /var/spacedev/logs/build_setup_tarball.sh.log
+            echo ""
             exit 1
         fi
