@@ -29,7 +29,8 @@ jobs:
     - name: Build and package tar file
       shell: bash
       run: |
-        source "./modules/load_modules.sh"
+        source ./env/spacefx.env
+        bash ./modules/load_modules.sh
 
         info_log "Running ./.vscode/build_setup_tarball.sh"
         run_a_script "./.vscode/build_setup_tarball.sh"
