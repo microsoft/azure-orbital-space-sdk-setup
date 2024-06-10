@@ -40,7 +40,6 @@ jobs:
         # Validate the output directory exists and clean it out if there is content already present
         echo "Creating output directory..."
         mkdir -p "./output/spacefx-dev"
-        [[ -f ./output/spacefx-dev/* ]]; rm ./output/spacefx-dev/*
 
         # Copy the scripts ino the entry point for the devcontainer feature
         echo "Copying all files to /var/spacedev..."
