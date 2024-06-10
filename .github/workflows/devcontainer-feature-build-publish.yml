@@ -29,7 +29,7 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@km/add_structure
       with:
-        oras_version: 0.12.0
+        oras_version: 0.16.0
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@km/add_structure
 
