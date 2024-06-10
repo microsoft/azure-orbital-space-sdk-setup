@@ -9,7 +9,9 @@
 # Load the modules and pass all the same parameters that we're passing here
 # shellcheck disable=SC1091
 # shellcheck disable=SC2068
+echo "Loading modules..."
 source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log
+echo "Modules loaded."
 
 ############################################################
 # Script variables

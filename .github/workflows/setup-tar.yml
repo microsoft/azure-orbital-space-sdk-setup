@@ -30,10 +30,10 @@ jobs:
       run: |
         echo "Creating directory..."
         sudo mkdir -p /var/spacedev/
-        sudo chown -R $USER:$USER /var/spacedev/
 
-        echo "Do chown..."
+        echo "Setting directory permissions..."
         sudo chown -R $USER:$USER /var/log
+        sudo chown -R $USER:$USER /var/spacedev/
         
         echo "Copying to /var/spacedev/"
         bash ./.vscode/copy_to_spacedev.sh 
