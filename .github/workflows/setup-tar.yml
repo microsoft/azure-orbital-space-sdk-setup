@@ -28,13 +28,11 @@ jobs:
     - name: Build and package tar file
       shell: bash
       run: |
-        chmod +x ./.vscode/build_setup_tarball.sh
-
-        cp ./config/channels/nightly.yaml ./config/nightly.yaml
-        cp ./config/github/annotations/azure-orbital-space-sdk-setup.yaml ./config/azure-orbital-space-sdk-setup.yaml
+        echo "Copying to /var/spacedev/"
+        bash ./.vscode/copy_to_spacedev.sh 
 
         echo "Running ./.vscode/build_setup_tarball.sh"
-        sudo bash ./.vscode/build_setup_tarball.sh
+        bash ./.vscode/build_setup_tarball.sh
         
         sub_exit_code=${PIPESTATUS[0]}
         if [[ $sub_exit_code -gt 0 ]]; then
