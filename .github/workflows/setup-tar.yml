@@ -49,3 +49,10 @@ jobs:
             echo ""
             exit 1
         fi
+
+    - name: Upload /var/spacedev logs
+      if: failure()
+      uses: actions/upload-artifact@v2
+      with:
+        name: logs
+        path: /var/spacedev/logs
