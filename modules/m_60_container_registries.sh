@@ -1,16 +1,107 @@
 #!/bin/bash
 
 ############################################################
-# Find the first container registry with push access enabled
+# Check if we need to add a prefix to the repo based on the supplied container registry
 ############################################################
-function get_registry_with_push_access() {
-    local return_result_var=$1
-    if [[ -z "${return_result_var}" ]]; then
-        exit_with_error "Please supply a return variable name for results"
+function check_for_repo_prefix(){
+
+    local registry=""
+    local repo=""
+    local returnResult=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --registry)
+                shift
+                registry=$1
+                ;;
+            --repo)
+                shift
+                repo=$1
+                ;;
+            --result)
+                shift
+                returnResult=$1
+                ;;
+            *)
+                echo "Unknown parameter '$1'"
+                exit 1
+               ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${container_registry}" ]] || [[ -z "${repo}" ]]  || [[ -z "${returnResult}" ]]; then
+        exit_with_error "Missing a parameter.  Please use function like check_for_repo_prefix --registry \"registry\" --repo \"repo\" --result \"returnResult\".  Please supply all parameters."
     fi
-    run_a_script "jq -r '.config.containerRegistries[] | select(.push_enabled == true) | .url' ${SPACEFX_DIR}/tmp/config/spacefx-config.json | head -n 1" container_registry_with_push_access --ignore_error --disable_log
-    eval "$return_result_var='$container_registry_with_push_access'"
+
+    if [[ ! -f "${SPACEFX_DIR}/tmp/config/spacefx-config.json" ]]; then
+        warn_log "Configuration file not found.  Running '_generate_spacefx_config_json' to generate it."
+        _generate_spacefx_config_json
+    fi
+
+    # Check if our destination repo has a repositoryPrefix
+    run_a_script "jq -r '.config.containerRegistries[] | select(.url == \"${registry}\") | if (has(\"repositoryPrefix\")) then .repositoryPrefix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" repo_prefix
+
+    if [[ -n "${repo_prefix}" ]]; then
+        # Check if we already prefixed the repo name
+        if [[ "${repo}" == "$repo_prefix"* ]]; then
+            debug_log "Repository Prefix '${repo_prefix}' for ${registry} is already applied to '${repo}'.  Nothing to do"
+            eval "$returnResult='${repo}'"
+        else
+            debug_log "Repository Prefix '${repo_prefix}' found for ${registry}.  Returning '${repo_prefix}/${repo}'"
+            eval "$returnResult='${repo_prefix}/${repo}'"
+        fi
+    else
+        debug_log "No Repository Prefix found for ${registry}.  Returning '${repo}'"
+        eval "$returnResult='${repo}'"
+    fi
+
 }
+
+
+############################################################
+# Get the container tag value based on the channel we're using
+############################################################
+function calculate_tag_from_channel() {
+
+    local tag=""
+    local returnResult=""
+    local return_tag=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --tag)
+                shift
+                tag=$1
+                ;;
+            --result)
+                shift
+                returnResult=$1
+                ;;
+            *)
+                echo "Unknown parameter '$1'"
+                exit 1
+               ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${tag}" ]] || [[ -z "${returnResult}" ]]; then
+        exit_with_error "Missing a parameter.  Please use function like calculate_tag_from_channel --tag \"tag\" --result \"result\".  Please supply all parameters."
+    fi
+
+    if [[ "${SPACEFX_CHANNEL}" == "nightly" ]]; then
+        return_tag="${tag}-nightly"
+    fi
+
+    if [[ "${SPACEFX_CHANNEL}" == "rc" ]]; then
+        return_tag="${tag}-rc"
+    fi
+
+    eval "$returnResult='$return_tag'"
+}
+
 
 ############################################################
 # Find the first container registry with push access enabled
@@ -43,13 +134,14 @@ function find_registry_for_image(){
     for row in $container_registries; do
         parse_json_line --json "${row}" --property ".url" --result container_registry
 
-        info_log "Checking container registry '${container_registry}' for image '${container_image}'..."
+        check_for_repo_prefix --registry "${container_registry}" --repo "${container_image}" --result _find_registry_for_image_repo
 
-        login_to_container_registry ${container_registry}
-        run_a_script "regctl image manifest ${container_registry}/${container_image}" --ignore_error --disable_log
+        info_log "Checking container registry '${container_registry}' for image '${_find_registry_for_image_repo}'..."
+
+        run_a_script "regctl image manifest ${container_registry}/${_find_registry_for_image_repo}" --ignore_error --disable_log
 
         if [[ "${RETURN_CODE}" -eq 0 ]]; then
-            info_log "...image '${container_image}' FOUND in container registry '${container_registry}'"
+            info_log "...image '${container_image}' FOUND in container registry '${container_registry}' as '${_find_registry_for_image_repo}'"
             REGISTRY_IMAGE_NAME="${container_registry}"
             break;
         else
