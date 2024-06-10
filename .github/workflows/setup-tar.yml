@@ -8,7 +8,6 @@ on:
 
 env:
   REGISTRY: ghcr.io/microsoft
-  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-tar-file:
