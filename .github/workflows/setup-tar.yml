@@ -30,7 +30,7 @@ jobs:
       shell: bash
       run: |
         echo "Running ./.vscode/build_setup_tarball.sh"
-        bash ./.vscode/build_setup_tarball.sh
+        sudo bash ./.vscode/build_setup_tarball.sh
         
         sub_exit_code=${PIPESTATUS[0]}
         if [[ $sub_exit_code -gt 0 ]]; then
