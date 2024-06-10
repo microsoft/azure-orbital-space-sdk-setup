@@ -9,7 +9,7 @@ global:
     resourceScavengerTimingMS: 30000
   containerCommand: dotnet
   containerRegistry: registry.spacefx.local:5000
-  containerRegistryInternal: core-registry.core.svc.cluster.local:5000
+  containerRegistryInternal: coresvc-registry.coresvc.svc.cluster.local:5000
   dapr:
     logLevel: debug
   debugShim:
@@ -79,7 +79,7 @@ global:
   namespaces:
     enabled: false
     list:
-      - namespace: core
+      - namespace: coresvc
       - namespace: hostsvc
       - namespace: payload-app
       - namespace: platformsvc
@@ -102,7 +102,7 @@ subcharts:
 services:
   core:
     buildservice:
-      serviceNamespace: core
+      serviceNamespace: coresvc
       enabled: false
       targetService:
         appName: exampleapp
@@ -113,13 +113,13 @@ services:
       dockerFile: Dockerfile.svc
       contextDir: build/dotnet
     registry:
-      appName: core-registry
+      appName: coresvc-registry
       containerCommand:
         - /usr/bin/registry
       containerArgs:
         - serve
         - /etc/docker/registry/config.yml
-      serviceNamespace: core
+      serviceNamespace: coresvc
       prod:
         enabled: false
         hasBase: false
@@ -127,7 +127,7 @@ services:
         enabled: false
         hasBase: false
       enabled: false
-      repository: core-registry
+      repository: coresvc-registry
       targetPort: 5000
       tlsCertificate: /certs/registry.spacefx.local.crt
       tlsKey: /certs/registry.spacefx.local.key
@@ -139,8 +139,8 @@ services:
           limit: 1000m
           request: 10m
     switchboard:
-      appName: core-switchboard
-      serviceNamespace: core
+      appName: coresvc-switchboard
+      serviceNamespace: coresvc
       prod:
         enabled: true
         hasBase: false
@@ -148,14 +148,14 @@ services:
         enabled: true
         hasBase: false
       enabled: false
-      repository: core-switchboard
+      repository: coresvc-switchboard
     fileserver:
-      appName: core-fileserver
+      appName: coresvc-fileserver
       logLevel: info
       maximumNumberOfLogs: 15
       pollingTimeSecs: 5
-      repository: core-fileserver
-      serviceNamespace: core
+      repository: coresvc-fileserver
+      serviceNamespace: coresvc
       prod:
         enabled: true
         hasBase: false

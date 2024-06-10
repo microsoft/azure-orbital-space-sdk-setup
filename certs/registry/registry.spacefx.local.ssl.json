@@ -7,8 +7,8 @@
       "*.registry.spacefx.local:5000",
       "registry.spacefx.local:5000",
       "localhost:5000",
-      "core-registry.core.svc.cluster.local",
-      "core-registry.core.svc.cluster.local:5000"
+      "coresvc-registry.coresvc.svc.cluster.local",
+      "coresvc-registry.coresvc.svc.cluster.local:5000"
     ],
     "key": {
       "algo": "rsa",
