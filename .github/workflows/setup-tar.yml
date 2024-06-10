@@ -28,6 +28,13 @@ jobs:
     - name: Build and package tar file
       shell: bash
       run: |
+        echo "Creating directory..."
+        sudo mkdir -p /var/spacedev/
+        sudo chown -R $USER:$USER /var/spacedev/
+
+        echo "Do chown..."
+        sudo chown -R $USER:$USER /var/log
+        
         echo "Copying to /var/spacedev/"
         bash ./.vscode/copy_to_spacedev.sh 
 
