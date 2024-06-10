@@ -87,16 +87,25 @@ while [[ "$#" -gt 0 ]]; do
     shift
 done
 
-
+echo "_calculate_for_sudo"
 _calculate_for_sudo
+echo "_calculate_root_tty"
 _calculate_root_tty
+echo "_setup_initial_directories"
 _setup_initial_directories
+echo "_script_start"
 _script_start
+echo "_log_init"
 _log_init
+echo "_calculate_host_architecture"
 _calculate_host_architecture
 
+echo "_app_prereqs_validate"
 _app_prereqs_validate
+echo "_generate_spacefx_config_json"
 _generate_spacefx_config_json
 
+echo "_update_regctl_config"
 _update_regctl_config
+echo "_check_for_coresvc_registry_hosts_entry"
 _check_for_coresvc_registry_hosts_entry
