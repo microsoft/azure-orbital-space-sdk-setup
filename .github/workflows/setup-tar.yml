@@ -29,7 +29,9 @@ jobs:
     - name: Build and package tar file
       shell: bash
       run: |
-        source "$(dirname "$(realpath "$0")")/modules/load_modules.sh" $@ --log_dir /var/log
+        mkdir -p /var/log  
+        source "./modules/load_modules.sh" $@ --log_dir /var/log
+        
         info_log "Running ./.vscode/build_setup_tarball.sh"
         run_a_script "./.vscode/build_setup_tarball.sh"
         
