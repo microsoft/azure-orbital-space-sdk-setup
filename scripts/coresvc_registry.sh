@@ -193,28 +193,31 @@ function main() {
 
     check_prerequisites
 
-    stop_registry
-
-    if [[ "${START_REGISTRY}" == false ]]; then
+    if [[ "${STOP_REGISTRY}" == true ]]; then
+        stop_registry
         info_log "------------------------------------------"
         info_log "END: ${SCRIPT_NAME}"
         return
     fi
 
-    write_parameter_to_log DESTINATION_HOST
-    info_log "Starting ${REGISTRY_REPO}"
+    if [[ "${START_REGISTRY}" == true ]]; then
+        write_parameter_to_log DESTINATION_HOST
+        info_log "Starting ${REGISTRY_REPO}"
 
-    if [[ ! -f "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.crt" ]]; then
-        info_log "Missing certificates detected.  Generating certificates and restarting ${REGISTRY_REPO} (if applicable)"
+        if [[ ! -f "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.crt" ]]; then
+            info_log "Missing certificates detected.  Generating certificates and restarting ${REGISTRY_REPO} (if applicable)"
 
-        generate_certificate --profile "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl.json" --config "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl-config.json" --output "${SPACEFX_DIR}/certs/registry"
+            generate_certificate --profile "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl.json" --config "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl-config.json" --output "${SPACEFX_DIR}/certs/registry"
+        fi
+
+        [[ "${DESTINATION_HOST}" == "docker" ]] && start_registry_docker
+        # [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
+
+        info_log "------------------------------------------"
+        info_log "END: ${SCRIPT_NAME}"
     fi
 
-    [[ "${DESTINATION_HOST}" == "docker" ]] && start_registry_docker
-    # [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
 
-    info_log "------------------------------------------"
-    info_log "END: ${SCRIPT_NAME}"
 }
 
 

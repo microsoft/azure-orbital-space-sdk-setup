@@ -1,10 +1,10 @@
 #!/bin/bash
 #
-# Downloads the third-party apps used by the Azure Orbital Space SDK for use in an airgapped, non-internet connected environment.
+# Downloads the helm chart dependencies used by the Azure Orbital Space SDK for use in an airgapped, non-internet connected environment.
 #
 # Example Usage:
 #
-#  "bash ./scripts/stage/stage_3p_apps.sh [--architecture arm64 | amd64]"
+#  "bash ./scripts/stage/stage_chart_dependencies.sh [--architecture arm64 | amd64]"
 
 # Load the modules and pass all the same parameters that we're passing here
 # shellcheck disable=SC1091
@@ -14,19 +14,19 @@ source "$(dirname "$(realpath "$0")")/../../modules/load_modules.sh" $@
 ############################################################
 # Script variables
 ############################################################
-DEST_STAGE_DIR=""
-
+NVIDIA_GPU_PLUGIN=false
 
 ############################################################
 # Help                                                     #
 ############################################################
 function show_help() {
    # Display Help
-   echo "Downloads the third-party apps used by the Azure Orbital Space SDK for use in an airgapped, non-internet connected environment."
+   echo "Downloads the helm chart dependencies used by the Azure Orbital Space SDK for use in an airgapped, non-internet connected environment."
    echo
-   echo "Syntax: bash ./scripts/stage/stage_3p_apps.sh [--architecture arm64 | amd64]"
+   echo "Syntax: bash ./scripts/stage/stage_chart_dependencies.sh [--architecture arm64 | amd64]"
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
+   echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -48,6 +48,9 @@ while [[ "$#" -gt 0 ]]; do
                 exit 1
             fi
             ;;
+        --nvidia-gpu-plugin)
+            NVIDIA_GPU_PLUGIN=true
+            ;;
         -h|--help) show_help ;;
         *) echo "Unknown parameter '$1'"; show_help ;;
     esac
@@ -61,71 +64,101 @@ if [[ -z "${ARCHITECTURE}" ]]; then
     esac
 fi
 
-DEST_STAGE_DIR="${SPACEFX_DIR}/bin/${ARCHITECTURE}"
-
 
 ############################################################
-# Check and download k3s
+# Enable nvivia gpu plugin in spacefx-base
 ############################################################
-function stage_k3s(){
+function enable_nvidia_gpu_in_config() {
     info_log "START: ${FUNCNAME[0]}"
 
-    local k3s_uri_filename="k3s"
-    local url_encoded_k3s_vers=""
+    info_log "Activating nvidia gpu plugin in 0_spacefx-base.yaml..."
 
-    # The k3s version has special characters that need to be URL encoded
-    url_encoded_k3s_vers=$(jq -rn --arg x "${VER_K3S:?}" '$x|@uri')
+    run_a_script "yq eval '(.config.charts[] | select(.group == \"nvidia_gpu\") | .enabled) = true' -i ${SPACEFX_DIR}/config/0_spacefx-base.yaml"
+    _generate_spacefx_config_json
+    info_log "...successfully activated nvidia gpu plugin in spacefx-config.json"
 
-    if [[ "${ARCHITECTURE}" == "arm64" ]]; then
-        k3s_uri_filename="k3s-arm64"
-    fi
-
-    # Download k3s
-    _app_install --app "k3s" --source "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/${k3s_uri_filename}" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s"
-
-    # Download k3s install script
-    _app_install --app "k3s_install.sh" --source "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh" --url "https://get.k3s.io/" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh"
-
-    # Download k3s airgap images
-    _app_install --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --source "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
-
-    # Download kubectl
-    _app_install --app "kubectl" --source "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl" --url "https://dl.k8s.io/release/${VER_KUBECTL}/bin/linux/${ARCHITECTURE}/kubectl" --destination "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
 ############################################################
-# Check and download Helm
+# Download the chart used by the nvidia plugin
 ############################################################
-function stage_helm(){
+stage_nvidia_plugin_helm_chart() {
     info_log "START: ${FUNCNAME[0]}"
 
-    local destination="${DEST_STAGE_DIR}/helm/${VER_HELM}/helm"
-    local destination_dir="$(dirname ${destination})"
-    if [[ -f "${destination}" ]]; then
-        info_log "App 'helm' already downloaded to '${destination}'.  Nothing to do"
+    info_log "Calculating nvidia plugin version..."
+
+    run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .version' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_gpu_chart_version
+
+    local dest_dir="${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}"
+
+    info_log "Looking for '${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz'..."
+
+
+    if [[ ! -f "${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz" ]]; then
+        info_log "...not found.  Downloading..."
+        create_directory "${dest_dir}"
+        run_a_script "helm --kubeconfig ${KUBECONFIG} repo add nvdp https://nvidia.github.io/k8s-device-plugin"
+        run_a_script "helm --kubeconfig ${KUBECONFIG} pull nvdp/nvidia-device-plugin --destination ${dest_dir} --version ${nvidia_gpu_chart_version}"
+        info_log "...successfully downloaded to '${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz'"
+    else
+        info_log "...found '${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz'"
+    fi
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Downloads the backend charts used by the Microsoft Azure Orbital Space SDK Helm Chart
+############################################################
+function stage_dependent_charts(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Staging chart dependencies..."
+    run_a_script "helm --kubeconfig ${KUBECONFIG} dependency update ${SPACEFX_DIR}/chart"
+    info_log "...successfully staged chart dependencies"
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Downloads the container images of the backend charts used by the Microsoft Azure Orbital Space SDK Helm Chart
+############################################################
+function stage_dependent_charts_images(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.charts[].group' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" chart_groups
+
+    local stage_container_cmd=""
+
+    for container_type in $chart_groups; do
+        if [[ "${container_type}" == "nvidia_gpu" ]] && [[ "${NVIDIA_GPU_PLUGIN}" == false ]]; then
+            continue
+        fi
+
+        run_a_script "jq -r '.config.charts[] | select(.group == \"${container_type}\" and .enabled == true) | .containers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" chart_containers
+
+        for container in $chart_containers; do
+            parse_json_line --json "${container}" --property ".repository" --result repository
+            parse_json_line --json "${container}" --property ".tag" --result tag
+            parse_json_line --json "${container}" --property ".registry" --result registry
+
+            tar_fileName="${container_type}_${repository}.${tag}.tar"
+            tar_fileName=${tar_fileName//\//_} # Replace slashed with underscores
+            stage_container_cmd="${stage_container_cmd} --image ${registry}/${repository}:${tag}"
+            debug_log "Adding ${registry}/${repository}:${tag} (${tar_fileName}) to stage queue"
+        done
+    done
+
+    if [[ -z "${stage_container_cmd}" ]]; then
+        info_log "No charts have any containers to stage.  Nothing to do"
+        info_log "FINISHED: ${FUNCNAME[0]}"
         return
     fi
 
-    # Helm has to be downloaded and untarred, so we run it explicitly
-    local tmp_filename="${destination_dir}/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
-    local download_uri="https://get.helm.sh/helm-${VER_HELM}-linux-${ARCHITECTURE}.tar.gz"
-
-    create_directory "${destination_dir}"
-
-    run_a_script "curl --silent --fail --create-dirs --output ${tmp_filename} -L ${download_uri}"
-
-    info_log "...succesfully downloaded to '${tmp_filename}'.  Extracting to '${destination_dir}'..."
-
-    run_a_script "tar -xf '${tmp_filename}' --directory '${destination_dir}' linux-${ARCHITECTURE}/helm"
-    run_a_script "mv ${destination_dir}/linux-${ARCHITECTURE}/helm ${destination_dir}/helm"
-    run_a_script "rm ${destination_dir}/linux-${ARCHITECTURE} -rf"
-    run_a_script "rm ${tmp_filename}"
-
-    run_a_script "chmod 0755 ${destination_dir}/helm"
-
-    info_log "...successfully extracted helm to '${destination_dir}'"
+    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_container_image.sh --architecture ${ARCHITECTURE} ${stage_container_cmd}"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -133,26 +166,17 @@ function stage_helm(){
 
 function main() {
     write_parameter_to_log ARCHITECTURE
-    write_parameter_to_log DEST_STAGE_DIR
+    write_parameter_to_log NVIDIA_GPU_PLUGIN
+
+    if [[ "${NVIDIA_GPU_PLUGIN}" == true ]]; then
+        enable_nvidia_gpu_in_config
+        stage_nvidia_plugin_helm_chart
+    fi
+
+    stage_dependent_charts
+    stage_dependent_charts_images
 
 
-    # Download CFSSL, jq, yq, regctl
-    local VER_CFSSL_no_v="${VER_CFSSL:1}"
-    _app_install --app "cfssl" --source "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssl"
-    _app_install --app "cfssljson" --source "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${ARCHITECTURE}" --destination "${DEST_STAGE_DIR}/cfssl/${VER_CFSSL}/cfssljson"
-
-    _app_install --app "jq" --source "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq" --url "https://github.com/jqlang/jq/releases/download/jq-${VER_JQ:?}/jq-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/jq/${VER_JQ}/jq"
-    _app_install --app "yq" --source "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/yq/${VER_YQ}/yq"
-    _app_install --app "regctl" --source "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${ARCHITECTURE:?}" --destination "${DEST_STAGE_DIR}/regctl/${VER_REGCTL}/regctl"
-
-    # Download k3s, kubectl, the airgap images, and the install script
-    stage_k3s
-
-    # Run helm last since it's not running in the background task
-    stage_helm
-
-    # Wait for any background tasks to finish
-    _app_install_wait_for_background_processes
 
 
     info_log "------------------------------------------"

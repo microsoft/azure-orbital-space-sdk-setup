@@ -75,6 +75,7 @@ function main() {
         --exclude='/*.gitignore' \
         --exclude='/*.gitattributes' \
         --exclude='/spacedev_cache' \
+        --exclude='/.shellcheckrc' \
         '${REPO_ROOT_DIR}/' '${OUTPUT_DIR}/'"
 
   clean_up_dest_directory
