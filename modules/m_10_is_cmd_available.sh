@@ -19,3 +19,39 @@ function is_cmd_available() {
         eval "$result_variable='false'"
     fi
 }
+
+
+############################################################
+# Check if prereq tool is available and if not, error with helper url
+############################################################
+function check_for_cmd() {
+    local app_name=""
+    local url=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --app)
+                shift
+                app_name=$1
+                ;;
+            --documentation-url)
+                shift
+                url=$1
+                ;;
+            *) echo "Unknown parameter '$1'"; show_help ;;
+        esac
+        shift
+    done
+
+    run_a_script "whereis -b ${app_name}" _check_for_cmd --no_sudo --disable_log
+
+    if [[ $_check_for_cmd == "$cmd_to_test:" ]]; then
+        # App is not available.  Throw error
+
+        if [[ -z "${url}" ]]; then
+            exit_with_error "The '${app_name}' command is not available.  Please install it and retry."
+        else
+            exit_with_error "The '${app_name}' command is not available.  See ${url} and retry"
+        fi
+    fi
+}

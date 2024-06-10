@@ -20,7 +20,7 @@ function _app_prereqs_validate() {
     is_cmd_available "helm" has_helm_cmd
 
 
-    if [[ $has_yq_cmd == true ]] && [[ $has_jq_cmd == true ]] && [[ $has_regctl_cmd == true ]] && [[ $has_kubectl_cmd == true ]] && [[ $has_cfssl_cmd == true ]] && [[ $has_cfssljson_cmd == true ]] && [[ $has_helm_cmd == true ]]; then
+    if [[ $has_yq_cmd == true ]] && [[ $has_jq_cmd == true ]] && [[ $has_regctl_cmd == true ]] && [[ $has_cfssl_cmd == true ]] && [[ $has_cfssljson_cmd == true ]] && [[ $has_helm_cmd == true ]]; then
         info_log "All third party apps are installed and available."
         return
     fi
@@ -76,7 +76,7 @@ function _app_install() {
         shift
     done
 
-    if [[ -z "${app_name}" ]] || [[ -z "${source}" ]] || [[ -z "${destination}" ]] || [[ -z "${source}" ]]; then
+    if [[ -z "${app_name}" ]] || [[ -z "${source}" ]] || [[ -z "${destination}" ]] || [[ -z "${url}" ]]; then
         exit_with_error "Missing required parameters.  Please use --app, --url, --source, and --destination.  Received app_name: '${app_name}', source: '${source}', destination: '${destination}', url: '${url}'"
     fi
 
