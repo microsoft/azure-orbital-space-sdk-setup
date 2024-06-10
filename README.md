@@ -1,6 +1,6 @@
 # Azure Orbital Space SDK - Setup
 
-
+[![spacefx-dev-build-publish](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml/badge.svg)](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml)
 
 ## Build and Deploying DevContainer Feature
 
