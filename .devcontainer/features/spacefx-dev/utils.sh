@@ -1,6 +1,7 @@
-source /k3s-on-host/.env
+source /devfeature/k3s-on-host/.env
+source /spacefx-dev/.env
 
-LOG_DIR="/var/log/k3s-on-host"
+LOG_DIR="/spacefx-dev/logs"
 SCRIPT_NAME=$(basename "$0")
 
 if [ "$(id -u)" -ne 0 ]; then
@@ -142,7 +143,7 @@ function exit_with_error() {
 
 
 ############################################################
-# Helper function to run a script on the host
+# Helper function to run a script on the host via the host_interface container
 # args
 # position 1     : the command to run.  i.e. "docker container ls"
 # position 2     : the variable to return the results of the script to for further processing
@@ -186,11 +187,17 @@ function run_a_script_on_host() {
 
     local run_cmd
 
-    run_cmd="docker exec \
-                ${env_vars} \
-                -ti \
-                $HOST_INTERFACE_CONTAINER \
-                chroot /host bash -c \"${run_script}\""
+    run_cmd="docker run \
+        --quiet \
+        --privileged \
+        --tty \
+        --rm \
+        --cap-add=SYS_CHROOT \
+        --name $HOST_INTERFACE_CONTAINER \
+        --net=host --pid=host --ipc=host \
+        --volume /:/host \
+        $HOST_INTERFACE_CONTAINER_BASE \
+        chroot /host bash --login -c \"${run_script}\""
 
 
     if [[ "${log_enabled}" == true ]]; then
@@ -218,7 +225,6 @@ function run_a_script_on_host() {
         exit_with_error "Script failed.  Received return code of '${sub_exit_code}'.  Command ran: '${run_script}'.  See previous errors and retry"
     fi
 }
-
 
 ############################################################
 # Helper function to run a script

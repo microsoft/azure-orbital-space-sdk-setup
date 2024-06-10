@@ -94,9 +94,16 @@ function check_prerequisites(){
     [[ ! -d "${SPACEFX_DIR}/registry/data" ]] && create_directory "${SPACEFX_DIR}/registry/data"
     [[ ! -d "${SPACEFX_DIR}/certs/registry" ]] && create_directory "${SPACEFX_DIR}/certs/registry"
 
-    debug_log "Calculating registry repository name..."
+    debug_log "Querying for registry values..."
     run_a_script "yq '.services.core.registry.repository' ${SPACEFX_DIR}/chart/values.yaml" REGISTRY_REPO
-    debug_log "...registry repository name calculated as '${REGISTRY_REPO}'"
+    run_a_script "yq '.global.containerRegistry' ${SPACEFX_DIR}/chart/values.yaml" REGISTRY
+    run_a_script "yq '.services.core.registry.serviceNamespace' ${SPACEFX_DIR}/chart/values.yaml" NAMESPACE
+    calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result REGISTRY_TAG
+
+    debug_log "...REGISTRY_REPO calculated as '${REGISTRY_REPO}'"
+    debug_log "...REGISTRY calculated as '${REGISTRY}'"
+    debug_log "...NAMESPACE calculated as '${NAMESPACE}'"
+    debug_log "...REGISTRY_TAG calculated as '${REGISTRY_TAG}'"
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -122,6 +129,10 @@ function stop_registry(){
 
     if [[ "${HAS_K3S}" == true ]]; then
         info_log "Checking for ${REGISTRY_REPO} in K3s..."
+
+        # run_a_script "helm --kubeconfig ${KUBECONFIG} show values ${SPACEFX_DIR}/chart | yq '.services.core.registry.repository'" REPOSITORY
+
+
         #TODO: Add
         # kubectl get pods -l app.kubernetes.io/instance=${REGISTRY_REPO}
     fi
@@ -137,6 +148,66 @@ function start_registry_k3s(){
     info_log "START: ${FUNCNAME[0]}"
 
 
+    info_log "Checking for namespace '${NAMESPACE}'..."
+
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get namespaces/${NAMESPACE}" has_namespace  --ignore_error
+
+    if [[ -z "${has_namespace}" ]]; then
+        info_log "...not found.  Deploying..."
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} create namespace ${NAMESPACE}"
+        info_log "...successfully deployed"
+    fi
+
+    info_log "Checking if '${REGISTRY_REPO}' container image has been imported..."
+
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get nodes -o json | jq '.items[0].status.nodeInfo.containerRuntimeVersion' -r" k3sContainerRunTime
+
+    if [[ "${k3sContainerRunTime}" == *"docker"* ]]; then
+        # We're running in docker - pull the cache using the docker images command
+        run_a_script "docker images" k3s_images_in_cache
+    else
+        run_a_script "ctr --address /run/k3s/containerd/containerd.sock images list --quiet" k3s_images_in_cache
+    fi
+
+    if [[ "${k3s_images_in_cache}" != *"${REGISTRY}/${REGISTRY_REPO}"* ]]; then
+
+        info_log "...'${REGISTRY_REPO}' not found in image cache.  Importing..."
+
+        if [[ ! -f "${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar" ]]; then
+            exit_with_error "Unable to find '${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar'"
+        fi
+
+        if [[ "${k3sContainerRunTime}" == *"docker"* ]]; then
+            run_a_script "docker load --quiet --input ${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar" image_hash
+
+            # Remove the return value we get from docker load
+            image_hash=${image_hash#"Loaded image: "}
+
+            # Tag don't match - this'll update it to match what we have in helm
+            run_a_script "docker tag ${image_hash} ${REGISTRY}/${REGISTRY_REPO}:${SPACEFX_VERSION}"
+        else
+            run_a_script "ctr --address /run/k3s/containerd/containerd.sock images import ${SPACEFX_DIR}/images/${HOST_ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar"
+
+            # Tag doesn't match - this'll update it to match what we have in helm
+            run_a_script "ctr --address /run/k3s/containerd/containerd.sock images list --quiet | grep '${REGISTRY_REPO}:${REGISTRY_TAG}'" current_tag
+            run_a_script "ctr --address /run/k3s/containerd/containerd.sock images tag ${current_tag} ${REGISTRY}/${REGISTRY_REPO}:${SPACEFX_VERSION}"
+        fi
+
+    fi
+
+    if [[ ! -f "${SPACEFX_DIR}/chart/Chart.lock" ]]; then
+        run_a_script "helm --kubeconfig ${KUBECONFIG} dependency update ${SPACEFX_DIR}/chart"
+    fi
+
+    run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart --set services.core.registry.enabled=true" registry_yaml
+
+    debug_log "...deploying core-registry..."
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
+${registry_yaml}
+SPACEFX_UPDATE_END"
+
+    # run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployment/core-registry -n ${NAMESPACE} --output=json | jq '.status.conditions[] | select(.type == \"Available\").status' -r" K3S_STATUS --ignore_error
+
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -149,7 +220,7 @@ function start_registry_docker(){
     info_log "START: ${FUNCNAME[0]}"
 
     # Calculate the image tag based on the channel and then check the registries to find it
-    info_log "Checking for '${REGISTRY_REPO}' in docker images..."
+    info_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result spacefx_version_tag
     find_registry_for_image "${REGISTRY_REPO}:${spacefx_version_tag}" coresvc_registry_parent
 
@@ -211,7 +282,7 @@ function main() {
         fi
 
         [[ "${DESTINATION_HOST}" == "docker" ]] && start_registry_docker
-        # [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
+        [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
 
         info_log "------------------------------------------"
         info_log "END: ${SCRIPT_NAME}"

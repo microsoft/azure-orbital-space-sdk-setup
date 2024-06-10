@@ -51,7 +51,7 @@ global:
     xfer: xfer
   servicesPrefix:
   spacefxSecretDirectory: /etc/spacefx_config
-  spacefxVersion: 0.10.0
+  spacefxVersion: 0.11.0
   logging:
     - name: Default
       level: Error
