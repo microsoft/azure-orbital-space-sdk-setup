@@ -22,6 +22,7 @@ source "${MODULE_DIR}/m_50_spacefx-config.sh"
 source "${MODULE_DIR}/m_60_container_registries.sh"
 source "${MODULE_DIR}/m_70_certificates.sh"
 source "${MODULE_DIR}/m_80_coresvc_registry_hosts.sh"
+source "${MODULE_DIR}/m_90_wait_for_deployment.sh"
 
 
 ############################################################

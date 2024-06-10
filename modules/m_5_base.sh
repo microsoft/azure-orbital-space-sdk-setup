@@ -89,6 +89,11 @@ function run_a_script() {
     # Setup a temp file to capture the output from the command
     script_temp_file=$(mktemp)
     script_temp_std_file="${script_temp_file}.stdout"
+    script_temp_exit_code="${script_temp_file}.exitcode"
+
+    touch $script_temp_file
+    touch $script_temp_std_file
+    touch $script_temp_exit_code
 
 
     [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_std_file})..."
@@ -99,6 +104,7 @@ function run_a_script() {
         exec 1> >(tee $output_tty > "$script_temp_std_file")
         exec 2>&1
         eval "${run_cmd}" > $script_temp_file
+        echo $? > $script_temp_exit_code
     ) &
 
     # Save the PID to a variable so we can process it
@@ -127,16 +133,18 @@ function run_a_script() {
             kill "${tail_pid}" > /dev/null
             tail_pid=""
         fi
-        RETURN_CODE=$?
+        RETURN_CODE=$(cat $script_temp_exit_code)
     done
 
     [[ "${log_enabled}" == true ]] && debug_log "...'${run_cmd}' Exit code: ${RETURN_CODE}"
 
+
+
+    returnResult=$(<"$script_temp_file")
+    [[ "${log_enabled}" == true ]] && [[ "${log_results_enabled}" == true ]] && debug_log "...'${run_cmd}' Result: ${returnResult}"
     # Read the results of the script into the return variable
     if [[ -n ${__returnVar} ]]; then
-        returnResult=$(<"$script_temp_file")
         eval $__returnVar="'$returnResult'"
-        [[ "${log_enabled}" == true ]] && [[ "${log_results_enabled}" == true ]] && debug_log "...'${run_cmd}' Result: ${returnResult}"
     fi
 
     if [[ $RETURN_CODE -gt 0 ]] && [[ "${ignore_error}" == false ]]; then
@@ -146,6 +154,7 @@ function run_a_script() {
     # Cleanup by removing the temp file
     [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
     [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
+    [[ -f "$script_temp_exit_code" ]] && rm "$script_temp_exit_code"
 
 
 }

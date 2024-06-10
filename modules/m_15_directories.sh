@@ -26,3 +26,18 @@ function _setup_initial_directories() {
     create_directory "${SPACEFX_DIR}/tmp/yamls"
     create_directory "${SPACEFX_DIR}/xfer"
 }
+
+############################################################
+# Helper function to check if a file exists
+############################################################
+function _check_for_file(){
+    local file_location=$1
+
+    info_log "Checking for ${file_location}..."
+
+    if [[ -f "${file_location}" ]]; then
+        info_log "...found '${file_location}'"
+    else
+        exit_with_error "Missing '${file_location}'.  Please run applicable staging script and re-deploy env-config to this machine, then rerun deploy"
+    fi
+}

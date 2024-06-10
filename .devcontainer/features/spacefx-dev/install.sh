@@ -6,11 +6,10 @@
 #
 # Docs: https://github.com/microsoft/devcontainer-feature-k3s/README.md
 
-K3S_VERSION="${K3SVERSION:-"latest"}"
-USE_CRI_DOCKERD="${CRIDOCKERD:-"true"}"
+SPACEFX_DIR="${SPACEFX_DIR:-"true"}"
+CLUSTER_ENABLED="${CLUSTER_ENABLED:-"true"}"
 HOST_INTERFACE_CONTAINER="host_interface"
 HOST_INTERFACE_CONTAINER_BASE="mcr.microsoft.com/devcontainers/base:ubuntu22.04"
-CLUSTER_ENABLED="${CLUSTER_ENABLED:-"true"}"
 
 # Ensure apt is in non-interactive to avoid prompts
 export DEBIAN_FRONTEND=noninteractive
@@ -45,9 +44,6 @@ fi
 
 # Source /etc/os-release to get OS info
 . /etc/os-release
-# Fetch host/container arch.
-ARCHITECTURE="$(dpkg --print-architecture)"
-K3S_ARCHITECTURE=$ARCHITECTURE
 
 
 ############################################################
@@ -82,8 +78,8 @@ UPDATE_END
 
 
     while read -r shellFile; do
-        chmod +x ${shellFile}
-        chmod 777 ${shellFile}
+        chmod +x "${shellFile}"
+        chmod 777 "${shellFile}"
     done < <(find "/spacefx-dev" -iname "*.sh")
 
     echo "Updating /devfeature/.env file with CLUSTER_ENABLED=${CLUSTER_ENABLED}..."
