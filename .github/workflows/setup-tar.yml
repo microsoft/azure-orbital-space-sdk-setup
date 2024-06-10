@@ -25,3 +25,16 @@ jobs:
       with:
         env_file: ./env/spacefx.env
         token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and package tar file
+      shell: bash
+      run: |
+        source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log
+        info_log "Running ./.vscode/build_setup_tarball.sh"
+        run_a_script "./.vscode/build_setup_tarball.sh"
+        
+        sub_exit_code=${PIPESTATUS[0]}
+        if [[ $sub_exit_code -gt 0 ]]; then
+            echo "Previous step failed.  Troubleshoot"
+            exit 1
+        fi
