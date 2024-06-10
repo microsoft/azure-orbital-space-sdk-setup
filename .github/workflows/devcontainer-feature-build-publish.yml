@@ -4,7 +4,7 @@ on:
     workflow_dispatch:
     push:
         branches:
-        - km/add_tar_file
+        - main
 
 env:
   REGISTRY: ghcr.io
@@ -22,16 +22,16 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@km/add_structure
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
         env_file: ./env/spacefx.env
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@km/add_structure
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
       with:
         oras_version: 0.16.0
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@km/add_structure
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
     - name: Build and publish devcontainer feature
       shell: bash
