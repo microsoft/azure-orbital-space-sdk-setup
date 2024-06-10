@@ -11,7 +11,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build:
+  build-tar-file:
     runs-on: ubuntu-latest
 
     permissions:
