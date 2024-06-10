@@ -25,8 +25,7 @@ FEATURE=azure-orbital-space-sdk/spacefx-dev
 ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
 # Validate the output directory exists and clean it out if there is content already present
-mkdir -p "./output/spacefx-dev"
-[[ -f ./output/spacefx-dev/* ]]; rm ./output/spacefx-dev/*
+[[ -d ./output/spacefx-dev ]]; sudo rm ./output/spacefx-dev/* -rf
 
 # Copy the scripts ino the entry point for the devcontainer feature
 ./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
