@@ -20,7 +20,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: actions/composite-actions/initialize@km/add_structure
+    - uses: https://github.com/microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@km/add_structure
       with:
         env_file: ./env/spacefx.env
         token: ${{ secrets.GITHUB_TOKEN }}
