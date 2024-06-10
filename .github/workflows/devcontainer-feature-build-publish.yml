@@ -33,7 +33,7 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@km/add_structure
 
-    - name: Build and package tar file
+    - name: Build and publish devcontainer feature
       shell: bash
       run: |
         echo "Sourcing environment variables..."  
