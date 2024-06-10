@@ -53,5 +53,5 @@ jobs:
     - name: Upload /var/spacedev logs
       uses: actions/upload-artifact@v2
       with:
-        name: logs
+        name: space-dev-logs
         path: /var/spacedev/logs
