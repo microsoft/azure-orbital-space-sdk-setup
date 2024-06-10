@@ -1,0 +1,26 @@
+name: setup-tar-creation
+
+on: 
+    push:
+        branches:
+        - main
+
+env:
+  REGISTRY: ghcr.io/microsoft
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/composite-actions/initialize@km/add_structure
+      with:
+        env_file: ./env/spacefx.env
+        token: ${{ secrets.GITHUB_TOKEN }}
