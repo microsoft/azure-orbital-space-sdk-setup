@@ -55,7 +55,7 @@ spec:
   version: v1
   metadata:
   - name: host
-    value: "amqp://{{ $serviceValues.appName }}.core:5672"
+    value: "amqp://{{ $serviceValues.appName }}.coresvc:5672"
   - name: autoAck
     value: true
   - name: deliveryMode

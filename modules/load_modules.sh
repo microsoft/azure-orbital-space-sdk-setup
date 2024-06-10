@@ -20,7 +20,8 @@ source "${MODULE_DIR}/m_40_regctl_config.sh"
 source "${MODULE_DIR}/m_45_emulator.sh"
 source "${MODULE_DIR}/m_50_spacefx-config.sh"
 source "${MODULE_DIR}/m_60_container_registries.sh"
-source "${MODULE_DIR}/m_80_core_registry_hosts.sh"
+source "${MODULE_DIR}/m_70_certificates.sh"
+source "${MODULE_DIR}/m_80_coresvc_registry_hosts.sh"
 
 
 ############################################################
@@ -86,4 +87,4 @@ _app_prereqs_validate
 _generate_spacefx_config_json
 
 _update_regctl_config
-_check_for_core_registry_hosts_entry
+_check_for_coresvc_registry_hosts_entry

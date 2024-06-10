@@ -3,7 +3,7 @@
 ############################################################
 # Add the hosts entry for core registry
 ############################################################
-function _check_for_core_registry_hosts_entry() {
+function _check_for_coresvc_registry_hosts_entry() {
     run_a_script "cat /etc/hosts" current_etc_hosts --disable_log
     if [[ $current_etc_hosts == *"registry.spacefx.local"* ]]; then
         return

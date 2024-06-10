@@ -43,6 +43,7 @@ function run_a_script() {
     fi
 
     local log_enabled=true
+    local log_results_enabled=true
     local ignore_error=false
     local run_in_background=false
     local returnResult=""
@@ -58,6 +59,9 @@ function run_a_script() {
                 ;;
             --disable_log)
                 log_enabled=false
+                ;;
+            --no_log_results)
+                log_results_enabled=false
                 ;;
             --background)
                 run_in_background=true
@@ -132,7 +136,7 @@ function run_a_script() {
     if [[ -n ${__returnVar} ]]; then
         returnResult=$(<"$script_temp_file")
         eval $__returnVar="'$returnResult'"
-        [[ "${log_enabled}" == true ]] && debug_log "...'${run_cmd}' Result: ${returnResult}"
+        [[ "${log_enabled}" == true ]] && [[ "${log_results_enabled}" == true ]] && debug_log "...'${run_cmd}' Result: ${returnResult}"
     fi
 
     if [[ $RETURN_CODE -gt 0 ]] && [[ "${ignore_error}" == false ]]; then

@@ -11,7 +11,7 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - name: core-registry
+    - name: {{ $serviceValues.repository }}
       port: {{ $serviceValues.targetPort }}
       targetPort: {{ $serviceValues.targetPort }}
   selector:
