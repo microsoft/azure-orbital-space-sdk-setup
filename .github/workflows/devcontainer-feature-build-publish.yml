@@ -31,6 +31,8 @@ jobs:
       with:
         oras_version: 0.12.0
 
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@km/add_structure
+
     - name: Build and package tar file
       shell: bash
       run: |
