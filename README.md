@@ -1,6 +1,6 @@
 # Azure Orbital Space SDK - Setup
 
-
+[![spacefx-dev-build-publish](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml/badge.svg)](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml)
 
 ## Build and Deploying DevContainer Feature
 
@@ -30,7 +30,7 @@ ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 # Copy the scripts ino the entry point for the devcontainer feature
 ./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
-# Build the devcontaienr feature
+# Build the devcontainer feature
 devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
 
 # Push the devcontainer feature tarball to the registry
