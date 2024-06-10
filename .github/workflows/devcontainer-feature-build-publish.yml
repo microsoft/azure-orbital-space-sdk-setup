@@ -12,7 +12,7 @@ env:
   ARTIFACT_PATH: ./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
 jobs:
-  build-tar-file:
+  build-publish-feature:
     runs-on: ubuntu-latest
 
     permissions:
