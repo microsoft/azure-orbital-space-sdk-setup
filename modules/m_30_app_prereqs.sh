@@ -1,3 +1,5 @@
+#!/bin/bash
+
 _app_prereqs_worker_pids=()
 _app_prereqs_log_files=()
 _app_prereqs_temp_dir=""
@@ -34,6 +36,7 @@ function _app_prereqs_validate() {
     _app_install --app "yq" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/yq/${VER_YQ}/yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${HOST_ARCHITECTURE:?}" --destination "/usr/local/bin/yq"
     _app_install --app "regctl" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/regctl/${VER_REGCTL}/regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${HOST_ARCHITECTURE:?}" --destination "/usr/local/bin/regctl"
 
+    _app_install_for_helm
     _app_install_wait_for_background_processes
 
     info_log "Installation of third party apps successful."
@@ -164,6 +167,55 @@ function _app_install_wait_for_background_processes(){
     fi
 
     info_log "...background processes finished successfully."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Check and download Helm
+############################################################
+function _app_install_for_helm(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local app_name="helm"
+    source="${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/helm/${VER_HELM}/helm"
+    url="https://get.helm.sh/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz"
+
+    run_a_script "mktemp -d" _helm_install_temp_dir --disable_log
+
+    destination="/usr/local/bin/helm"
+
+
+    if [[ -f "${destination}" ]]; then
+        info_log "App '${app_name}' already present at '${destination}'.  Nothing to do"
+        return
+    fi
+
+
+
+    if [[ ! -f "${source}" ]]; then
+        if [[ "${INTERNET_CONNECTED}" == false  ]]; then
+            echo "App '${app_name}' not found at '${source}' and no internet connection available.  Please restage from an internet connected host and retry."
+            exit 1
+        else
+            # We have internet connectivity.  Go ahead and download it
+            echo "...app '${app_name}' not found at '${source}'.  Starting download from '${url}' to '${destination}'..."
+            run_a_script "curl --fail --create-dirs --output ${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz -L ${url}" --disable_log
+
+            run_a_script "tar -xf '${tmp_filename}' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
+            run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}"
+            run_a_script "rm ${_helm_install_temp_dir}"
+        fi
+    else
+        # App is already downloaded.  Copy it to the destination
+        echo "...app '${app_name}' found at '${source}'.  Copying to '${destination}'..."
+        cp ${source} ${destination}
+    fi
+
+    run_a_script "chmod +x ${destination}"
+    run_a_script "chmod 755 ${destination}"
+
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }

@@ -39,7 +39,6 @@ MAX_WAIT_SECS=300
 NEEDS_SUDO=false
 ROOT_TTY="/dev/null"
 CURRENT_TTY="$(tty)"
-INSTALL_APPS=true
 INTERNET_CONNECTED=true
 
 ############################################################
@@ -64,10 +63,6 @@ while [[ "$#" -gt 0 ]]; do
             LOG_DIR=$1
             LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
             ;;
-        --no_app_installs)
-            shift
-            INSTALL_APPS=false
-            ;;
         --no_internet)
             shift
             INTERNET_CONNECTED=false
@@ -80,8 +75,8 @@ done
 _calculate_for_sudo
 _calculate_root_tty
 _setup_initial_directories
-_script_start
 _log_init
+_script_start
 _calculate_host_architecture
 
 _app_prereqs_validate
