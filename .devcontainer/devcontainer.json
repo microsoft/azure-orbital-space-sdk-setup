@@ -25,6 +25,18 @@
 		},
 		"codespaces": {
 			"repositories": {
+				"microsoft/azure-orbital-space-sdk": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-setup": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
 				"microsoft/azure-orbital-space-sdk-coresvc-registry": {
 					"permissions": {
 						"contents": "read",
@@ -38,6 +50,48 @@
 					}
 				},
 				"microsoft/azure-orbital-space-sdk-coresvc-switchboard": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-platform-mts": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-platform-deployment": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-vth": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-link": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-logging": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-position": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-sensor": {
 					"permissions": {
 						"contents": "read",
 						"packages": "read"
