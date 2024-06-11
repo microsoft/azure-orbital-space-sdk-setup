@@ -122,8 +122,8 @@ function _app_install() {
             cp ${source} ${destination}
         fi
 
-        run_a_script "chmod +x ${destination}"
-        run_a_script "chmod 755 ${destination}"
+        run_a_script "chmod +x ${destination}" --disable_log
+        run_a_script "chmod 755 ${destination}" --disable_log
 
         echo "Successfully deployed '${app_name}' to '${destination}'"
     ) &
@@ -203,7 +203,7 @@ function _app_install_for_helm(){
 
             run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
             run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}"
-            # run_a_script "rm ${_helm_install_temp_dir} -rf"
+            run_a_script "rm ${_helm_install_temp_dir} -rf"
         fi
     else
         # App is already downloaded.  Copy it to the destination
@@ -211,8 +211,8 @@ function _app_install_for_helm(){
         run_a_script "cp ${source} ${destination}"
     fi
 
-    run_a_script "chmod +x ${destination}"
-    run_a_script "chmod 755 ${destination}"
+    run_a_script "chmod +x ${destination}" --disable_log
+    run_a_script "chmod 755 ${destination}" --disable_log
 
 
     info_log "FINISHED: ${FUNCNAME[0]}"

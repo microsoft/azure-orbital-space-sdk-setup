@@ -45,8 +45,8 @@ config:
           repository: nvidia/k8s-device-plugin
           tag: v0.14.4
   containerRegistries:
-    - url: ghcr.io/microsoft
-      repositoryPrefix: azure-orbital-space-sdk
+    - url: ghcr.io
+      repositoryPrefix: microsoft/azure-orbital-space-sdk
       push_enabled: true
       pull_enabled: true
       login_enabled: true
