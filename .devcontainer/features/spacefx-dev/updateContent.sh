@@ -32,11 +32,34 @@ function initialize_spacedev_directory() {
 }
 
 
+function add_hosts_entry_for_coresvc_registry(){
+    # Calculate the external ip of the host by checking the routes used to get to the internet
+    debug_log "Calculating external ip..."
+    run_a_script_on_host "ip route get 8.8.8.8" host_ip
+    host_ip=${host_ip#*src }
+    host_ip=${host_ip%% *}
+
+    debug_log "...external ip: '${host_ip}'"
+
+    debug_log "...retrieving coresvc-registry external url..."
+
+    run_a_script "yq '.global.containerRegistry' ${SPACEFX_DIR}/chart/values.yaml" _registry_url
+
+    _registry_url="${_registry_url%%:*}"
+
+    debug_log "...adding hosts entry for '${_registry_url}' to '${host_ip}'..."
+
+    run_a_script "tee -a /etc/hosts > /dev/null << SPACEFX_UPDATE_END
+${host_ip}       ${_registry_url}
+SPACEFX_UPDATE_END" --disable_log
+
+}
 
 function main() {
     initialize_spacedev_directory
     run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
     run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
+    add_hosts_entry_for_coresvc_registry
 }
 
 main
