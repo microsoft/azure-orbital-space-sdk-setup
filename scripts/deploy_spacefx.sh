@@ -67,11 +67,11 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_k3s.sh"
     info_log "...successfully deployed k3s"
 
+    check_and_create_certificate_authority
     deploy_namespaces
 
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --start"
-
-
+    run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
 
     info_log "------------------------------------------"
