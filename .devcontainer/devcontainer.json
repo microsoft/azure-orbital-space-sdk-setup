@@ -25,19 +25,7 @@
 		},
 		"codespaces": {
 			"repositories": {
-				"microsoft/azure-orbital-space-sdk-coresvc-registry": {
-					"permissions": {
-						"contents": "read",
-						"packages": "read"
-					}
-				},
-				"microsoft/azure-orbital-space-sdk-coresvc-fileserver": {
-					"permissions": {
-						"contents": "read",
-						"packages": "read"
-					}
-				},
-				"microsoft/azure-orbital-space-sdk-coresvc-switchboard": {
+				"microsoft/azure-orbital-space-sdk*": {
 					"permissions": {
 						"contents": "read",
 						"packages": "read"

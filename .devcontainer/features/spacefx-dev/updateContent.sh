@@ -43,7 +43,7 @@ function add_hosts_entry_for_coresvc_registry(){
 
     debug_log "...retrieving coresvc-registry external url..."
 
-    run_a_script "yq '.global.containerRegistry' ${SPACEFX_DIR}/chart/values.yaml" _registry_url
+    run_a_script_on_host "yq '.global.containerRegistry' ${SPACEFX_DIR}/chart/values.yaml" _registry_url
 
     _registry_url="${_registry_url%%:*}"
 
