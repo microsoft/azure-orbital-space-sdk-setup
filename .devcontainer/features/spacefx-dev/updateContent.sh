@@ -35,7 +35,8 @@ function initialize_spacedev_directory() {
 
 function main() {
     initialize_spacedev_directory
-    run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
-    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
+    # run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
+    # run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
 }
 
+main

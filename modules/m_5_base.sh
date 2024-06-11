@@ -96,7 +96,7 @@ function run_a_script() {
     touch $script_temp_exit_code
 
 
-    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_std_file})..."
+    [[ "${log_enabled}" == true ]] && debug_log "Running '${run_cmd}' (log file: ${script_temp_std_file}; exit code: ${script_temp_exit_code})..."
 
     (
         trap "" HUP
@@ -152,9 +152,9 @@ function run_a_script() {
     fi
 
     # Cleanup by removing the temp file
-    [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
-    [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
-    [[ -f "$script_temp_exit_code" ]] && rm "$script_temp_exit_code"
+    # [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
+    # [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
+    # [[ -f "$script_temp_exit_code" ]] && rm "$script_temp_exit_code"
 
 
 }

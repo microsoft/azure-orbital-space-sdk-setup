@@ -31,7 +31,7 @@ function _app_prereqs_validate() {
 
     local VER_CFSSL_no_v="${VER_CFSSL:1}"
     _app_install --app "cfssl" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/cfssl/${VER_CFSSL}/cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssl_${VER_CFSSL_no_v}_linux_${HOST_ARCHITECTURE}" --destination "/usr/local/bin/cfssl"
-    _app_install --app "cfssl" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/cfssl/${VER_CFSSL}/cfssl" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssljson_${VER_CFSSL_no_v}_linux_${HOST_ARCHITECTURE}" --destination "/usr/local/bin/cfssljson"
+    _app_install --app "cfssljson" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/cfssl/${VER_CFSSL}/cfssljson" --url "https://github.com/cloudflare/cfssl/releases/download/${VER_CFSSL}/cfssljson_${VER_CFSSL_no_v}_linux_${HOST_ARCHITECTURE}" --destination "/usr/local/bin/cfssljson"
     _app_install --app "jq" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/jq/${VER_JQ}/jq" --url "https://github.com/jqlang/jq/releases/download/jq-${VER_JQ:?}/jq-linux-${HOST_ARCHITECTURE:?}" --destination "/usr/local/bin/jq"
     _app_install --app "yq" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/yq/${VER_YQ}/yq" --url "https://github.com/mikefarah/yq/releases/download/v${VER_YQ:?}/yq_linux_${HOST_ARCHITECTURE:?}" --destination "/usr/local/bin/yq"
     _app_install --app "regctl" --source "${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/regctl/${VER_REGCTL}/regctl" --url "https://github.com/regclient/regclient/releases/download/${VER_REGCTL:?}/regctl-linux-${HOST_ARCHITECTURE:?}" --destination "/usr/local/bin/regctl"
@@ -182,7 +182,7 @@ function _app_install_for_helm(){
     source="${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/helm/${VER_HELM}/helm"
     url="https://get.helm.sh/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz"
 
-    run_a_script "mktemp -d" _helm_install_temp_dir --disable_log
+    run_a_script "mktemp -d" _helm_install_temp_dir
 
     destination="/usr/local/bin/helm"
 
@@ -203,7 +203,7 @@ function _app_install_for_helm(){
 
             run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
             run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}"
-            run_a_script "rm ${_helm_install_temp_dir} -rf"
+            # run_a_script "rm ${_helm_install_temp_dir} -rf"
         fi
     else
         # App is already downloaded.  Copy it to the destination
