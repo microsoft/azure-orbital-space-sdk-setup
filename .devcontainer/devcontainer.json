@@ -27,17 +27,20 @@
 			"repositories": {
 				"microsoft/azure-orbital-space-sdk-coresvc-registry": {
 					"permissions": {
-						"issues": "read"
+						"contents": "read",
+						"packages": "read"
 					}
 				},
 				"microsoft/azure-orbital-space-sdk-coresvc-fileserver": {
 					"permissions": {
-						"issues": "read"
+						"contents": "read",
+						"packages": "read"
 					}
 				},
 				"microsoft/azure-orbital-space-sdk-coresvc-switchboard": {
 					"permissions": {
-						"issues": "read"
+						"contents": "read",
+						"packages": "read"
 					}
 				}
 			}

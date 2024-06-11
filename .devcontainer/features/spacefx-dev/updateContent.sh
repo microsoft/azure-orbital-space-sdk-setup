@@ -39,5 +39,3 @@ function main() {
     run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
 }
 
-
-# main

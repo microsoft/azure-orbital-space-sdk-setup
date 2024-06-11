@@ -52,5 +52,6 @@
       "k3sVersion": "v1.29.3+k3s1",
       "criDockerd": "true"
     }
-  }
+  },
+  "updateContentCommand": "/spacefx-dev/updateContent.sh"
 }
