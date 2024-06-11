@@ -8,8 +8,7 @@
 		"spacefx-dev"
 	],
 	"features": {
-		"./features/spacefx-dev": {
-		}
+		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {}
 	},
 	"hostRequirements": {
 		"cpus": 8,
@@ -23,6 +22,28 @@
 			"extensions": [
 				"rogalmic.bash-debug"
 			]
+		},
+		"codespaces": {
+			"repositories": {
+				"microsoft/azure-orbital-space-sdk-coresvc-registry": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-coresvc-fileserver": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-coresvc-switchboard": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				}
+			}
 		}
 	},
 	"remoteUser": "root",
