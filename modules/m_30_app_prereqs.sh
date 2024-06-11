@@ -192,8 +192,6 @@ function _app_install_for_helm(){
         return
     fi
 
-
-
     if [[ ! -f "${source}" ]]; then
         if [[ "${INTERNET_CONNECTED}" == false  ]]; then
             echo "App '${app_name}' not found at '${source}' and no internet connection available.  Please restage from an internet connected host and retry."
@@ -203,14 +201,14 @@ function _app_install_for_helm(){
             echo "...app '${app_name}' not found at '${source}'.  Starting download from '${url}' to '${destination}'..."
             run_a_script "curl --fail --create-dirs --output ${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz -L ${url}" --disable_log
 
-            run_a_script "tar -xf '${tmp_filename}' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
+            run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
             run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}"
-            run_a_script "rm ${_helm_install_temp_dir}"
+            run_a_script "rm ${_helm_install_temp_dir} -rf"
         fi
     else
         # App is already downloaded.  Copy it to the destination
         echo "...app '${app_name}' found at '${source}'.  Copying to '${destination}'..."
-        cp ${source} ${destination}
+        run_a_script "cp ${source} ${destination}"
     fi
 
     run_a_script "chmod +x ${destination}"
