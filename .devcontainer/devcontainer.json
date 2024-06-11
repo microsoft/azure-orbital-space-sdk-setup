@@ -8,7 +8,7 @@
 		"spacefx-dev"
 	],
 	"features": {
-		"./features/spacefx-dev": {
+		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {
 		}
 	},
 	"hostRequirements": {
