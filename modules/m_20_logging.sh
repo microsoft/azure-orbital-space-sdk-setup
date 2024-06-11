@@ -172,7 +172,7 @@ function write_parameter_to_log() {
 # Walk up the process tree to determine the root TTY we're using
 ############################################################
 function _calculate_root_tty(){
-    ROOT_TTY="/dev/null"
+    ROOT_TTY="$(tty)"
     CURRENT_TTY="$(tty)"
 
     current_pid=$$
@@ -201,6 +201,7 @@ function _calculate_root_tty(){
     done
 
     if [[ "${ROOT_TTY}" == "/dev/?" ]]; then
-        ROOT_TTY="/dev/null"
+        ROOT_TTY="$(tty)"
     fi
+
 }
