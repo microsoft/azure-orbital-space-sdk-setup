@@ -141,11 +141,11 @@ function find_registry_for_image(){
         run_a_script "regctl image manifest ${container_registry}/${_find_registry_for_image_repo}" --ignore_error --disable_log
 
         if [[ "${RETURN_CODE}" -eq 0 ]]; then
-            info_log "...image '${container_image}' FOUND in container registry '${container_registry}' as '${_find_registry_for_image_repo}'"
+            info_log "...image '${container_image}' FOUND in container registry '${container_registry}' (as '${_find_registry_for_image_repo}')"
             REGISTRY_IMAGE_NAME="${container_registry}"
             break;
         else
-            info_log "...image '${container_image}' NOT FOUND in container registry '${container_registry}'"
+            info_log "...image ${container_image}' ('${_find_registry_for_image_repo}') NOT FOUND in container registry '${container_registry}'"
         fi
     done
 

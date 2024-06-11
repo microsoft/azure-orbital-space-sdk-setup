@@ -4,13 +4,13 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 #
-# Docs: https://github.com/microsoft/devcontainer-feature-k3s/README.md
+# Docs: https://github.com/microsoft/azure-orbital-space-sdk-setup/README.md
 
 export DEBIAN_FRONTEND=noninteractive
 
 # Source /etc/os-release to get OS info
-# source /etc/os-release
-# source /spacefx-dev/utils.sh
+source /etc/os-release
+source /spacefx-dev/utils.sh
 
 ############################################################
 # Setup spacedev directory on host
@@ -35,8 +35,8 @@ function initialize_spacedev_directory() {
 
 function main() {
     initialize_spacedev_directory
-    # run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
-    # run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
+    run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
+    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
 }
 
 
