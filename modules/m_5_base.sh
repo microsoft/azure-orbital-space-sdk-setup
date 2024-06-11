@@ -101,7 +101,7 @@ function run_a_script() {
     (
         trap "" HUP
         exec 0</dev/null
-        exec 1> >(tee $output_tty > "$script_temp_std_file")
+        exec 1> >(tee $ROOT_TTY > "$script_temp_std_file")
         exec 2>&1
         eval "${run_cmd}" > $script_temp_file
         echo $? > $script_temp_exit_code
