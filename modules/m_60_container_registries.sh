@@ -1,6 +1,103 @@
 #!/bin/bash
 
 ############################################################
+# Given a container registry and a container image, build the full image name to include any prefixing
+############################################################
+function get_image_name(){
+
+    local registry=""
+    local repo=""
+    local returnResult=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --registry)
+                shift
+                registry=$1
+                ;;
+            --repo)
+                shift
+                repo=$1
+                ;;
+            --result)
+                shift
+                returnResult=$1
+                ;;
+            *)
+                echo "Unknown parameter '$1'"
+                exit 1
+               ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${container_registry}" ]] || [[ -z "${repo}" ]]  || [[ -z "${returnResult}" ]]; then
+        exit_with_error "Missing a parameter.  Please use function like check_for_repo_prefix --registry \"registry\" --repo \"repo\" --result \"returnResult\".  Please supply all parameters."
+    fi
+
+    check_for_repo_prefix_for_registry --registry "${registry}" --result repo_prefix
+
+    if [[ -n "${repo_prefix}" ]]; then
+        debug_log "Repository Prefix '${repo_prefix}' found for ${registry}.  Returning '${repo_prefix}/${repo}'"
+        eval "$returnResult='${registry}/${repo_prefix}/${repo}'"
+    else
+        debug_log "No Repository Prefix found for ${registry}.  Returning '${repo}'"
+        eval "$returnResult='${registry}/${repo}'"
+    fi
+
+}
+
+############################################################
+# Check if we need to add a prefix to the repo based on the supplied container registry
+############################################################
+function check_for_repo_prefix_for_registry(){
+
+    local registry=""
+    local repo=""
+    local returnResult=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --registry)
+                shift
+                registry=$1
+                ;;
+            --result)
+                shift
+                returnResult=$1
+                ;;
+            *)
+                echo "Unknown parameter '$1'"
+                exit 1
+               ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${container_registry}" ]] || [[ -z "${returnResult}" ]]; then
+        exit_with_error "Missing a parameter.  Please use function like check_for_repo_prefix --registry \"registry\" --repo \"repo\" --result \"returnResult\".  Please supply all parameters."
+    fi
+
+    if [[ ! -f "${SPACEFX_DIR}/tmp/config/spacefx-config.json" ]]; then
+        warn_log "Configuration file not found.  Running '_generate_spacefx_config_json' to generate it."
+        _generate_spacefx_config_json
+    fi
+
+    # Check if our destination repo has a repositoryPrefix
+    run_a_script "jq -r '.config.containerRegistries[] | select(.url == \"${registry}\") | if (has(\"repositoryPrefix\")) then .repositoryPrefix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" repo_prefix
+
+    if [[ -n "${repo_prefix}" ]]; then
+        debug_log "Repository Prefix '${repo_prefix}' found for ${registry}."
+        eval "$returnResult='${repo_prefix}'"
+    else
+        debug_log "No Repository Prefix found for ${registry}."
+        eval "$returnResult=''"
+    fi
+
+}
+
+
+############################################################
 # Check if we need to add a prefix to the repo based on the supplied container registry
 ############################################################
 function check_for_repo_prefix(){
@@ -35,13 +132,7 @@ function check_for_repo_prefix(){
         exit_with_error "Missing a parameter.  Please use function like check_for_repo_prefix --registry \"registry\" --repo \"repo\" --result \"returnResult\".  Please supply all parameters."
     fi
 
-    if [[ ! -f "${SPACEFX_DIR}/tmp/config/spacefx-config.json" ]]; then
-        warn_log "Configuration file not found.  Running '_generate_spacefx_config_json' to generate it."
-        _generate_spacefx_config_json
-    fi
-
-    # Check if our destination repo has a repositoryPrefix
-    run_a_script "jq -r '.config.containerRegistries[] | select(.url == \"${registry}\") | if (has(\"repositoryPrefix\")) then .repositoryPrefix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" repo_prefix
+    check_for_repo_prefix_for_registry --registry "${registry}" --result repo_prefix
 
     if [[ -n "${repo_prefix}" ]]; then
         # Check if we already prefixed the repo name
