@@ -12,6 +12,63 @@ env:
   ARTIFACT_PATH: ./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
 jobs:
+
+  test-dev:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
+      with:
+        oras_version: 0.16.0
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+
+    - name: Build and publish devcontainer feature
+      shell: bash
+      run: |
+        echo "Running  dev_cluster.sh test..."
+
+        bash ./tests/dev_cluster.sh
+
+  test-prod:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
+      with:
+        oras_version: 0.16.0
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+
+    - name: Build and publish devcontainer feature
+      shell: bash
+      run: |
+        echo "Running  prod_cluster.sh test..."
+        bash ./tests/prod_cluster.sh
+
+
   build-publish-feature:
     runs-on: ubuntu-latest
 
