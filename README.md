@@ -48,6 +48,33 @@ Development deploments are intended to experiment and develop a payload applicat
 TODO: Add steps to include the feature
 
 
+## Testing
+Test scripts for the Microsoft Azure Orbital Space SDK are available at [./tests](https://github.com/microsoft/azure-orbital-space-sdk-setup/tree/main/tests).  The scripts are atomic and idempotent; they are intended to be run on a host from within this repository.  Successful test will have a zero (0) exit code; failed tests will return a non-zero exit code.  Example a successful test:
+
+```bash
+spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ ./tests/prod_cluster.sh
+...
+// output abbreviated //
+...
+-------------------------------
+prod_cluster.sh - Test successful
+
+spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
+0
+```
+
+```bash
+spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ ./tests/dev_cluster.sh
+...
+// output abbreviated //
+...
+-------------------------------
+dev_cluster.sh - Test successful
+
+spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
+0
+```
+
 ## Building the Microsoft Azure Orbital DevContainer Feature
 Microsoft Azure Orbital Space SDK is centrally deployed by a custom devcontainer feature.
 
