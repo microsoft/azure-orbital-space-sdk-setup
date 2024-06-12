@@ -14,7 +14,7 @@ global:
     logLevel: debug
   debugShim:
     command: bash
-    keepAliveRelativePath: tmp/debugShim_keepAlive.sh
+    keepAliveRelativePath: .git/spacefx-dev/debugShim_keepAlive.sh
     resources:
       memory:
         limit: 16G

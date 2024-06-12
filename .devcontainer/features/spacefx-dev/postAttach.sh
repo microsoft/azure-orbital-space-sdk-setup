@@ -102,6 +102,7 @@ function wipe_bin_and_obj_directories() {
 ############################################################
 function generate_debugshims(){
     info_log "START: ${FUNCNAME[0]}"
+
     if [[ -n "${DEBUG_SHIM_PRE_YAML_FILE}" ]]; then
         info_log "Running DEBUG_SHIM_PRE_YAML_FILE '${DEBUG_SHIM_PRE_YAML_FILE}'..."
         if [[ ! -f "${DEBUG_SHIM_PRE_YAML_FILE}" ]]; then
@@ -291,6 +292,8 @@ function main() {
     wipe_bin_and_obj_directories
 
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
+        [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev"
+        [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && cp /spacefx-dev/debugShim_keepAlive.sh "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh"
         generate_debugshims
         create_symlink_to_debugger
         run_user_requested_yamls

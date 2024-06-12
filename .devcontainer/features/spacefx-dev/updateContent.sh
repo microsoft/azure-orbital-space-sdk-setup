@@ -35,7 +35,6 @@ set -e
 
 ## Provision the spacefx-dev directory with the latest files from spacesdk-setup
 cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
-[[ ! -f "${SPACEFX_DIR_FOR_HOST:?}/tmp/debugShim_keepAlive.sh" ]] && cp /spacefx-dev/debugShim_keepAlive.sh "${SPACEFX_DIR_FOR_HOST:?}/tmp/debugShim_keepAlive.sh"
 set +e
 
 # Directory is setup and populated.  Now we can run the main script
