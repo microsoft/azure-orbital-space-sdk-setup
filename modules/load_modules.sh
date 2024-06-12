@@ -99,7 +99,6 @@ _check_for_coresvc_registry_hosts_entry
 
 # Load the modules and function used by devcontainers
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
-    CONTAINER_ID=${HOSTNAME}
     _collect_container_info
     _update_bashrc
     _convert_options_to_arrays
