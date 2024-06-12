@@ -114,12 +114,12 @@ function _app_install() {
             else
                 # We have internet connectivity.  Go ahead and download it
                 echo "...app '${app_name}' not found at '${source}'.  Starting download from '${url}' to '${destination}'..."
-                run_a_script "curl --fail --create-dirs --output ${destination} -L ${url}" --disable_log
+                run_a_script "curl --silent --fail --create-dirs --output ${destination} -L ${url}" --disable_log
             fi
         else
             # App is already downloaded.  Copy it to the destination
             echo "...app '${app_name}' found at '${source}'.  Copying to '${destination}'..."
-            cp ${source} ${destination}
+            run_a_script "cp ${source} ${destination}"
         fi
 
         run_a_script "chmod +x ${destination}" --disable_log
@@ -182,7 +182,7 @@ function _app_install_for_helm(){
     source="${SPACEFX_DIR}/bin/${HOST_ARCHITECTURE}/helm/${VER_HELM}/helm"
     url="https://get.helm.sh/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz"
 
-    run_a_script "mktemp -d" _helm_install_temp_dir
+    run_a_script "mktemp -d" _helm_install_temp_dir --disable_log
 
     destination="/usr/local/bin/helm"
 
@@ -199,16 +199,16 @@ function _app_install_for_helm(){
         else
             # We have internet connectivity.  Go ahead and download it
             echo "...app '${app_name}' not found at '${source}'.  Starting download from '${url}' to '${destination}'..."
-            run_a_script "curl --fail --create-dirs --output ${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz -L ${url}" --disable_log
+            run_a_script "curl --silent --fail --create-dirs --output ${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz -L ${url}" --disable_log
 
-            run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm"
-            run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}"
-            run_a_script "rm ${_helm_install_temp_dir} -rf"
+            run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm" --disable_log
+            run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}" --disable_log
+            run_a_script "rm ${_helm_install_temp_dir} -rf" --disable_log
         fi
     else
         # App is already downloaded.  Copy it to the destination
         echo "...app '${app_name}' found at '${source}'.  Copying to '${destination}'..."
-        run_a_script "cp ${source} ${destination}"
+        run_a_script "cp ${source} ${destination}" --disable_log
     fi
 
     run_a_script "chmod +x ${destination}" --disable_log

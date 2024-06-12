@@ -5,16 +5,169 @@
   "description": "Deploys the environmental configuration used for developing payload application and plugins within the Azure Orbital Framework",
   "documentationURL": "https://github.com/microsoft/azure-orbital-space-sdk-setup",
   "options": {
+    "addl_debug_shim_suffixes": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list of suffixes to create extra debugshims.  Will be forced to lowercase"
+    },
+    "auto_inject_python_dev_dependencies": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatically add any spacefx-dev python dependencies to pyproject.toml"
+    },
+    "app_name": {
+      "type": "string",
+      "proposals": [
+        "my-awesome-payload-app"
+      ],
+      "default": "",
+      "description": "Select or enter the name of your app"
+    },
+    "app_type": {
+      "type": "string",
+      "enum": [
+        "none",
+        "framework-core",
+        "sdk",
+        "sdk-service",
+        "payloadapp",
+        "hostsvc-sensor-plugin",
+        "hostsvc-logging-plugin",
+        "hostsvc-link-plugin",
+        "hostsvc-position-plugin",
+        "platform-mts-plugin",
+        "platform-deployment-plugin",
+        "vth-plugin"
+      ],
+      "default": "payloadapp",
+      "description": "Choose the app type you're creating.  These options will automatically calculate extra build artifacts to download and stage to enable the debugshim.  Choose 'none' to skip auto download of artifacts"
+    },
+    "cluster_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Deploy a k3s cluster if one is not available"
+    },
+    "addl_config_yamls": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list of yamls to include in spacefx_config.  Must use full paths as seen from the container.  Will be added and processed in alphabetical order.  Essentially copies the file to SPACEFX_DIR/config and regens spacefx-config.json"
+    },
+    "container_registry_login_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Disables auto-login to container registries (useful for advanced login scenarios)"
+    },
+    "container_registry": {
+      "type": "string",
+      "default": "spacefx.azurecr.io",
+      "description": "The container registry to look for spacefx artifacts"
+    },
+    "deploy_data_generator": {
+      "type": "string",
+      "enum": [
+        "",
+        "image_provider",
+        "star_viewer",
+        "planetary_computer"
+      ],
+      "default": "",
+      "description": "Deploy a sample data generator via env-config/samples/datagenerator/deploy_data_generator.sh"
+    },
+    "debug_shim_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "Deploys the debug shim.  If false, any debug shim components and triggers are disabled.  This is useful if you want to deploy the cluster, but not for a payload app"
+    },
+    "debug_shim_pre_yaml_file": {
+      "type": "string",
+      "default": "",
+      "description": "Path to a yaml file to run before generating the debug shim"
+    },
+    "debug_shim_post_yaml_file": {
+      "type": "string",
+      "default": "",
+      "description": "Path to a yaml file to run after generating the debug shim"
+    },
+    "dev_language": {
+      "type": "string",
+      "enum": [
+        "dotnet",
+        "python"
+      ],
+      "default": "dotnet",
+      "description": "Choose the development language being used"
+    },
+    "download_artifacts": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list of build artifacts to download.  Provide just the filename of the artifact.  i.e. 'Common.proto,Link.proto'.  Files are passed to _env-config_ /scripts/stage/stage_build_artifact.sh to download and stage the artifact from the container registry"
+    },
+    "dotnet_sdk_version": {
+      "type": "string",
+      "default": "6.0.414",
+      "description": "Dotnet version to install if needed"
+    },
+    "env_config_repo": {
+      "type": "string",
+      "default": "env/config",
+      "description": "Modify the env_config_repo value for downloading and initializing a cluster with Microsoft Azure Orbital Space SDK"
+    },
+    "extra_packages": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list of packages to install to both the devcontainer and the debugshim.  Essentially triggers an apt-get install before the debugshim image is packaged up and mounted in kubernetes"
+    },
+    "env_extract": {
+      "type": "boolean",
+      "default": true,
+      "description": "Enable freshness check of env_config_repo to validate you're pulling the latest version.  Disabling this is useful if you've pre-downloaded env_config_repo and want to speed up the build process (like in a pipeline build)"
+    },
+    "force_spacefx_config_regen": {
+      "type": "boolean",
+      "default": false,
+      "description": "If true, will force spacefx_config to be regenned.  Useful if you're getting a new config file via download_artifacts"
+    },
+    "log_level": {
+      "type": "string",
+      "enum": [
+        "ERROR",
+        "WARN",
+        "INFO",
+        "DEBUG",
+        "TRACE"
+      ],
+      "default": "DEBUG",
+      "description": "Choose the log level for scripts to use"
+    },
+    "pull_containers": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list of containers to download into docker and core-registry"
+    },
+    "run_yamls": {
+      "type": "string",
+      "default": "",
+      "description": "A comma-seperated list yaml paths to run"
+    },
+    "spacefx_env": {
+      "type": "string",
+      "default": "spacefx.env",
+      "description": "Provide the spacefx env file to use for env-config"
+    },
     "spacefx_dir": {
       "type": "string",
       "default": "/var/spacedev",
       "description": "Directory to output the contents of env-config"
     },
-    "cluster_enabled": {
-      "type": "boolean",
-      "default": true,
-      "description": "Optionally deploy a local Kubernetes cluster using k3s"
-    },
+    "spacefx_version": {
+      "type": "string",
+      "enum": [
+        "0.11.0",
+        "latest"
+      ],
+      "default": "latest",
+      "description": "Choose the version of the Azure Orbital Space SDK to deploy"
+    }
   },
   "entrypoint": "",
   "customizations": {
@@ -40,12 +193,19 @@
       "source": "/var/run/docker.sock",
       "target": "/var/run/docker-host.sock",
       "type": "bind"
+    },
+    {
+      "source": "vscode-server-cache",
+      "target": "/root/.vscode-server",
+      "type": "volume"
     }
   ],
   "privileged": true,
   "containerEnv": {
     "KUBECONFIG": "/devfeature/k3s-on-host/k3s.devcontainer.yaml",
-    "INSTALLDOCKERBUILDX": "false"
+    "PATH": "/root/.dotnet/:/vsdbg/:${PATH}",
+    "INSTALLDOCKERBUILDX": "false",
+    "SPACESDK_CONTAINER": "true"
   },
   "dependsOn":{
     "ghcr.io/microsoft/devcontainers/features/k3s-on-host":{
