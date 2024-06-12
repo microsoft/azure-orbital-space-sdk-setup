@@ -22,7 +22,7 @@ SPACEFX_UPDATE_END" --disable_log
 
     # Generate the container info file
     if [[ ! -f "${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json" ]]; then
-        run_a_script "docker inspect ${CONTAINER_ID} > ${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json"
+        run_a_script_on_host "docker inspect ${CONTAINER_ID} > ${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json"
     fi
 
     run_a_script "cat ${SPACEFX_DEV_ENV}" _spacefx_dev_env --disable_log
