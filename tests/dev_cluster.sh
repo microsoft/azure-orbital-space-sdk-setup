@@ -7,7 +7,7 @@
 #
 #  "bash ./tests/dev_cluster.sh"
 set -e
-
+SCRIPT_NAME=$(basename "$0")
 echo "Microsoft Azure Orbital Space SDK - Development Cluster Test"
 
 if [[ -d "/var/spacedev" ]]; then
@@ -33,5 +33,5 @@ echo ""
 echo ""
 echo ""
 echo "-------------------------------"
-echo "Test successful"
+echo "${SCRIPT_NAME} - Test successful"
 set +e

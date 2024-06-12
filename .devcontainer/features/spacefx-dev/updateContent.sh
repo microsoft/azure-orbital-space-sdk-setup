@@ -44,8 +44,6 @@ function main() {
 
     run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh"
     run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
-    add_ca_cert_to_trusted_root_authorities
-    add_hosts_entry_for_coresvc_registry
 
 }
 

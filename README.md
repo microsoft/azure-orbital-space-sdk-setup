@@ -2,9 +2,54 @@
 
 [![spacefx-dev-build-publish](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml/badge.svg)](https://github.com/microsoft/azure-orbital-space-sdk-setup/actions/workflows/devcontainer-feature-build-publish.yml)
 
-## Build and Deploying DevContainer Feature
+This repository hosts the configuration and scripts to used to deploy the Azure Orbital Space SDK to an environment (including DevContainer and host environment). These are components to be mixed-and-matched to achieve the desired state, and are intended to be centralized to accelerate new deployments and configurations.
 
-This devcontainer feature can be built and deployed using the devcontainer CLI.
+## Deployment
+Deploying the Microsoft Azure Orbital Space SDK is done one of two ways: Production and Development.
+
+### Production Deployment
+Production deploments are intended to run on a satellite with an emphasis on reduced size and reduced logging.  Follow the below steps to deploy the production configuration
+
+1.  Stage the artifacts and containers for the Microsoft Azure Orbital Space SDK
+    ```bash
+    # Clone the repo
+    git clone https://github.com/microsoft/azure-orbital-space-sdk-setup
+    cd ./azure-orbital-space-sdk-setup
+
+    # Initialize /var/spacedev
+    ./.vscode/copy_to_spacedev.sh
+
+    # Stage all the artifacts and containers
+    /var/spacedev/scripts/stage_spacefx.sh
+
+    # Or specify the architecture to download a different architecture
+    /var/spacedev/scripts/stage_spacefx.sh --architecture arm64
+
+    [[ ! -d "./output" ]] && sudo mkdir ./output
+    sudo tar -czf ./output/msft_azure_orbital_space_sdk.tar.gz -C /var/spacedev .
+    ```
+
+1.  Copy the `./output/msft_azure_orbital_space_sdk.tar.gz` to the target hardware / satellite / host
+
+1.  Deploy the Microsoft Azure Orbital Space SDK
+    ```bash
+    # Extract the Microsoft Azure Orbital Space SDK to /var/spacedev
+    sudo mkdir -p /var/spacedev
+    sudo chown -R "${USER:-$(id -un)}" /var/spacedev
+    sudo tar -xzvf msft_azure_orbital_space_sdk.tar.gz -C /var/spacedev
+
+    # Deploy the Microsoft Azure Orbital Space SDK
+    /var/spacedev/scripts/deploy_spacefx.sh
+    ```
+
+### Developmnt
+Development deploments are intended to experiment and develop a payload application / plugin with an emphasis on accelerated deployment and more logging.  Follow the below steps to deploy the development configuration
+
+TODO: Add steps to include the feature
+
+
+## Building the Microsoft Azure Orbital DevContainer Feature
+Microsoft Azure Orbital Space SDK is centrally deployed by a custom devcontainer feature.
 
 ### Install devcontainer CLI
 ```bash
