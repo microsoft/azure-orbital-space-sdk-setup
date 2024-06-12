@@ -11,7 +11,9 @@ function _collect_container_info() {
     fi
 
     if [[ -z "${CONTAINER_ID}" ]]; then
-        CONTAINER_ID=${HOSTNAME}
+        run_a_script "docker inspect $(docker ps -aq)" _all_container_info
+        run_a_script "jq -r '.[] | select(.Config.Hostname == \"${HOSTNAME}\") | .Id'  <<< \${_all_container_info}" CONTAINER_ID
+
         debug_log "Adding CONTAINER_ID '${CONTAINER_ID}' to ${SPACEFX_DEV_ENV}"
         run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
 export CONTAINER_ID=${CONTAINER_ID}
@@ -22,7 +24,7 @@ SPACEFX_UPDATE_END" --disable_log
 
     # Generate the container info file
     if [[ ! -f "${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json" ]]; then
-        run_a_script_on_host "docker inspect ${CONTAINER_ID} > ${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json"
+        run_a_script "docker inspect ${CONTAINER_ID} > ${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json"
     fi
 
     run_a_script "cat ${SPACEFX_DEV_ENV}" _spacefx_dev_env --disable_log
