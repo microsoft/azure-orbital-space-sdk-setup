@@ -151,8 +151,9 @@ function purge_docker() {
 function main() {
     show_header
 
-    remove_k3s
     purge_docker
+    remove_k3s
+
 
     run_a_script "rm -rf ${SPACEFX_DIR:?}"
 
