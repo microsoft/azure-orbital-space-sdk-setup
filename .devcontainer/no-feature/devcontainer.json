@@ -1,12 +1,12 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+// A devcontainer definition to enable development against the Azure Orbital Space SDK - Setup repo without running teh Azure Orbital Space SDK - DevContainer Feature.
+// README at: https://github.com/microsoft/azure-orbital-space-sdk-setup
 {
 	"name": "no-feature",
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu22.04",
 	"runArgs": [
 		"--name",
 		"no-feature"
-	],	
+	],
 	"hostRequirements": {
 		"cpus": 8,
 		"memory": "8gb"

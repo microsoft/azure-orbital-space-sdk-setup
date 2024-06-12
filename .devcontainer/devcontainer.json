@@ -1,5 +1,4 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/dotnet
+// README at: https://github.com/microsoft/azure-orbital-space-sdk-setup
 {
 	"name": "spacefx-dev",
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu22.04",

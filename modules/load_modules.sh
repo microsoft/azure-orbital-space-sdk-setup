@@ -101,7 +101,6 @@ _check_for_coresvc_registry_hosts_entry
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
     CONTAINER_ID=${HOSTNAME}
     _collect_container_info
-    _calculate_service_group
     _update_bashrc
     _convert_options_to_arrays
 fi

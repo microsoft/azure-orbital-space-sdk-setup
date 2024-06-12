@@ -89,11 +89,11 @@ function remove_k3s() {
     if [[ "${has_cmd}" == true ]]; then
         info_log "...pausing containers..."
 
-        run_a_script "docker ps -q" all_docker_containers
+        run_a_script "docker ps -q" all_docker_containers --disable_log
 
         for container_id in $all_docker_containers; do
             info_log "...pausing container id ${container_id}..."
-            run_a_script "docker pause ${container_id}" --ignore_error
+            run_a_script "docker pause ${container_id}" --ignore_error --disable_log
         done
     fi
 
@@ -127,23 +127,23 @@ function purge_docker() {
 
     # Kill the Docker container processes
     for pid in $docker_pids; do
-        run_a_script "kill -9 $pid"
+        run_a_script "kill -9 $pid" --disable_log
     done
 
     info_log "Removing all docker containers...."
-    run_a_script "docker ps -a -q" all_docker_containers
+    run_a_script "docker ps -a -q" all_docker_containers --disable_log
 
     for container_id in $all_docker_containers; do
         info_log "...removing container id ${container_id}..."
-        run_a_script "docker rm ${container_id} -f" results --ignore_error
+        run_a_script "docker rm ${container_id} -f" results --ignore_error --disable_log
     done
 
     info_log "Checking if containers need another pass..."
-    run_a_script "docker ps -a -q" second_pass_docker_containers
+    run_a_script "docker ps -a -q" second_pass_docker_containers --disable_log
 
     for container_id in $second_pass_docker_containers; do
         info_log "...removing container id ${container_id}..."
-        run_a_script "docker rm ${container_id} -f" results --ignore_error
+        run_a_script "docker rm ${container_id} -f" results --ignore_error --disable_log
     done
 
     info_log "...all docker containers removed."
