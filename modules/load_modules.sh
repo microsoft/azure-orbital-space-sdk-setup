@@ -6,8 +6,6 @@ MODULE_DIR=$(dirname "$(realpath "$BASH_SOURCE")")
 # Calculate the env directory
 ENV_DIR="$(realpath "$(dirname ${MODULE_DIR})")/env"
 
-
-
 # Source our ENV file so it's used for all files
 source "${ENV_DIR}/spacefx.env"
 
@@ -25,6 +23,8 @@ source "${MODULE_DIR}/m_60_container_registries.sh"
 source "${MODULE_DIR}/m_70_certificates.sh"
 source "${MODULE_DIR}/m_80_coresvc_registry_hosts.sh"
 source "${MODULE_DIR}/m_90_wait_for_deployment.sh"
+source "${MODULE_DIR}/m_100_collect_container_info.sh"
+source "${MODULE_DIR}/m_110_debugshim.sh"
 
 
 ############################################################
@@ -96,3 +96,11 @@ _generate_spacefx_config_json
 
 _update_regctl_config
 _check_for_coresvc_registry_hosts_entry
+
+# Load the modules and function used by devcontainers
+if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
+    CONTAINER_ID=${HOSTNAME}
+    _collect_container_info
+    _update_bashrc
+    _convert_options_to_arrays
+fi

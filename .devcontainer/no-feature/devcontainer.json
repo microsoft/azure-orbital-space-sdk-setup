@@ -1,17 +1,12 @@
+// A devcontainer definition to enable development against the Azure Orbital Space SDK - Setup repo without running teh Azure Orbital Space SDK - DevContainer Feature.
 // README at: https://github.com/microsoft/azure-orbital-space-sdk-setup
 {
-	"name": "spacefx-dev",
+	"name": "no-feature",
 	"image": "mcr.microsoft.com/devcontainers/base:ubuntu22.04",
 	"runArgs": [
 		"--name",
-		"spacefx-dev"
+		"no-feature"
 	],
-	"features": {
-		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {
-			"app_name": "spacesdk-setup",
-			"cluster_enabled": "false"
-		}
-	},
 	"hostRequirements": {
 		"cpus": 8,
 		"memory": "8gb"
@@ -102,6 +97,5 @@
 			}
 		}
 	},
-	"remoteUser": "root",
-	"initializeCommand": "${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output_dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup"
+	"remoteUser": "root"
 }

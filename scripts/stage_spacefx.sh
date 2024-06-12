@@ -233,6 +233,37 @@ function stage_spacefx_service_images(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Stage spacefx-base
+############################################################
+function stage_container_images(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local containers_to_stage=""
+
+    if [[ ${#CONTAINERS[@]} -eq 0 ]]; then
+        info_log "...no containers requested.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    for i in "${!CONTAINERS[@]}"; do
+        CONTAINER=${CONTAINERS[i]}
+        info_log "Checking container registries for ${CONTAINER}..."
+        find_registry_for_image "${CONTAINER}" _container_registry
+
+        if [[ -z "${_container_registry}" ]]; then
+            exit_with_error "Unable to find a container registry with container image '${CONTAINER}'.  Please recheck image name, and configured container registries in your config yamls"
+        fi
+
+        containers_to_stage="${containers_to_stage} --image ${_container_registry}/${CONTAINER}"
+    done
+
+    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_container_image.sh --architecture ${ARCHITECTURE} ${containers_to_stage}"
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
@@ -276,6 +307,10 @@ function main() {
     [[ "${NVIDIA_GPU_PLUGIN}" == true ]] && extra_args="${extra_args} --nvidia-gpu-plugin"
     run_a_script "${SPACEFX_DIR}/scripts/stage/stage_chart_dependencies.sh --architecture ${ARCHITECTURE} ${extra_args}"
     info_log "...successfully staged chart dependencies"
+
+    info_log "Staging extra container images..."
+    stage_container_images
+    info_log "...successfully staged extra container images"
 
 
 
