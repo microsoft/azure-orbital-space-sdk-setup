@@ -52,7 +52,7 @@ spec:
           image: "{{ $serviceValues.repository }}:latest"
           imagePullPolicy: "Never"
           command: [{{ $globalValues.debugShim.command | quote }}]
-          {{- $containerArgs := printf "%s/%s" $serviceValues.workingDir $globalValues.debugShim.keepAliveRelativePath }}
+          {{- $containerArgs := printf "%s/%s" $globalValues.spacefxDirectories.base $globalValues.debugShim.keepAliveRelativePath }}
           args:
             - {{ $containerArgs }}
         {{- else }}

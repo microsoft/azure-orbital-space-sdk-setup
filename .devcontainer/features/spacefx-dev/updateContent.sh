@@ -28,12 +28,14 @@ set -e
 
 ## Create the spacefx-dev directory on the host if it doesn't exist
 [[ ! -d "${SPACEFX_DIR_FOR_HOST:?}" ]] && mkdir -p "${SPACEFX_DIR_FOR_HOST:?}"
+[[ ! -d "${SPACEFX_DIR_FOR_HOST:?}/tmp" ]] && mkdir -p "${SPACEFX_DIR_FOR_HOST:?}/tmp"
 
 ## Create a symlink on the devcontainer to the host directory so the directory paths match on both
 [[ ! -L "${SPACEFX_DIR}" ]] && ln -s "${SPACEFX_DIR_FOR_HOST:?}" "${SPACEFX_DIR:?}"
 
 ## Provision the spacefx-dev directory with the latest files from spacesdk-setup
 cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
+[[ ! -f "${SPACEFX_DIR_FOR_HOST:?}/tmp/debugShim_keepAlive.sh" ]] && cp ./debugShim_keepAlive.sh "${SPACEFX_DIR_FOR_HOST:?}/tmp/debugShim_keepAlive.sh"
 set +e
 
 # Directory is setup and populated.  Now we can run the main script

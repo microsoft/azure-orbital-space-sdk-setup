@@ -14,7 +14,7 @@ global:
     logLevel: debug
   debugShim:
     command: bash
-    keepAliveRelativePath: .git/cache/_keepAlive.sh
+    keepAliveRelativePath: tmp/debugShim_keepAlive.sh
     resources:
       memory:
         limit: 16G

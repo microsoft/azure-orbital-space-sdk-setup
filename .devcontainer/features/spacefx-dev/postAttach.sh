@@ -111,7 +111,11 @@ function generate_debugshims(){
     fi
 
     for debug_shim in "${DEBUG_SHIMS[@]}"; do
-        generate_debugshim --debug_shim "${debug_shim}"
+        if [[ "$debug_shim" == "$APP_NAME"* ]]; then
+            generate_debugshim --debug_shim "${debug_shim}"
+        else
+            generate_debugshim --debug_shim "${APP_NAME}-${debug_shim}"
+        fi
     done
 
 
