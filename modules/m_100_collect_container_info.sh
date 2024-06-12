@@ -11,6 +11,7 @@ function _collect_container_info() {
     fi
 
     if [[ -z "${CONTAINER_ID}" ]]; then
+        debug_log "Calculating docker container ID for '${HOSTNAME}'"
         run_a_script "docker inspect $(docker ps -aq)" _all_container_info
         run_a_script "jq -r '.[] | select(.Config.Hostname == \"${HOSTNAME}\") | .Id'  <<< \${_all_container_info}" CONTAINER_ID
 
