@@ -123,7 +123,7 @@ stage_images() {
 
             info_log "Copying '${full_image_name}' to '${destination_full_name}'..."
 
-            run_a_script "regctl image copy --platform linux/$ARCHITECTURE ${full_image_name} ${destination_full_name}"
+            run_a_script "regctl image copy --platform linux/$ARCHITECTURE ${full_image_name} ${destination_full_name}" --disable_log
 
             info_log "...successfully copied '${full_image_name}' to '${destination_full_name}'."
 

@@ -295,8 +295,8 @@ function main() {
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev"
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && cp /spacefx-dev/debugShim_keepAlive.sh "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh"
         generate_debugshims
-        create_symlink_to_debugger
-        run_user_requested_yamls
+        # create_symlink_to_debugger
+        # run_user_requested_yamls
     fi
 
     info_log "------------------------------------------"

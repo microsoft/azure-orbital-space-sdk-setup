@@ -12,9 +12,9 @@ function _collect_container_info() {
 
     if [[ -z "${CONTAINER_ID}" ]]; then
         debug_log "Calculating docker container ID for '${HOSTNAME}'"
-        run_a_script "docker ps -q | xargs" _all_container_ids
-        run_a_script "docker inspect ${_all_container_ids}" _all_container_info
-        run_a_script "jq -r '.[] | select(.Config.Hostname == \"${HOSTNAME}\") | .Id'  <<< \${_all_container_info}" CONTAINER_ID
+        run_a_script "docker ps -q | xargs" _all_container_ids --disable_log
+        run_a_script "docker inspect ${_all_container_ids}" _all_container_info  --disable_log
+        run_a_script "jq -r '.[] | select(.Config.Hostname == \"${HOSTNAME}\") | .Id'  <<< \${_all_container_info}" CONTAINER_ID  --disable_log
 
         debug_log "Adding CONTAINER_ID '${CONTAINER_ID}' to ${SPACEFX_DEV_ENV}"
         run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
@@ -33,7 +33,14 @@ SPACEFX_UPDATE_END" --disable_log
 
     # Check and add the HOST_FOLDER to the dev env file
     if [[ "$_spacefx_dev_env" != *"HOST_FOLDER"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Config.Labels.\"devcontainer.local_folder\"'" HOST_FOLDER
+        # Codespaces calculates differently for the host folder
+        if [[ "$HOSTNAME" == "codespaces"* ]]; then
+            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].HostConfig.Mounts[0].Source'" HOST_FOLDER
+        else
+            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Config.Labels.\"devcontainer.local_folder\"'" HOST_FOLDER
+        fi
+
+
         debug_log "Adding HOST_FOLDER '${HOST_FOLDER}' to ${SPACEFX_DEV_ENV}"
         run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
 export HOST_FOLDER=${HOST_FOLDER}
@@ -65,7 +72,13 @@ SPACEFX_UPDATE_END" --disable_log
 
     # Check and add the CONTAINER_WORKING_DIR to the dev env file
     if [[ "$_spacefx_dev_env" != *"CONTAINER_WORKING_DIR"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Mounts[] | select(.Source == \"${HOST_FOLDER}\") | .Destination'" CONTAINER_WORKING_DIR
+        # codespaces containers are always the first mount
+        if [[ "$HOSTNAME" == "codespaces"* ]]; then
+            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].HostConfig.Mounts[0].Target'" CONTAINER_WORKING_DIR
+        else
+            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Mounts[] | select(.Source == \"${HOST_FOLDER}\") | .Destination'" CONTAINER_WORKING_DIR
+        fi
+
 
         debug_log "Adding CONTAINER_WORKING_DIR '${CONTAINER_WORKING_DIR}' to ${SPACEFX_DEV_ENV}"
         run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
