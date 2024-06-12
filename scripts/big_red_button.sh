@@ -76,20 +76,6 @@ function remove_k3s() {
         run_a_script "systemctl stop k3s"
     fi
 
-    # If we're using docker, then pause all the docker containers so k3s uninstalls faster
-    is_cmd_available "docker" has_cmd
-    # shellcheck disable=SC2154
-    if [[ "${has_cmd}" == true ]]; then
-        info_log "...pausing containers..."
-
-        run_a_script "docker ps -q" all_docker_containers --disable_log
-
-        for container_id in $all_docker_containers; do
-            info_log "...pausing container id ${container_id}..."
-            run_a_script "docker pause ${container_id}" --ignore_error --disable_log
-        done
-    fi
-
     info_log "...uninstalling k3s..."
     [[ -f "/usr/local/bin/k3s-uninstall.sh" ]] && run_a_script "/usr/local/bin/k3s-uninstall.sh"
 
@@ -114,6 +100,13 @@ function purge_docker() {
         return
     fi
 
+    run_a_script "docker ps -q" all_docker_containers --disable_log
+
+    for container_id in $all_docker_containers; do
+        info_log "...pausing container id ${container_id}..."
+        run_a_script "docker pause ${container_id}" --ignore_error --disable_log
+    done
+
     info_log "Stoping all docker containers..."
 
     docker_pids=$(ps -e | grep 'containerd-shim' | awk '{print $1}')
@@ -127,14 +120,6 @@ function purge_docker() {
     run_a_script "docker ps -a -q" all_docker_containers --disable_log
 
     for container_id in $all_docker_containers; do
-        info_log "...removing container id ${container_id}..."
-        run_a_script "docker rm ${container_id} -f" results --ignore_error --disable_log
-    done
-
-    info_log "Checking if containers need another pass..."
-    run_a_script "docker ps -a -q" second_pass_docker_containers --disable_log
-
-    for container_id in $second_pass_docker_containers; do
         info_log "...removing container id ${container_id}..."
         run_a_script "docker rm ${container_id} -f" results --ignore_error --disable_log
     done

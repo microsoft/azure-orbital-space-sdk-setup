@@ -222,7 +222,7 @@ function run_a_script_on_host() {
 
 
     if [[ "${log_enabled}" == true ]]; then
-        trace_log "Running '${run_cmd}'..."
+        trace_log "Running '${run_cmd}' on host..."
     fi
 
     returnResult=$(eval "${run_cmd}" )
