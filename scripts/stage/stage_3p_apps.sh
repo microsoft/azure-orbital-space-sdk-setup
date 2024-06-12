@@ -119,9 +119,9 @@ function stage_helm(){
     info_log "...succesfully downloaded to '${tmp_filename}'.  Extracting to '${destination_dir}'..."
 
     run_a_script "tar -xf '${tmp_filename}' --directory '${destination_dir}' linux-${ARCHITECTURE}/helm"
-    run_a_script "mv ${destination_dir}/linux-${ARCHITECTURE}/helm ${destination_dir}/helm"
-    run_a_script "rm ${destination_dir}/linux-${ARCHITECTURE} -rf"
-    run_a_script "rm ${tmp_filename}"
+    run_a_script "mv ${destination_dir}/linux-${ARCHITECTURE}/helm ${destination_dir}/helm" --disable_log
+    run_a_script "rm ${destination_dir}/linux-${ARCHITECTURE} -rf" --disable_log
+    run_a_script "rm ${tmp_filename}" --disable_log
 
     run_a_script "chmod 0755 ${destination_dir}/helm"
 

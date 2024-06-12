@@ -152,14 +152,100 @@ function run_a_script() {
     fi
 
     # Cleanup by removing the temp file
-    # [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
-    # [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
-    # [[ -f "$script_temp_exit_code" ]] && rm "$script_temp_exit_code"
-
+    [[ -f "$script_temp_file" ]] && rm "$script_temp_file"
+    [[ -f "$script_temp_std_file" ]] && rm "$script_temp_std_file"
+    [[ -f "$script_temp_exit_code" ]] && rm "$script_temp_exit_code"
 
 }
 
 
+
+############################################################
+# Helper function to run a script on the host via the host_interface container
+# args
+# position 1     : the command to run.  i.e. "docker container ls"
+# position 2     : the variable to return the results of the script to for further processing
+# --ignore_error : allow the script to continue even if the return code is not 0
+# --disable_log  : prevent the output from writing to the log and screen
+############################################################
+function run_a_script_on_host() {
+    if [[ "$#" -eq 0 ]]; then
+        exit_with_error "Missing run script to execute.  Please use function like run_a_script 'ls /'"
+    fi
+
+    if [[ "${SPACESDK_CONTAINER}" != "true" ]]; then
+        exit_with_error "run_a_script_on_host can only be executed from a container."
+    fi
+
+    local run_script="$1"
+    local  __returnVar=$2
+    RETURN_CODE=""
+    # We're passing flags and not a return value.  Reset the return variable here
+    if [[ "${__returnVar:0:2}" == "--" ]]; then
+        __returnVar=""
+    fi
+
+    local log_enabled=true
+    local ignore_error=false
+    local env_vars=""
+    local returnResult=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --ignore_error)
+                ignore_error=true
+                ;;
+            --disable_log)
+                log_enabled=false
+                ;;
+            --env)
+                shift
+                env_vars="${env_vars} --env $1"
+                ;;
+        esac
+        shift
+    done
+
+    local run_cmd
+
+    run_cmd="docker run \
+        --quiet \
+        --privileged \
+        --tty \
+        --rm \
+        --cap-add=SYS_CHROOT \
+        --name $HOST_INTERFACE_CONTAINER \
+        --net=host --pid=host --ipc=host \
+        --volume /:/host \
+        $HOST_INTERFACE_CONTAINER_BASE \
+        chroot /host bash --login -c \"${run_script}\""
+
+
+    if [[ "${log_enabled}" == true ]]; then
+        trace_log "Running '${run_cmd}'..."
+    fi
+
+    returnResult=$(eval "${run_cmd}" )
+
+    sub_exit_code=${PIPESTATUS[0]}
+    RETURN_CODE=${sub_exit_code}
+    if [[ -n ${__returnVar} ]]; then
+        eval $__returnVar="'$returnResult'"
+    fi
+
+    if [[ "${log_enabled}" == true ]]; then
+        trace_log "...'${run_cmd}' Exit code: ${sub_exit_code}"
+        trace_log "...'${run_cmd}' Result: ${returnResult}"
+    fi
+
+    if [[ "${ignore_error}" == true ]]; then
+        return
+    fi
+
+    if [[ $sub_exit_code -gt 0 ]]; then
+        exit_with_error "Script failed.  Received return code of '${sub_exit_code}'.  Command ran: '${run_script}'.  See previous errors and retry"
+    fi
+}
 
 ############################################################
 # Parses a base64-encoded json string row and returns the value requested

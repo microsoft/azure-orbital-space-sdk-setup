@@ -10,6 +10,12 @@ SPACEFX_DIR="${SPACEFX_DIR:-"true"}"
 CLUSTER_ENABLED="${CLUSTER_ENABLED:-"true"}"
 HOST_INTERFACE_CONTAINER="host_interface"
 HOST_INTERFACE_CONTAINER_BASE="mcr.microsoft.com/devcontainers/base:ubuntu22.04"
+APP_NAME="${APP_NAME:-"na"}"
+APP_TYPE="${APP_TYPE:-"payloadapp"}"
+ADDL_DEBUG_SHIM_SUFFIXES="${ADDL_DEBUG_SHIM_SUFFIXES:-""}"
+SPACESDK_CONTAINER="${SPACESDK_CONTAINER:-"false"}"
+
+
 
 # Ensure apt is in non-interactive to avoid prompts
 export DEBIAN_FRONTEND=noninteractive
@@ -56,8 +62,8 @@ function build_dest_directory() {
 
     SPACEFX_DIR_FOR_HOST="${SPACEFX_DIR/\//\/host_}"
 
-    echo "Creating /spacefx-dev/.env file..."
-    tee /spacefx-dev/.env -a > /dev/null << UPDATE_END
+    echo "Creating /spacefx-dev/app.env file..."
+    tee /spacefx-dev/app.env -a > /dev/null << UPDATE_END
 export _REMOTE_USER=${_REMOTE_USER}
 export _REMOTE_USER_HOME=${_REMOTE_USER_HOME}
 export _CONTAINER_USER=${_CONTAINER_USER}
@@ -69,6 +75,10 @@ export K3S_ARCHITECTURE=${K3S_ARCHITECTURE}
 export HOST_INTERFACE_CONTAINER_BASE=${HOST_INTERFACE_CONTAINER_BASE}
 export SPACEFX_DIR=${SPACEFX_DIR}
 export SPACEFX_DIR_FOR_HOST=${SPACEFX_DIR_FOR_HOST}
+export SPACESDK_CONTAINER=${SPACESDK_CONTAINER}
+export APP_NAME=${APP_NAME}
+export APP_TYPE=${APP_TYPE}
+export ADDL_DEBUG_SHIM_SUFFIXES=${ADDL_DEBUG_SHIM_SUFFIXES}
 UPDATE_END
 
 
@@ -82,12 +92,12 @@ UPDATE_END
         chmod 777 "${shellFile}"
     done < <(find "/spacefx-dev" -iname "*.sh")
 
-    echo "Updating /devfeature/.env file with CLUSTER_ENABLED=${CLUSTER_ENABLED}..."
+    echo "Updating /devfeature/k3s-on-host/.env file with CLUSTER_ENABLED=${CLUSTER_ENABLED}..."
     mkdir -p /devfeature/k3s-on-host
     tee /devfeature/k3s-on-host/.env -a > /dev/null << UPDATE_END
 export CLUSTER_ENABLED=${CLUSTER_ENABLED}
 UPDATE_END
-    echo "...Successfully updated /devfeature/.env file."
+    echo "...Successfully updated /devfeature/k3s-on-host/.env file."
 
 }
 

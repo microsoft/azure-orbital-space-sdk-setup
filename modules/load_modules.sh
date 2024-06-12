@@ -6,6 +6,8 @@ MODULE_DIR=$(dirname "$(realpath "$BASH_SOURCE")")
 # Calculate the env directory
 ENV_DIR="$(realpath "$(dirname ${MODULE_DIR})")/env"
 
+
+
 # Source our ENV file so it's used for all files
 source "${ENV_DIR}/spacefx.env"
 
@@ -40,6 +42,7 @@ NEEDS_SUDO=false
 ROOT_TTY="/dev/null"
 CURRENT_TTY="$(tty)"
 INTERNET_CONNECTED=true
+APP_INSTALLS=true
 
 ############################################################
 # Arguments
@@ -67,6 +70,10 @@ while [[ "$#" -gt 0 ]]; do
             shift
             INTERNET_CONNECTED=false
             ;;
+        --no_app_installs)
+            shift
+            APP_INSTALLS=false
+            ;;
     esac
     shift
 done
@@ -78,6 +85,11 @@ _setup_initial_directories
 _log_init
 _script_start
 _calculate_host_architecture
+
+# We can't force the apps to install, so drop out so we don't run any functions that rely on the apps to be present
+if [[ "${APP_INSTALLS}" == false ]]; then
+    return
+fi
 
 _app_prereqs_validate
 _generate_spacefx_config_json
