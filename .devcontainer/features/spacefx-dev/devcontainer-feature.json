@@ -205,7 +205,9 @@
     "KUBECONFIG": "/devfeature/k3s-on-host/k3s.devcontainer.yaml",
     "PATH": "/root/.dotnet/:/vsdbg/:${PATH}",
     "INSTALLDOCKERBUILDX": "false",
-    "SPACESDK_CONTAINER": "true"
+    "SPACESDK_CONTAINER": "true",
+    "SPACEFX_DEV_ENV": "/spacefx-dev/app.env",
+    "K3S_VERSION": "v1.29.3+k3s1"
   },
   "dependsOn":{
     "ghcr.io/microsoft/devcontainers/features/k3s-on-host":{
@@ -213,5 +215,6 @@
       "criDockerd": "true"
     }
   },
-  "updateContentCommand": "/spacefx-dev/updateContent.sh"
+  "updateContentCommand": "/spacefx-dev/updateContent.sh",
+  "postAttachCommand": "/spacefx-dev/postAttach.sh"
 }
