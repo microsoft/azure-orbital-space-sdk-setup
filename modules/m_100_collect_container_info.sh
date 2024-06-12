@@ -12,7 +12,8 @@ function _collect_container_info() {
 
     if [[ -z "${CONTAINER_ID}" ]]; then
         debug_log "Calculating docker container ID for '${HOSTNAME}'"
-        run_a_script "docker inspect $(docker ps -aq)" _all_container_info
+        run_a_script "docker ps -q | xargs" _all_container_ids
+        run_a_script "docker inspect ${_all_container_ids}" _all_container_info
         run_a_script "jq -r '.[] | select(.Config.Hostname == \"${HOSTNAME}\") | .Id'  <<< \${_all_container_info}" CONTAINER_ID
 
         debug_log "Adding CONTAINER_ID '${CONTAINER_ID}' to ${SPACEFX_DEV_ENV}"
