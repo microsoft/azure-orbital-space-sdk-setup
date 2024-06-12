@@ -62,13 +62,6 @@ function remove_k3s() {
 
     info_log "Removing k3s..."
 
-    run_a_script "helm --kubeconfig ${KUBECONFIG} list --all-namespaces | grep 'csi-driver-smb'" has_smb_plugin --ignore_error
-
-    if [[ -n "${has_smb_plugin}" ]]; then
-        run_a_script "helm --kubeconfig ${KUBECONFIG} uninstall csi-driver-smb --wait --wait-for-jobs" smb_install
-    fi
-
-
     is_cmd_available "k3s" has_cmd
     # shellcheck disable=SC2154
     if [[ "${has_cmd}" == false ]]; then
