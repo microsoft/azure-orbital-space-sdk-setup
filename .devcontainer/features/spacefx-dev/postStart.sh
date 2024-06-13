@@ -31,10 +31,8 @@ set +e
 source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}"
 
 # File pointers to let the rest of the container know we've started
-run_a_script "touch /spacefx-dev/postAttach.start"
-[[ -f "/spacefx-dev/postAttach.complete" ]] && run_a_script "rm /spacefx-dev/postAttach.complete" --disable_log
-[[ -f "/spacefx-dev/debugShim.start" ]] && run_a_script "rm /spacefx-dev/debugShim.complete" --disable_log
-[[ -f "/spacefx-dev/debugShim.start" ]] && run_a_script "rm /spacefx-dev/debugShim.complete" --disable_log
+run_a_script "touch /spacefx-dev/postStart.start"
+[[ -f "/spacefx-dev/postStart.complete" ]] && run_a_script "rm /spacefx-dev/postStart.complete" --disable_log
 
 
 
@@ -51,6 +49,28 @@ function _template(){
 
     info_log "END: ${FUNCNAME[0]}"
 }
+
+############################################################
+# Install VSDebugger
+############################################################
+function check_and_install_vsdebugger(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Checking for VSDebugger ('${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/vsdbg/vsdbg')..."
+    if [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/vsdbg/vsdbg" ]]; then
+        info_log "...VSDebugger not found.  Downloading..."
+
+        run_a_script "wget -P /tmp -q https://aka.ms/getvsdbgsh" --disable_log
+        run_a_script "chmod +x /tmp/getvsdbgsh" --disable_log
+        run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/vsdbg" --disable_log
+        run_a_script "/tmp/getvsdbgsh -v latest -l ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/vsdbg"
+    fi
+
+    info_log "...VSDebugger found at '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/vsdbg/vsdbg'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
 
 ############################################################
 # Add the local nuget source to dotnet's list of sources
@@ -292,10 +312,10 @@ function main() {
     wipe_bin_and_obj_directories
 
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
-        [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev"
-        [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && cp /spacefx-dev/debugShim_keepAlive.sh "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh"
+        [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
+        [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
+        check_and_install_vsdebugger
         generate_debugshims
-        # create_symlink_to_debugger
         # run_user_requested_yamls
     fi
 
@@ -304,4 +324,4 @@ function main() {
 }
 
 main
-run_a_script "touch /spacefx-dev/postAttach.complete" --disable_log
+run_a_script "touch /spacefx-dev/postStart.complete" --disable_log

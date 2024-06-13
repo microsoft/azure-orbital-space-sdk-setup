@@ -74,7 +74,7 @@ function wait_for_deployment_deletion_by_app_id() {
     start_time=$(date +%s)
 
     # This returns any pods that are running
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
+    run_a_script "kubectl get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
 
     # This loops and waits for at least 1 pod to flip the running
     while [[ ${pods_cleaned} == false ]]; do
