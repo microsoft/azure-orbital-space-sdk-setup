@@ -12,7 +12,8 @@
 		"memory": "8gb"
 	},
 	"features": {
-		"ghcr.io/devcontainers/features/docker-outside-of-docker": {}
+		"ghcr.io/devcontainers/features/docker-outside-of-docker": {},
+		"ghcr.io/devcontainers-contrib/features/devcontainers-cli:1": {}
 	},
 	// Configure tool-specific properties.
 	"customizations": {

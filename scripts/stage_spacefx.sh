@@ -98,8 +98,13 @@ function calculate_spacefx_registry(){
 
     debug_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result SPACEFX_VERSION_TAG
+    info_log "SPACEFX_VERSION_TAG calculated as '${SPACEFX_VERSION_TAG}'"
+
     find_registry_for_image "${REGISTRY_REPO}:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
+    info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
+
     check_for_repo_prefix_for_registry --registry "${SPACEFX_REGISTRY}" --result SPACEFX_REPO_PREFIX
+    info_log "SPACEFX_REPO_PREFIX calculated as '${SPACEFX_REPO_PREFIX}'"
 
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
     info_log "SPACEFX_VERSION_TAG calculated as '${SPACEFX_VERSION_TAG}'"
@@ -123,6 +128,8 @@ function stage_coresvc_registry(){
         info_log "FINISHED: ${FUNCNAME[0]}"
         return
     fi
+
+    create_directory "${SPACEFX_DIR}/images/${ARCHITECTURE}"
 
     debug_log "Calculating registry repository name..."
     run_a_script "yq '.services.core.registry.repository' ${SPACEFX_DIR}/chart/values.yaml" REGISTRY_REPO

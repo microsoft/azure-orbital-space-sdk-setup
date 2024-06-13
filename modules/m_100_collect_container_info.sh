@@ -100,70 +100,19 @@ function _update_bashrc() {
     fi
 
     # Only update .bashrc if it's there
-    if [[ ! -f "${HOME}/.bashrc" ]]; then
+    if [[ ! -f "/root/.bashrc" ]]; then
         return
     fi
 
-    run_a_script "cat ${HOME}/.bashrc" _bashrc_contents --disable_log
+    run_a_script "cat /root/.bashrc" _bashrc_contents --disable_log
 
     # Check and add the HOST_FOLDER to the dev env file
     if [[ "$_bashrc_contents" != *"${SPACEFX_DEV_ENV}"* ]]; then
-        debug_log "Adding '${SPACEFX_DEV_ENV}' to ${SPACEFX_DEV_ENV}"
-        run_a_script "tee -a ${HOME}/.bashrc > /dev/null << SPACEFX_UPDATE_END
+        debug_log "Adding '${SPACEFX_DEV_ENV}' to /root/.bashrc"
+        run_a_script "tee -a /root/.bashrc > /dev/null << SPACEFX_UPDATE_END
 source ${SPACEFX_DEV_ENV}
 SPACEFX_UPDATE_END" --disable_log
     fi
-
-
-    # Generate the container info file
-    if [[ ! -f "${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json" ]]; then
-        run_a_script "docker inspect ${CONTAINER_ID} > ${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json"
-    fi
-
-    run_a_script "cat ${SPACEFX_DEV_ENV}" _spacefx_dev_env --disable_log
-
-    # Check and add the HOST_FOLDER to the dev env file
-    if [[ "$_spacefx_dev_env" != *"HOST_FOLDER"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Config.Labels.\"devcontainer.local_folder\"'" HOST_FOLDER
-        debug_log "Adding HOST_FOLDER '${HOST_FOLDER}' to ${SPACEFX_DEV_ENV}"
-        run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
-export HOST_FOLDER=${HOST_FOLDER}
-SPACEFX_UPDATE_END" --disable_log
-    fi
-
-    # Check and add the CONTAINER_IMAGE to the dev env file
-    if [[ "$_spacefx_dev_env" != *"CONTAINER_IMAGE"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Config.Image'" CONTAINER_IMAGE
-        debug_log "Adding CONTAINER_IMAGE '${CONTAINER_IMAGE}' to ${SPACEFX_DEV_ENV}"
-        run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
-export CONTAINER_IMAGE=${CONTAINER_IMAGE}
-SPACEFX_UPDATE_END" --disable_log
-    fi
-
-
-    # Check and add the CONTAINER_NAME to the dev env file
-    if [[ "$_spacefx_dev_env" != *"CONTAINER_NAME"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Name'" CONTAINER_NAME
-        # Remove the first character if its a slash
-        if [[ "${CONTAINER_NAME:0:1}" == "/" ]]; then
-            CONTAINER_NAME="${CONTAINER_NAME:1}"
-        fi
-        debug_log "Adding CONTAINER_NAME '${CONTAINER_NAME}' to ${SPACEFX_DEV_ENV}"
-        run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
-export CONTAINER_NAME=${CONTAINER_NAME}
-SPACEFX_UPDATE_END" --disable_log
-    fi
-
-    # Check and add the CONTAINER_WORKING_DIR to the dev env file
-    if [[ "$_spacefx_dev_env" != *"CONTAINER_WORKING_DIR"* ]]; then
-        run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Mounts[] | select(.Source == \"${HOST_FOLDER}\") | .Destination'" CONTAINER_WORKING_DIR
-
-        debug_log "Adding CONTAINER_WORKING_DIR '${CONTAINER_WORKING_DIR}' to ${SPACEFX_DEV_ENV}"
-        run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
-export CONTAINER_WORKING_DIR=${CONTAINER_WORKING_DIR}
-SPACEFX_UPDATE_END" --disable_log
-    fi
-
 
 }
 

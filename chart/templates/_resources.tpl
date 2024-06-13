@@ -1,27 +1,11 @@
 {{- define "spacefx.resourceLimits" }}
-{{- $serviceValues := .serviceValues }}
-{{- $globalValues := .globalValues }}
+{{- $serviceRes := .serviceValues.resources }}
+{{- $globalRes := .globalValues.resources }}
 resources:
   limits:
-{{- if and $serviceValues (not (empty $serviceValues.resources)) (not (empty $serviceValues.resources.cpu)) (not (empty $serviceValues.resources.cpu.limit)) }}
-    cpu: {{ $serviceValues.resources.cpu.limit }}
-{{- else }}
-    cpu: {{ $globalValues.resources.cpu.limit }}
-{{- end }}
-{{- if and $serviceValues (not (empty $serviceValues.resources)) (not (empty $serviceValues.resources.memory)) (not (empty $serviceValues.resources.memory.limit)) }}
-    memory: {{ $serviceValues.resources.memory.limit }}
-{{- else }}
-    memory: {{ $globalValues.resources.memory.limit }}
-{{- end }}
+    cpu: {{ if and $serviceRes $serviceRes.cpu $serviceRes.cpu.limit }}{{ $serviceRes.cpu.limit }}{{ else }}{{ $globalRes.cpu.limit }}{{ end }}
+    memory: {{ if and $serviceRes $serviceRes.memory $serviceRes.memory.limit }}{{ $serviceRes.memory.limit }}{{ else }}{{ $globalRes.memory.limit }}{{ end }}
   requests:
-{{- if and $serviceValues (not (empty $serviceValues.resources)) (not (empty $serviceValues.resources.cpu)) (not (empty $serviceValues.resources.cpu.request)) }}
-    cpu: {{ $serviceValues.resources.cpu.request }}
-{{- else }}
-    cpu: {{ $globalValues.resources.cpu.request }}
-{{- end }}
-{{- if and $serviceValues (not (empty $serviceValues.resources)) (not (empty $serviceValues.resources.memory)) (not (empty $serviceValues.resources.memory.request)) }}
-    memory: {{ $serviceValues.resources.memory.request }}
-{{- else }}
-    memory: {{ $globalValues.resources.memory.request }}
-{{- end }}
+    cpu: {{ if and $serviceRes $serviceRes.cpu $serviceRes.cpu.request }}{{ $serviceRes.cpu.request }}{{ else }}{{ $globalRes.cpu.request }}{{ end }}
+    memory: {{ if and $serviceRes $serviceRes.memory $serviceRes.memory.request }}{{ $serviceRes.memory.request }}{{ else }}{{ $globalRes.memory.request }}{{ end }}
 {{- end }}

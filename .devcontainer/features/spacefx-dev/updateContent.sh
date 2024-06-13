@@ -35,6 +35,7 @@ set -e
 
 ## Provision the spacefx-dev directory with the latest files from spacesdk-setup
 cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
+rm /azure-orbital-space-sdk-setup -rf
 set +e
 
 # Directory is setup and populated.  Now we can run the main script

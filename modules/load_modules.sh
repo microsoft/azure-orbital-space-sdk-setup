@@ -99,7 +99,13 @@ _check_for_coresvc_registry_hosts_entry
 
 # Load the modules and function used by devcontainers
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
+    if [[ -f "/devfeature/k3s-on-host/k3s.devcontainer.yaml" ]]; then
+        run_a_script "mkdir -p $(dirname ${KUBECONFIG})" --disable_log
+        run_a_script "cp /devfeature/k3s-on-host/k3s.devcontainer.yaml ${KUBECONFIG}"
+    fi
+
+
     _collect_container_info
-    _update_bashrc
+    # _update_bashrc
     _convert_options_to_arrays
 fi

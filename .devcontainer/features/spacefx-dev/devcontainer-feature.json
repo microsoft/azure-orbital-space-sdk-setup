@@ -216,5 +216,5 @@
     }
   },
   "updateContentCommand": "/spacefx-dev/updateContent.sh",
-  "postAttachCommand": "/spacefx-dev/postAttach.sh"
+  "postStartCommand": "/spacefx-dev/postStart.sh"
 }
