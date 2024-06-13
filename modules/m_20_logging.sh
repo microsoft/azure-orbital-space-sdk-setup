@@ -176,6 +176,8 @@ function _calculate_root_tty(){
     CURRENT_TTY="$(tty)"
 
     if [[ "${CURRENT_TTY}" == "not a tty" ]]; then
+        ROOT_TTY="/dev/null"
+        CURRENT_TTY="/dev/null"
         return
     fi
 

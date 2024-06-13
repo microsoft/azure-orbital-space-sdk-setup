@@ -3,3 +3,6 @@ spacedev_cache
 tmp
 output
 .devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+not
+a
+tty
