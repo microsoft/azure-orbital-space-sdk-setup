@@ -162,7 +162,7 @@ function verify_config_secret_exists() {
     # Check if a Kubernetes secret with the name `${targetService}-secret` exists in the `payload-app` namespace
     info_log "Verifying '${DEBUG_SHIM}' configuration secret '${DEBUG_SHIM}-secret'..."
 
-    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json" has_config --ignore_error
+    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json" has_config --ignore_error --disable_log
 
     # If the secret does not exist, create an empty secret with that name and a placeholder item
     # Empty secrets don't get applied the same way and this forces the volume to update in kubernetes
@@ -170,7 +170,7 @@ function verify_config_secret_exists() {
         debug_log "Not found.  Creating empty..."
         run_a_script "kubectl create secret generic ${DEBUG_SHIM}-secret \
                         -n payload-app \
-                        --from-literal=placeholder=na"
+                        --from-literal=placeholder=na" --disable_log
     fi
 
     # Log that the secret was found
@@ -263,7 +263,7 @@ function update_configuration_for_plugins() {
     fi
 
     info_log "Scanning for plugin configuration files..."
-    run_a_script "find ${CONTAINER_WORKING_DIR} -type f -name \"*.spacefx_plugin\" | head -n 1)" plugin_file --ignore_error
+    run_a_script "find ${CONTAINER_WORKING_DIR} -type f -name \"*.spacefx_plugin\" | head -n 1" plugin_file --ignore_error
 
     if [[ -z "${plugin_file}" ]]; then
         info_log "No plugin configuration files found.  Nothing to do"
