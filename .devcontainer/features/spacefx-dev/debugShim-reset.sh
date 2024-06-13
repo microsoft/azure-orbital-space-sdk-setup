@@ -21,7 +21,7 @@ set -e
 set +e
 #-------------------------------------------------------------------------------------------------------------
 
-source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}"
+
 
 ############################################################
 # Script variables
@@ -79,6 +79,7 @@ if [[ -z "$DEBUG_SHIM" ]]; then
     show_help
 fi
 
+source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}/${DEBUG_SHIM:?}"
 
 ############################################################
 # Reset Debug Shim
@@ -180,8 +181,6 @@ function wait_for_debugshim_to_come_online() {
 }
 
 function main() {
-    wait_for_poststart
-
     reset_debugshim
 
     if [[ "${WAIT_FOR_POD}" == true ]]; then

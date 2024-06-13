@@ -21,8 +21,6 @@ set -e
 set +e
 #-------------------------------------------------------------------------------------------------------------
 
-source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}"
-
 ############################################################
 # Script variables
 ############################################################
@@ -108,6 +106,8 @@ if [[ "${DEV_LANGUAGE}" == "python" ]]; then
     fi
 fi
 
+
+source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}/${DEBUG_SHIM:?}"
 
 ############################################################
 # Check for the debugshim pod and deploy if not found
