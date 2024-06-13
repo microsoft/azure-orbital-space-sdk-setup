@@ -1,7 +1,7 @@
 // README at: https://github.com/microsoft/azure-orbital-space-sdk-setup
 {
 	"name": "spacefx-dev",
-	"image": "mcr.microsoft.com/devcontainers/base:ubuntu22.04",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:0-6.0",
 	"runArgs": [
 		"--name",
 		"spacefx-dev"
