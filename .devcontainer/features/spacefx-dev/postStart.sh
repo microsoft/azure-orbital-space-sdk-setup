@@ -197,7 +197,7 @@ SPACEFX_UPDATE_END"
     check_service_account $debug_shim
     check_fileserver_creds $debug_shim
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
+    run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
 
 
     info_log "END: ${FUNCNAME[0]}"
@@ -213,13 +213,13 @@ function check_service_account(){
     local appName=$1
 
     debug_log "Validating service account '${appName}' exists in payload-app..."
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account
+    run_a_script "kubectl get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account
 
     debug_log "Service_account: ${service_account}"
 
     if [[ -z "${service_account}" ]]; then
         debug_log "...not found.  Creating service account '${appName}' in payload-app..."
-        run_a_script "kubectl --kubeconfig ${KUBECONFIG} create serviceaccount ${appName} -n payload-app"
+        run_a_script "kubectl create serviceaccount ${appName} -n payload-app"
         debug_log "...successfully creatied service account '${appName}'."
     else
         debug_log "...found service account '${appName}' in payload-app"
@@ -240,7 +240,7 @@ function check_fileserver_creds(){
 
     info_log "Validating FileServer credentials for '${appName}'..."
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"payload-app\")) | true'" has_creds --disable_log
+    run_a_script "kubectl get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"payload-app\")) | true'" has_creds --disable_log
 
     if [[ "${has_creds}" == "true" ]]; then
         info_log "Found previous credentials.  Nothing to do."
@@ -250,13 +250,13 @@ function check_fileserver_creds(){
 
     info_log "No previous credentials found.  Generating..."
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"hostsvc\" or .metadata.namespace == \"platformsvc\")) | @base64'" service_creds --disable_log
+    run_a_script "kubectl get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"hostsvc\" or .metadata.namespace == \"platformsvc\")) | @base64'" service_creds --disable_log
 
     if [[ -n "${service_creds}" ]]; then
         parse_json_line --json "${service_creds}" --property ".metadata.namespace" --result creds_namespace
         info_log "...previous service credentials found for '${appName}' in namespace '${creds_namespace}'.  Copying to 'payload-app'..."
-        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/fileserver-${appName} -n ${creds_namespace} -o yaml | yq 'del(.metadata.annotations) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.uid) | .metadata.namespace = \"payload-app\"'" creds_yaml --disable_log
-        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
+        run_a_script "kubectl get secret/fileserver-${appName} -n ${creds_namespace} -o yaml | yq 'del(.metadata.annotations) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.uid) | .metadata.namespace = \"payload-app\"'" creds_yaml --disable_log
+        run_a_script "kubectl apply -f - <<SPACEFX_UPDATE_END
 ${creds_yaml}
 SPACEFX_UPDATE_END" --disable_log
 
@@ -286,9 +286,9 @@ function add_fileserver_creds(){
     run_a_script "head /dev/urandom | tr -dc \"${CHARSET}\" | head -c 16 | base64" generated_password
     run_a_script "base64 <<< ${appName}" generated_username
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/coresvc-fileserver-config -n coresvc -o json | jq '.data +={\"user-${appName}\": \"${generated_password}\"}'  | kubectl apply -f -" --disable_log
+    run_a_script "kubectl get secret/coresvc-fileserver-config -n coresvc -o json | jq '.data +={\"user-${appName}\": \"${generated_password}\"}'  | kubectl apply -f -" --disable_log
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
+    run_a_script "kubectl apply -f - <<SPACEFX_UPDATE_END
 apiVersion: v1
 kind: Secret
 metadata:
