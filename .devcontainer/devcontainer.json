@@ -8,8 +8,7 @@
 	],
 	"features": {
 		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {
-			"app_name": "spacesdk-setup",
-			"cluster_enabled": "false"
+			"app_name": "spacesdk-setup"
 		}
 	},
 	"hostRequirements": {
