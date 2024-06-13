@@ -273,7 +273,7 @@ function update_configuration_for_plugins() {
 
     info_log "...found '${plugin_file}'.  Updating plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'...."
 
-    pluginPath_encoded=$(echo -n "${plugin_file}" | base64)
+    pluginPath_encoded=$(echo -n "$(dirname $plugin_file)" | base64)
     run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl apply -f -"
     debug_log "...successfully updated plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'"
 
