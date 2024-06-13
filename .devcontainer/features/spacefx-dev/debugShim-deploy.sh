@@ -28,6 +28,7 @@ source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}
 ############################################################
 DEBUG_SHIM=""
 DEBUG_SHIM_POD=""
+PROCESS_PLUGIN_CONFIGS=true
 
 ############################################################
 # Help                                                     #
@@ -41,6 +42,7 @@ function show_help() {
    echo "--debug_shim | -d                  [REQUIRED] The unique name to use for template generation"
    echo "--port | -p                        [REQUIRED FOR PYTHON] Port number used for port-forwarding start"
    echo "--python_file | -f                 [REQUIRED FOR PYTHON] Direct path to the python file we're debugging.  If omitted, the debugger is not started"
+   echo "--disable_plugin_configs           [OPTIONAL] Skips the plugin secret update"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -60,6 +62,9 @@ while [[ "$#" -gt 0 ]]; do
             DEBUG_SHIM=$1
             # Force to lower case
             DEBUG_SHIM=${DEBUG_SHIM,,}
+            ;;
+        --disable_plugin_configs)
+            PROCESS_PLUGIN_CONFIGS=false
             ;;
         -f|--python_file)
             shift
@@ -245,12 +250,52 @@ function wait_for_poststart() {
     info_log "END: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Update the configuration to include the plugins (if any are present)
+############################################################
+function update_configuration_for_plugins() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${PROCESS_PLUGIN_CONFIGS}" == false ]]; then
+        info_log "PROCESS_PLUGIN_CONFIGS = 'false'.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Scanning for plugin configuration files..."
+    run_a_script "find ${CONTAINER_WORKING_DIR} -type f -name \"*.spacefx_plugin\" | head -n 1)" plugin_file --ignore_error
+
+    if [[ -z "${plugin_file}" ]]; then
+        info_log "No plugin configuration files found.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "...found '${plugin_file}'.  Updating plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'...."
+
+    pluginPath_encoded=$(echo -n "${plugin_file}" | base64)
+    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl apply -f -"
+    debug_log "...successfully updated plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'"
+
+    debug_log "...annotating '${DEBUG_SHIM_POD}' to trigger a faster secret update..."
+    run_a_script "kubectl annotate pod ${DEBUG_SHIM_POD} -n payload-app kubernetes.io/change-cause='$(date)'"
+    debug_log "...successfully annotated '${DEBUG_SHIM_POD}'"
+
+
+    debug_log "...debug shim successfully updated for plugin debugging"
+
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
 function main() {
     wait_for_poststart
 
     verify_debugshim
     verify_config_secret_exists
     wait_for_debugshim_to_come_online
+    update_configuration_for_plugins
 
 
 

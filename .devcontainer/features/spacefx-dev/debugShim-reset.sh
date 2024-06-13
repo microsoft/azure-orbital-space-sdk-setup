@@ -90,6 +90,10 @@ function reset_debugshim() {
     run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" PREVIOUS_DEBUG_SHIM_POD --ignore_error
     info_log "Calculated as '${PREVIOUS_DEBUG_SHIM_POD}'"
 
+    info_log "Resetting spacefx_dir_plugins"
+    pluginPath_encoded=$(echo -n "${SPACEFX_DIR}/plugins/${DEBUG_SHIM}" | base64)
+    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl apply -f -"
+
     info_log "Deleting '${PREVIOUS_DEBUG_SHIM_POD}'..."
     run_a_script "kubectl delete pod/${PREVIOUS_DEBUG_SHIM_POD} -n payload-app --wait=false"
 
