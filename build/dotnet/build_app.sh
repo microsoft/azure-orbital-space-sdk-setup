@@ -270,6 +270,12 @@ function gather_devcontainer_values(){
         fi
     fi
 
+    BUILD_OUTPUT_DIR="${SPACEFX_DIR}/tmp/${APP_NAME}/build-${DIR_DATESTAMP_VALUE}_${ARCHITECTURE}"
+
+    info_log "Generating output directories..."
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}"
+    info_log "...output directories generated."
+
     info_log "END: ${FUNCNAME[0]}"
 }
 
@@ -309,6 +315,34 @@ function provision_devcontainer(){
     info_log "Devcontainer built"
 
     info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Helper function to update an option in devcontainer.json
+############################################################
+function build_nuget_package(){
+
+    local project=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --project)
+                shift
+                project=$1
+                ;;
+        esac
+        shift
+    done
+
+    info_log "Building nuget package for project '${project}'..."
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION}"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --configuration Release"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --configuration Release --output \"${BUILD_OUTPUT_DIR}/nuget/\""
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget/\" --configuration Release"
+    info_log "...project ${project} successfully generated"
+
 }
 
 function main() {
@@ -379,6 +413,20 @@ function main() {
     update_devcontainer_json
     provision_devcontainer
     gather_devcontainer_values
+
+    if [ ${#NUGET_PROJECTS[@]} -gt 0 ]; then
+        info_log "Building nuget packages..."
+
+        for NUGET_PROJECT in "${NUGET_PROJECTS[@]}"; do
+            build_nuget_package --project "${NUGET_PROJECT}"
+        done
+
+        info_log "All nuget packages successfully built"
+    fi
+
+    if [[ "${CONTAINER_BUILD}" == "true" ]]; then
+        info_log "Building container image..."
+    fi
 
 }
 
