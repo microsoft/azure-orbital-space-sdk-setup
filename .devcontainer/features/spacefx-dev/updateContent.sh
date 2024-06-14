@@ -33,8 +33,9 @@ set -e
 ## Create a symlink on the devcontainer to the host directory so the directory paths match on both
 [[ ! -L "${SPACEFX_DIR}" ]] && ln -s "${SPACEFX_DIR_FOR_HOST:?}" "${SPACEFX_DIR:?}"
 
-## Provision the spacefx-dev directory with the latest files from spacesdk-setup
-cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
+
+## Provision the spacefx-dev directory with the latest files from spacesdk-setup if enabled
+[[ "${EXTRACT_SETUP_FILES}" == "true" ]] && cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
 rm /azure-orbital-space-sdk-setup -rf
 set +e
 

@@ -52,9 +52,12 @@ function write_to_file(){
         run_a_script "mkdir -p ${parent_dir}"
     fi
 
+    debug_log "Writing to file '${file}'..."
     run_a_script "tee ${file} ${append} > /dev/null << SPACEFX_UPDATE_END
 ${file_contents}
 SPACEFX_UPDATE_END"
+
+    debug_log "...successfully wrote to file '${file}'"
 }
 
 

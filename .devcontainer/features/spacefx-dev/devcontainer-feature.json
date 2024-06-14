@@ -107,20 +107,15 @@
       "default": "6.0.414",
       "description": "Dotnet version to install if needed"
     },
-    "env_config_repo": {
-      "type": "string",
-      "default": "env/config",
-      "description": "Modify the env_config_repo value for downloading and initializing a cluster with Microsoft Azure Orbital Space SDK"
-    },
     "extra_packages": {
       "type": "string",
       "default": "",
       "description": "A comma-seperated list of packages to install to both the devcontainer and the debugshim.  Essentially triggers an apt-get install before the debugshim image is packaged up and mounted in kubernetes"
     },
-    "env_extract": {
+    "extract_setup_files": {
       "type": "boolean",
       "default": true,
-      "description": "Enable freshness check of env_config_repo to validate you're pulling the latest version.  Disabling this is useful if you've pre-downloaded env_config_repo and want to speed up the build process (like in a pipeline build)"
+      "description": "Disable the copy of files to the /var/spacedev directory on the host.  Useful when running a build process and the directory is already populated"
     },
     "force_spacefx_config_regen": {
       "type": "boolean",

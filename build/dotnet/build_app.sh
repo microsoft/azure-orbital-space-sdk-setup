@@ -2,18 +2,7 @@
 #
 # Builds and pushes an app built with the Azure Orbital Space SDK.  Will push both a full and base container image.  Will build any nuget packages specified by nuget-project parameter
 #
-# arguments:
 #
-#   image_tag - The image tag used for generation.  Will have the processor architecture suffix
-#   app_version - The major app version to use
-#   app_version_suffix - The minor app version to use
-#   architecture - processor architecture - either arm64 or amd64
-#   project - The path to the csproj file to build
-#   repo_dir - The path to the root of the repo
-#
-# Example Usage:
-#
-#  "bash ./build/dotnet/build_service.sh --architecture arm64 --app-version 0.0.1 --app-version-suffix a --repo-dir ~/repos/project_source_code --service-project src/project.csproj  --output ./tmp/someDirectory"
 
 # Load the modules and pass all the same parameters that we're passing here
 # shellcheck disable=SC1091
@@ -46,7 +35,7 @@ function show_help() {
    # Display Help
    echo "Builds and pushes the Azure Orbital Space SDK container images and nuget packages"
    echo
-   echo "Syntax: bash ./build/dotnet/build_service.sh --repo-dir ~/repos/project_source_code --service-project src/project.csproj --nuget-project src_pluginTemplate/pluginTemplate.csproj --dll-project src/plugin.csproj"
+   echo "Syntax: bash ./build/dotnet/build_app.sh --repo-dir ~/repos/project_source_code --app-project src/project.csproj --nuget-project src/project.csproj --architecture amd64 --output ./tmp/someDirectory --app-version 0.0.1"
    echo "options:"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--architecture | -a                [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
@@ -202,6 +191,8 @@ function _update_devcontainer_option(){
         run_a_script "jq '.configuration' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
     fi
 
+    debug_log "Updating devcontainer json - '${devfeature_key}' = '${devfeature_value}'"
+
     run_a_script "jq '.features |= with_entries(select(.key | contains(\"spacefx-dev\")) | .value += {\"${devfeature_key}\": \"${devfeature_value}\"})' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
 
 
@@ -221,6 +212,13 @@ function update_devcontainer_json() {
     # Make sure we're running in /var/spacedev
     _update_devcontainer_option --key spacefx-dev --value "${SPACEFX_DIR}"
 
+    # Disable setup extraction since we already have the files
+    _update_devcontainer_option --key extract_setup_files --value "false"
+
+    # Calculate the app name
+    run_a_script "jq -r '.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.app_name' <<< \${DEVCONTAINER_JSON}" APP_NAME
+    info_log "...App Name calculated as '$APP_NAME'"
+
     write_to_file --file "${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json" --file_contents "${DEVCONTAINER_JSON}"
 
 
@@ -236,14 +234,9 @@ function gather_devcontainer_values(){
 
     info_log "Gathering devcontainer values..."
 
-    # Calculate the app name
-    run_a_script "jq -r '.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.app_name' <<< \${DEVCONTAINER_JSON}" APP_NAME
-    info_log "...App Name calculated as '$APP_NAME'"
-
     # Calculate the app type
     run_a_script "jq -r '.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.app_type' <<< \${DEVCONTAINER_JSON}" APP_TYPE
     info_log "...App Type calculated as '$APP_TYPE'"
-
 
     run_a_script "docker ps -q --filter \"label=devcontainer.local_folder=${REPO_DIR}\"" CONTAINER_ID
     info_log "...container id calculated as '${CONTAINER_ID}'"
@@ -336,13 +329,25 @@ function build_nuget_package(){
     done
 
     info_log "Building nuget package for project '${project}'..."
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION}"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --configuration Release"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --configuration Release --output \"${BUILD_OUTPUT_DIR}/nuget/\""
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget/\" --configuration Release"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/\" --configuration Release"
     info_log "...project ${project} successfully generated"
 
+}
+
+############################################################
+# Copy generated nugets to output directory
+############################################################
+function copy_to_output_dir(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT}'..."
+    run_a_script "mkdir -p ${OUTPUT}"
+    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/* ${OUTPUT}/"
+    info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT}'. "
+
+    info_log "END: ${FUNCNAME[0]}"
 }
 
 function main() {
@@ -421,6 +426,7 @@ function main() {
             build_nuget_package --project "${NUGET_PROJECT}"
         done
 
+        copy_to_output_dir
         info_log "All nuget packages successfully built"
     fi
 
