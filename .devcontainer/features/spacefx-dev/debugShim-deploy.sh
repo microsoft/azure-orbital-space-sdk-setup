@@ -263,7 +263,7 @@ function update_configuration_for_plugins() {
     fi
 
     info_log "Scanning for plugin configuration files..."
-    run_a_script "find ${CONTAINER_WORKING_DIR} -type f -name \"*.spacefx_plugin\" | head -n 1" plugin_file --ignore_error
+    run_a_script "find ${CONTAINER_WORKING_DIR} -type f -path \"*/bin/Debug/*\" -name \"*.spacefx_plugin\" | head -n 1" plugin_file --ignore_error
 
     if [[ -z "${plugin_file}" ]]; then
         info_log "No plugin configuration files found.  Nothing to do"
