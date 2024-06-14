@@ -1,3 +1,5 @@
+#!/bin/bash
+
 ############################################################
 # Set SUDO if we aren't already root
 ############################################################
@@ -15,6 +17,49 @@ function _calculate_for_sudo(){
         fi
     fi
 }
+
+
+
+############################################################
+# Helper function to write to a file with run a script and tee
+############################################################
+function write_to_file(){
+
+    local file_contents=""
+    local file=""
+    local parent_dir=""
+    local append=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --file)
+                shift
+                file=$1
+                parent_dir=$(dirname $file)
+                ;;
+            --file_contents)
+                shift
+                file_contents=$1
+                ;;
+            --append)
+                append=" -a "
+                ;;
+        esac
+        shift
+    done
+
+    if [[ ! -d "${parent_dir}" ]]; then
+        run_a_script "mkdir -p ${parent_dir}"
+    fi
+
+    debug_log "Writing to file '${file}'..."
+    run_a_script "tee ${file} ${append} > /dev/null << SPACEFX_UPDATE_END
+${file_contents}
+SPACEFX_UPDATE_END"
+
+    debug_log "...successfully wrote to file '${file}'"
+}
+
 
 ############################################################
 # Helper function to run a script with/without sudo

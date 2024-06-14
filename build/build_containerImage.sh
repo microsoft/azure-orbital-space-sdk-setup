@@ -29,6 +29,7 @@ BUILD_ARGS=""
 EXTRA_PKGS=""
 ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
+IS_BASE_SVC_CONTAINER=false
 
 ############################################################
 # Help                                                     #
@@ -46,6 +47,7 @@ function show_help() {
    echo "--dockerfile | -d                  [REQUIRED] Relative path to the docker file within repo-dir"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
+   echo "--add-base-suffix                  [OPTIONAL] Add the base image suffix to the image tag.  Used for building base containers for Azure Orbital Space SDK Services"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -58,6 +60,9 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
+        --add-base-suffix)
+            IS_BASE_SVC_CONTAINER=true
+        ;;
         --annotation-config)
             shift
             ANNOTATION_CONFIG=$1
@@ -111,35 +116,58 @@ check_for_cmd --app "devcontainer" --documentation-url "https://code.visualstudi
 
 
 ############################################################
+# Helper function to update an option in devcontainer.json
+############################################################
+function _update_devcontainer_option(){
+
+    local devfeature_key=""
+    local devfeature_value=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --key)
+                shift
+                devfeature_key=$1
+                ;;
+            --value)
+                shift
+                devfeature_value=$1
+                ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${DEVCONTAINER_JSON}" ]]; then
+        debug_log "DEVCONTAINER_JSON is empty.  Reading values '${REPO_DIR}/.devcontainer/devcontainer.json'"
+        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" DEVCONTAINER_JSON
+
+        # Remove the extra .configuration.configFilePath that gets added by devcontainer cli
+        run_a_script "jq 'del(.configuration.configFilePath)' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
+
+        # Remove the extra .configuration that devcontainer cli adds
+        run_a_script "jq '.configuration' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
+    fi
+
+    run_a_script "jq '.features |= with_entries(select(.key | contains(\"spacefx-dev\")) | .value += {\"${devfeature_key}\": \"${devfeature_value}\"})' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
+
+
+    [[ -z "${DEVCONTAINER_JSON}" ]] && exit_with_error "Failed to query devcontainer_json (received empty results).  Please check the logs for more information."
+
+}
+
+############################################################
 # Update DevContainer.json config
 ############################################################
 function update_devcontainer_json(){
     info_log "START: ${FUNCNAME[0]}"
 
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" devcontainer_json --disable_log
+    # Disable the cluster to speed up the build
+    _update_devcontainer_option --key cluster_enabled --value "false"
 
-    echo "${devcontainer_json}"
+    # Make sure we're running in /var/spacedev
+    _update_devcontainer_option --key spacefx-dev --value "${SPACEFX_DIR}"
 
-    # update the parameters so we don't build the cluster
-    run_a_script "jq '.configuration.features |= with_entries(select(.key | contains(\"spacefx-dev\")) | .value += {\"cluster_enabled\": \"false\"})' <<< \${devcontainer_json}" devcontainer_json --disable_log
-
-    # update the parameters so that we only build in /var/spacedev
-    run_a_script "jq '.configuration.features |= with_entries(select(.key | contains(\"spacefx-dev\")) | .value += {\"spacefx_dir\": \"${SPACEFX_DIR}\"})' <<< \${devcontainer_json}" devcontainer_json --disable_log
-    [[ -z "${devcontainer_json}" ]] && exit_with_error "Failed to query devcontainer_json (received empty results).  Please check the logs for more information."
-
-    # update the devcontainer user to be root
-    run_a_script "jq '.configuration += {\"remoteUser\": \"root\"}' <<< \${devcontainer_json}" devcontainer_json --disable_log
-    run_a_script "jq '.configuration += {\"containerUser\": \"root\"}' <<< \${devcontainer_json}" devcontainer_json --disable_log
-
-    # Remove the extra configFilePath that gets added by devcontainer cli
-    run_a_script "jq 'del(.configuration.configFilePath)' <<< \${devcontainer_json}" devcontainer_json --disable_log
-    run_a_script "jq '.configuration' <<< \${devcontainer_json}" devcontainer_json --disable_log
-
-    run_a_script "mkdir -p ${SPACEFX_DIR}/tmp/${APP_NAME}" --disable_log
-
-    run_a_script "tee ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json > /dev/null << SPACEFX_UPDATE_END
-${devcontainer_json}
-SPACEFX_UPDATE_END" --disable_log
+    write_to_file --file "${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json" --file_contents "${DEVCONTAINER_JSON}"
 
 
     info_log "END: ${FUNCNAME[0]}"
@@ -296,6 +324,7 @@ function main() {
     write_parameter_to_log DOCKERFILE
     write_parameter_to_log REPO_DIR
     write_parameter_to_log BUILD_ARGS
+    write_parameter_to_log IS_BASE_SVC_CONTAINER
 
     if [[ -n "${ANNOTATION_CONFIG}" ]]; then
         write_parameter_to_log GITHUB_ANNOTATION
@@ -314,6 +343,11 @@ function main() {
 
     # Check if we have a tag suffix from our config file
     run_a_script "jq -r 'if (.config | has(\"tagSuffix\")) then .config.tagSuffix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" tag_suffix --disable_log
+
+    if [[ "${IS_BASE_SVC_CONTAINER}" == true ]]; then
+        trace_log "Adding base suffix to image tag"
+        IMAGE_TAG="${IMAGE_TAG}_base"
+    fi
 
     if [[ -n "${tag_suffix}" ]]; then
         IMAGE_TAG="${IMAGE_TAG}${tag_suffix}"
