@@ -34,7 +34,9 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
-    - name: Build and publish devcontainer feature
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
+
+    - name: Testing dev cluster
       shell: bash
       run: |
         echo "Running  dev_cluster.sh test..."
@@ -62,7 +64,7 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
-    - name: Build and publish devcontainer feature
+    - name: Testing Prod Cluster
       shell: bash
       run: |
         echo "Running  prod_cluster.sh test..."
