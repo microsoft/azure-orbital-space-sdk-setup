@@ -103,7 +103,7 @@ function _app_install() {
         exec 0< /dev/null
         exec 1> "${_app_prereqs_temp_dir}/${app_name}.log"
 
-        mkdir -p "$(dirname ${destination})"
+        create_directory "$(dirname ${destination})"
 
         echo "Checking for app '${app_name}' at '${source}'..."
 
@@ -142,7 +142,14 @@ function _app_install() {
 function _app_install_wait_for_background_processes(){
     info_log "START: ${FUNCNAME[0]}"
 
-    info_log "Waiting for background processes to finish..."
+    info_log "Background log files:"
+
+    # Outputing the logs that we're tracking
+    for logfile in "${_app_prereqs_log_files[@]}"; do
+        debug_log "...log file '${logfile}'"
+    done
+
+    info_log "...waiting for background processes to finish..."
 
     worker_failed=false
     local index=0

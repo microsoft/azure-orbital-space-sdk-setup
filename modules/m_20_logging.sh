@@ -175,6 +175,12 @@ function _calculate_root_tty(){
     ROOT_TTY="$(tty)"
     CURRENT_TTY="$(tty)"
 
+    if [[ "${CURRENT_TTY}" == "not a tty" ]]; then
+        ROOT_TTY="/dev/null"
+        CURRENT_TTY="/dev/null"
+        return
+    fi
+
     current_pid=$$
     # Iteratively find the parent process until we reach a non-root process
     while :; do

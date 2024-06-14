@@ -35,6 +35,7 @@ set -e
 
 ## Provision the spacefx-dev directory with the latest files from spacesdk-setup
 cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
+rm /azure-orbital-space-sdk-setup -rf
 set +e
 
 # Directory is setup and populated.  Now we can run the main script
@@ -186,12 +187,12 @@ function add_symlink_to_spacedev() {
         # If the symlink exists, check if it's pointing to the correct source path
         if [ "$(readlink "${CONTAINER_WORKING_DIR}/spacedev_cache")" != "${SPACEFX_DIR}" ]; then
             # If the symlink is pointing to the wrong source path, remove it and create a new one
-            run_a_script "rm '${CONTAINER_WORKING_DIR}/spacedev_cache'"
-            run_a_script "ln -s '${SPACEFX_DIR}' '${CONTAINER_WORKING_DIR}/spacedev_cache'"
+            run_a_script "rm ${CONTAINER_WORKING_DIR}/spacedev_cache"
+            run_a_script "ln -s ${SPACEFX_DIR} ${CONTAINER_WORKING_DIR}/spacedev_cache"
         fi
     else
         # If the symlink doesn't exist, create a new one
-        run_a_script "ln -s '${SPACEFX_DIR}' '${CONTAINER_WORKING_DIR}/spacedev_cache'"
+        run_a_script "ln -s ${SPACEFX_DIR} ${CONTAINER_WORKING_DIR}/spacedev_cache"
     fi
 }
 
