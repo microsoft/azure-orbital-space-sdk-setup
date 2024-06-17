@@ -1,6 +1,6 @@
 name: spacefx-dev-build-publish
 
-on: 
+on:
     workflow_dispatch:
     push:
         branches:
@@ -36,7 +36,7 @@ jobs:
     - name: Build and publish devcontainer feature
       shell: bash
       run: |
-        echo "Sourcing environment variables..."  
+        echo "Sourcing environment variables..."
         source ./env/spacefx.env
 
         # Validate the output directory exists and clean it out if there is content already present
@@ -45,7 +45,7 @@ jobs:
 
         # Copy the scripts ino the entry point for the devcontainer feature
         echo "Copying all files to /var/spacedev..."
-        ./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+        ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
         # Build the devcontainer feature
         echo "Building the devcontainer feature..."

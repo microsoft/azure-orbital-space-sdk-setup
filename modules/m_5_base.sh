@@ -19,6 +19,62 @@ function _calculate_for_sudo(){
 }
 
 
+############################################################
+# Determine the sha256 hash of a file
+############################################################
+function calculate_hash_for_file(){
+
+    local file=""
+    local returnResult=""
+    local ignoreMissing=false
+    fileHash=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --file)
+                shift
+                file=$1
+                ;;
+            --result)
+                shift
+                returnResult=$1
+                ;;
+            --ignore_missing)
+                shift
+                ignoreMissing=true
+                ;;
+            *)
+                echo "Unknown parameter '$1'"
+                exit 1
+               ;;
+        esac
+        shift
+    done
+
+    if [[ -z "${file}" ]] || [[ -z "${returnResult}" ]]; then
+        exit_with_error "Missing a parameter.  Please use function like calculate_hash_for_file --file \"/var/tmp/file.txt\" --result \"returnResult\".  Please supply all parameters."
+    fi
+
+    if [[ ! -f "${file}" ]] && [[ "${ignoreMissing}" == false ]]; then
+        exit_with_error "File '${file}' not found.  Unable to calculate hash"
+    fi
+
+    if [[ ! -f "${file}" ]] && [[ "${ignoreMissing}" == true ]]; then
+        warn_log "File '${file}' not found; ignoreMissing set to true.  Returning empty hash"
+        eval "$returnResult=''"
+        return
+    fi
+
+    trace_log "Calculating hash for file '${file}'..."
+    run_a_script "sha256sum ${file}" fileHash
+    fileHash="${fileHash%% *}"
+    trace_log "...Hash calculated as '${fileHash}'."
+
+    eval "$returnResult='${fileHash}'"
+
+
+}
+
 
 ############################################################
 # Helper function to write to a file with run a script and tee

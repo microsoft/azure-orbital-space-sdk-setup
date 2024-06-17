@@ -271,6 +271,30 @@ function stage_container_images(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+
+############################################################
+# Stage spacefx-base
+############################################################
+function stage_build_artifacts(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local artifacts_to_stage=""
+
+    if [[ ${#BUILD_ARTIFACTS[@]} -eq 0 ]]; then
+        info_log "...no build artifacts requested.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    for i in "${!BUILD_ARTIFACTS[@]}"; do
+        artifacts_to_stage="${artifacts_to_stage} --artifact ${BUILD_ARTIFACTS[i]}"
+    done
+
+    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_build_artifact.sh --architecture ${ARCHITECTURE} ${artifacts_to_stage}"
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
@@ -319,7 +343,9 @@ function main() {
     stage_container_images
     info_log "...successfully staged extra container images"
 
-
+    info_log "Staging build artifacts..."
+    stage_build_artifacts
+    info_log "...successfully staged build artifacts"
 
     info_log "Staging service images..."
     stage_spacefx_service_images --service_group core
