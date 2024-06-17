@@ -135,7 +135,7 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
       with:
-        oras_version: 0.16.0
+        oras-version: 0.16.0
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
