@@ -35,7 +35,7 @@ function show_help() {
    # Display Help
    echo "Builds and pushes the Azure Orbital Space SDK container images and nuget packages"
    echo
-   echo "Syntax: bash ./build/dotnet/build_app.sh --repo-dir ~/repos/project_source_code --app-project src/project.csproj --nuget-project src/project.csproj --architecture amd64 --output ./tmp/someDirectory --app-version 0.0.1"
+   echo "Syntax: bash ./build/dotnet/build_app.sh --repo-dir ~/repos/project_source_code --app-project src/project.csproj --nuget-project src/project.csproj --architecture amd64 --output-dir ./tmp/someDirectory --app-version 0.0.1"
    echo "options:"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--architecture | -a                [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
@@ -312,7 +312,7 @@ function provision_devcontainer(){
 
 
 ############################################################
-# Helper function to update an option in devcontainer.json
+# Build the nuget package project
 ############################################################
 function build_nuget_package(){
 
@@ -329,9 +329,34 @@ function build_nuget_package(){
     done
 
     info_log "Building nuget package for project '${project}'..."
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION}"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${nuget_pkg}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/\" --configuration Release"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
+    info_log "...project ${project} successfully generated"
+
+}
+
+############################################################
+# Build the app that will be backed into a container
+############################################################
+function build_app(){
+
+    local project=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --project)
+                shift
+                project=$1
+                ;;
+        esac
+        shift
+    done
+
+    info_log "Building app '${project}'..."
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/app"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/app\" --configuration Release"
     info_log "...project ${project} successfully generated"
 
 }
@@ -342,9 +367,21 @@ function build_nuget_package(){
 function copy_to_output_dir(){
     info_log "START: ${FUNCNAME[0]}"
 
+    local subfolder=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --subfolder)
+                shift
+                subfolder=$1
+                ;;
+        esac
+        shift
+    done
+
     info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT_DIR}'..."
-    run_a_script "mkdir -p ${OUTPUT_DIR}"
-    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/* ${OUTPUT_DIR}/"
+    run_a_script "mkdir -p ${OUTPUT_DIR}/${subfolder}"
+    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/${subfolder}* ${OUTPUT_DIR}/${subfolder}"
     info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT_DIR}'. "
 
     info_log "END: ${FUNCNAME[0]}"
@@ -426,13 +463,41 @@ function main() {
             build_nuget_package --project "${NUGET_PROJECT}"
         done
 
-        copy_to_output_dir
+        copy_to_output_dir --subfolder "nuget"
+
         info_log "All nuget packages successfully built"
     fi
 
     if [[ "${CONTAINER_BUILD}" == "true" ]]; then
         info_log "Building container image..."
+        build_app --project "${APP_PROJECT}"
+        copy_to_output_dir --subfolder "app"
+        local _annotation_config=""
+        [[ -n "${ANNOTATION_CONFIG}" ]] && _annotation_config="--annotation-config ${ANNOTATION_CONFIG}"
+        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
+                        --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.svc-base \
+                        --image-tag ${APP_VERSION} \
+                        --add-base-suffix \
+                        --no-spacefx-dev \
+                        --architecture ${ARCHITECTURE} \
+                        --repo-dir ${OUTPUT_DIR}/app \
+                        --app-name ${APP_NAME} ${_annotation_config}"
+
+        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
+                --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.svc-base \
+                --image-tag ${APP_VERSION} \
+                --no-spacefx-dev \
+                --architecture ${ARCHITECTURE} \
+                --repo-dir ${OUTPUT_DIR}/app \
+                --app-name ${APP_NAME} ${_annotation_config}"
+
+        info_log "...successfully built container image"
     fi
+
+
+
+    info_log "------------------------------------------"
+    info_log "END: ${SCRIPT_NAME}"
 
 }
 

@@ -30,6 +30,7 @@ EXTRA_PKGS=""
 ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 IS_BASE_SVC_CONTAINER=false
+SPACEFX_DEV_ENABLED=true
 
 ############################################################
 # Help                                                     #
@@ -48,6 +49,7 @@ function show_help() {
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
    echo "--add-base-suffix                  [OPTIONAL] Add the base image suffix to the image tag.  Used for building base containers for Azure Orbital Space SDK Services"
+   echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -62,6 +64,9 @@ while [[ "$#" -gt 0 ]]; do
         -h|--help) show_help ;;
         --add-base-suffix)
             IS_BASE_SVC_CONTAINER=true
+        ;;
+        --no-spacefx-dev)
+            SPACEFX_DEV_ENABLED=false
         ;;
         --annotation-config)
             shift
@@ -368,11 +373,9 @@ function main() {
     fi
 
     write_parameter_to_log DEST_REPO
-
     provision_emulator
 
-
-    if [[ -f "${REPO_DIR}/.devcontainer/devcontainer.json" ]]; then
+    if [[ -f "${REPO_DIR}/.devcontainer/devcontainer.json" ]] && [[ "${SPACEFX_DEV_ENABLED}" == true ]]; then
         info_log "Checking for spacefx-dev..."
         run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
         info_log "Result: ${has_spacefx_feature}"

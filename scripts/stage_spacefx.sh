@@ -34,7 +34,7 @@ function show_help() {
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
    echo "--dev-environment | -d             [OPTIONAL] Stage the environment for development."
-   echo "--build-artifact                   [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
+   echo "--artifact                   [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
    echo "--container | -c                   [OPTIONAL] name of the container to pull.  Can be passed multiple times"
    echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
@@ -69,7 +69,7 @@ while [[ "$#" -gt 0 ]]; do
             shift
             CONTAINERS+=("$1")
         ;;
-        --build-artifact)
+        --artifact)
             shift
             BUILD_ARTIFACTS+=("$1")
         ;;
