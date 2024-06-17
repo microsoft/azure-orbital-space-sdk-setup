@@ -21,44 +21,6 @@ env:
 
 jobs:
 
-  test-dev:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
-      with: 
-        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
-      with:
-        env_file: ./env/spacefx.env
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
-      with:
-        registry-name: ${{ env.REGISTRY }}
-        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
-        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
-  
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
-      with:
-        oras_version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
-
-    - name: Testing dev cluster
-      shell: bash
-      run: |
-        echo "Running  dev_cluster.sh test..."
-        bash ./tests/dev_cluster.sh
-
   test-prod:
     runs-on: ubuntu-latest
 
@@ -96,49 +58,94 @@ jobs:
         echo "Running  prod_cluster.sh test..."
         bash ./tests/prod_cluster.sh
 
+  build-publish-feature:
+    runs-on: ubuntu-latest
+    needs: test-prod
 
-  # build-publish-feature:
-  #   runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
-  #   permissions:
-  #     contents: read
-  #     packages: write
+    steps:
+    - uses: actions/checkout@v2
 
-  #   steps:
-  #   - uses: actions/checkout@v2
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        token: ${{ secrets.GITHUB_TOKEN }}
 
-  #   - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
-  #     with:
-  #       env_file: ./env/spacefx.env
-  #       token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
+      with:
+        oras_version: 0.16.0
 
-  #   - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
-  #     with:
-  #       oras_version: 0.16.0
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
-  #   - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+    - name: Build and publish devcontainer feature
+      shell: bash
+      run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
 
-  #   - name: Build and publish devcontainer feature
-  #     shell: bash
-  #     run: |
-  #       echo "Sourcing environment variables..."
-  #       source ./env/spacefx.env
+        # Validate the output directory exists and clean it out if there is content already present
+        echo "Creating output directory..."
+        mkdir -p "./output/spacefx-dev"
 
-  #       # Validate the output directory exists and clean it out if there is content already present
-  #       echo "Creating output directory..."
-  #       mkdir -p "./output/spacefx-dev"
+        # Copy the scripts ino the entry point for the devcontainer feature
+        echo "Copying all files to /var/spacedev..."
+        ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
-  #       # Copy the scripts ino the entry point for the devcontainer feature
-  #       echo "Copying all files to /var/spacedev..."
-  #       ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+        # Build the devcontainer feature
+        echo "Building the devcontainer feature..."
+        devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
 
-  #       # Build the devcontainer feature
-  #       echo "Building the devcontainer feature..."
-  #       devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
+        # Push the devcontainer feature tarball to the registry
+        echo "Pushing the devcontainer feature tarball to the registry..."
+        oras push ${{ env.REGISTRY }}/${{ env.FEATURE }}:${SPACEFX_VERSION} \
+            --config /dev/null:application/vnd.devcontainers \
+            --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
+                    ${{ env.ARTIFACT_PATH }}:application/vnd.devcontainers.layer.v1+tar
 
-  #       # Push the devcontainer feature tarball to the registry
-  #       echo "Pushing the devcontainer feature tarball to the registry..."
-  #       oras push ${{ env.REGISTRY }}/${{ env.FEATURE }}:${SPACEFX_VERSION} \
-  #           --config /dev/null:application/vnd.devcontainers \
-  #           --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
-  #                   ${{ env.ARTIFACT_PATH }}:application/vnd.devcontainers.layer.v1+tar
+  test-dev:
+    runs-on: ubuntu-latest
+    needs: build-publish-feature
+
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
+      with: 
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
+      with:
+        registry-name: ${{ env.REGISTRY }}
+        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
+        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
+  
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
+      with:
+        oras_version: 0.16.0
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+
+    - name: Testing dev cluster
+      shell: bash
+      run: |
+        echo "Running  dev_cluster.sh test..."
+        bash ./tests/dev_cluster.sh
+
+  
+
+
+  
