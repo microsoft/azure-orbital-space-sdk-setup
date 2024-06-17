@@ -102,3 +102,28 @@ function wait_for_deployment_deletion_by_app_id() {
 
     info_log "END: ${FUNCNAME[0]}"
 }
+
+
+
+############################################################
+# Automatically add options to download for debug shims
+############################################################
+function _auto_add_downloads() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    case "${APP_TYPE}" in
+        "sdk-service")
+            ARTIFACTS+=("Microsoft.Azure.SpaceFx.Core.${SPACEFX_VERSION}.nupkg")
+            ARTIFACTS+=("Common.proto")
+            ;;
+    esac
+
+
+    # TODO: update to scan for dotnet solutions (*.sln) and python files (*.py) to calculate which dev_language we're using
+    # if [[ "${DEV_LANGUAGE}" == "python" ]]; then
+    #     PACKAGES+=("socat")
+    #     PACKAGES+=("nuget")
+    # fi
+
+    info_log "END: ${FUNCNAME[0]}"
+}
