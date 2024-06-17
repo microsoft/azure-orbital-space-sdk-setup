@@ -98,7 +98,7 @@ function pull_extra_build_artifacts(){
             continue
         fi
         info_log "...adding build artifact '${artifact}' to stage_spacefx cmd..."
-        STAGE_SPACE_FX_CMD_EXTRAS="${STAGE_SPACE_FX_CMD_EXTRAS} --build-artifact ${artifact}"
+        STAGE_SPACE_FX_CMD_EXTRAS="${STAGE_SPACE_FX_CMD_EXTRAS} --artifact ${artifact}"
     done
 
     info_log "END: ${FUNCNAME[0]}"
@@ -218,6 +218,14 @@ function main() {
     install_extra_packages
 
     if [[ "${CLUSTER_ENABLED}" == "false" ]]; then
+        if [[ ${#DOWNLOAD_ARTIFACTS[@]} -ne 0 ]]; then
+            pull_extra_build_artifacts
+            info_log "Starting stage_build_artifact.sh..."
+            run_a_script_on_host "${SPACEFX_DIR}/scripts/stage/stage_build_artifact.sh ${STAGE_SPACE_FX_CMD_EXTRAS}"
+            info_log "...stage_build_artifact.sh completed successfully"
+        fi
+
+        # Drop out of the script if we're not deploying to a cluster
         return
     fi
 
