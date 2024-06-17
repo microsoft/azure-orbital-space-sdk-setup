@@ -115,7 +115,7 @@ function _auto_add_downloads() {
 
     case "${APP_TYPE}" in
         "sdk-service")
-            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceFx.Core.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             DOWNLOAD_ARTIFACTS+=("Common.proto")
             ;;
     esac
