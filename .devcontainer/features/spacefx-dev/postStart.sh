@@ -41,14 +41,6 @@ run_a_script "touch /spacefx-dev/postStart.start"
 ############################################################
 STAGE_SPACE_FX_CMD_EXTRAS=""
 
-############################################################
-# Function Template
-############################################################
-function _template(){
-    info_log "START: ${FUNCNAME[0]}"
-
-    info_log "END: ${FUNCNAME[0]}"
-}
 
 ############################################################
 # Install VSDebugger

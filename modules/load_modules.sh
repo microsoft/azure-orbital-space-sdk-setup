@@ -33,6 +33,7 @@ source "${MODULE_DIR}/m_110_debugshim.sh"
 SCRIPT_NAME=$(basename "$0")
 LOG_DIR="${SPACEFX_DIR}/logs"
 LOG_FILE="${LOG_DIR}/${SCRIPT_NAME}.log"
+LOG_FILE_BASENAME=$(basename "${LOG_FILE}")
 RETURN_CODE=""
 HOST_ARCHITECTURE=""
 ARCHITECTURE=""
@@ -108,4 +109,5 @@ if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
     _collect_container_info
     # _update_bashrc
     _convert_options_to_arrays
+    _auto_add_downloads
 fi

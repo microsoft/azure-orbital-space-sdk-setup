@@ -33,8 +33,9 @@ set -e
 ## Create a symlink on the devcontainer to the host directory so the directory paths match on both
 [[ ! -L "${SPACEFX_DIR}" ]] && ln -s "${SPACEFX_DIR_FOR_HOST:?}" "${SPACEFX_DIR:?}"
 
-## Provision the spacefx-dev directory with the latest files from spacesdk-setup
-cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
+
+## Provision the spacefx-dev directory with the latest files from spacesdk-setup if enabled
+[[ "${EXTRACT_SETUP_FILES}" == "true" ]] && cp /azure-orbital-space-sdk-setup/* "${SPACEFX_DIR_FOR_HOST:?}" -r
 rm /azure-orbital-space-sdk-setup -rf
 set +e
 
@@ -64,14 +65,6 @@ fi
 ############################################################
 STAGE_SPACE_FX_CMD_EXTRAS=""
 
-############################################################
-# Function Template
-############################################################
-function _template(){
-    info_log "START: ${FUNCNAME[0]}"
-
-    info_log "END: ${FUNCNAME[0]}"
-}
 
 
 ############################################################
@@ -87,6 +80,29 @@ function pull_config_yamls(){
     info_log "END: ${FUNCNAME[0]}"
 }
 
+
+############################################################
+# Add any extra build artifacts passed from the devcontainer.json to the stage cmd
+############################################################
+function pull_extra_build_artifacts(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ${#DOWNLOAD_ARTIFACTS[@]} -eq 0 ]]; then
+        info_log "...no build artifacts specified in devcontainer.json.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    for artifact in "${DOWNLOAD_ARTIFACTS[@]}"; do
+        if [[ -z "${artifact}" ]]; then
+            continue
+        fi
+        info_log "...adding build artifact '${artifact}' to stage_spacefx cmd..."
+        STAGE_SPACE_FX_CMD_EXTRAS="${STAGE_SPACE_FX_CMD_EXTRAS} --build-artifact ${artifact}"
+    done
+
+    info_log "END: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Add any extra containers passed from the devcontainer.json to the stage cmd
@@ -209,6 +225,7 @@ function main() {
     calculate_helm_groups
     pull_config_yamls
     pull_extra_containers
+    pull_extra_build_artifacts
     info_log "Starting stage_spacefx.sh..."
     run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh ${STAGE_SPACE_FX_CMD_EXTRAS}"
     info_log "...stage_spacefx.sh completed successfully"

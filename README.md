@@ -100,7 +100,7 @@ ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 [[ -d ./output/spacefx-dev ]]; sudo rm ./output/spacefx-dev/* -rf
 
 # Copy the scripts ino the entry point for the devcontainer feature
-./.vscode/copy_to_spacedev.sh --output_dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
 # Build the devcontainer feature
 devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev

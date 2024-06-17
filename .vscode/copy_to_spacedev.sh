@@ -16,7 +16,7 @@ OUTPUT_DIR=""
 ############################################################
 while [[ "$#" -gt 0 ]]; do
     case $1 in
-        --output_dir)
+        --output-dir)
             shift
             OUTPUT_DIR=$1
             ;;
