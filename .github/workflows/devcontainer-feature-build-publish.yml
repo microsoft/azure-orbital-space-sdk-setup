@@ -2,9 +2,22 @@ name: spacefx-dev-build-publish
 
 on: 
     workflow_dispatch:
+      inputs:
+          REGISTRY: 
+            description: 'Registry to push the image to'
+            required: true
+            type: string 
+            default: 'ghcr.io'
+          VER_DOCKER_MAX:
+            description: 'Docker version to install'
+            required: false
+            type: string
+            default: "26.1.3"
+      
     push:
         branches:
         - main
+    
 
 env:
   REGISTRY: ghcr.io
@@ -23,18 +36,25 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
+      with: 
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
         env_file: ./env/spacefx.env
         token: ${{ secrets.GITHUB_TOKEN }}
 
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
+      with:
+        registry-name: ${{ inputs.REGISTRY }}
+        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
+        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
+  
+
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
       with:
         oras_version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
-      with: 
-        VER_DOCKER_MAX: 26.1.3
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
@@ -55,18 +75,24 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
+      with: 
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
         env_file: ./env/spacefx.env
         token: ${{ secrets.GITHUB_TOKEN }}
 
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
+      with:
+        registry-name: ${{ inputs.REGISTRY }}
+        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
+        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
+  
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
       with:
         oras_version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
-      with: 
-        VER_DOCKER_MAX: 26.1.3
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
