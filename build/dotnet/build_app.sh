@@ -41,7 +41,7 @@ function show_help() {
    echo "--architecture | -a                [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
    echo "--app-project | -p                 [REQUIRED] Relative path to the app's project file"
    echo "--app-version | -v                 [REQUIRED] Major version number to assign to the generated nuget package"
-   echo "--output | -o                      [REQUIRED] Local output directory to deliver any nuget packages to.  Will automatically get architecture appended.  Parameter is optional if no nuget packages are specified"
+   echo "--output-dir | -o                  [REQUIRED] Local output directory to deliver any nuget packages to.  Will automatically get architecture appended.  Parameter is optional if no nuget packages are specified"
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
    echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable).  Will generate a nuget package in the output directory.  Can be passed multiple times"
    echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build nuget packages"
@@ -95,9 +95,9 @@ while [[ "$#" -gt 0 ]]; do
             shift
             APP_VERSION=$1
             ;;
-        -o|--output)
+        -o|--output-dir)
             shift
-            OUTPUT=$1
+            OUTPUT_DIR=$1
             ;;
         *) echo "Unknown parameter passed: $1"; show_help ;;
     esac
@@ -130,9 +130,9 @@ if [[ ! -f "$REPO_DIR/.devcontainer/devcontainer.json" ]]; then
     show_help
 fi
 
-if [[ -z "$OUTPUT" ]]; then
+if [[ -z "$OUTPUT_DIR" ]]; then
     if [ ${#NUGET_PROJECTS[@]} -gt 0 ]; then
-        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Mising --output parameter"
+        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Mising --output-dir parameter"
         show_help
     fi
 fi
@@ -342,10 +342,10 @@ function build_nuget_package(){
 function copy_to_output_dir(){
     info_log "START: ${FUNCNAME[0]}"
 
-    info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT}'..."
-    run_a_script "mkdir -p ${OUTPUT}"
-    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/* ${OUTPUT}/"
-    info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT}'. "
+    info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT_DIR}'..."
+    run_a_script "mkdir -p ${OUTPUT_DIR}"
+    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/* ${OUTPUT_DIR}/"
+    info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT_DIR}'. "
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -369,8 +369,8 @@ function main() {
         write_parameter_to_log NUGET_PROJECT
     done
 
-    if [[ "$OUTPUT" != *"$ARCHITECTURE" ]]; then
-        OUTPUT="${OUTPUT}/${ARCHITECTURE}"
+    if [[ "$OUTPUT_DIR" != *"$ARCHITECTURE" ]]; then
+        OUTPUT_DIR="${OUTPUT_DIR}/${ARCHITECTURE}"
     fi
 
     write_parameter_to_log OUTPUT
