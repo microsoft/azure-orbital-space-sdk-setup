@@ -76,9 +76,14 @@ function wait_for_deployment_deletion_by_app_id() {
     # This returns any pods that are running
     run_a_script "kubectl get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
 
+   
+
     # This loops and waits for at least 1 pod to flip the running
     while [[ ${pods_cleaned} == false ]]; do
-    
+
+        info_log "k3s_pods: ${k3s_deployments}"
+
+        run_a_script "kubectl get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
         # Letting the pods be terminating status is sufficent for this step
         run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
         run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
@@ -89,7 +94,7 @@ function wait_for_deployment_deletion_by_app_id() {
             exit_with_error "Timed out waiting for pods to finish terminating.  Check if an error has happened and retry"
         fi
 
-        if { [[ -z "${num_of_deployments}" ]] || [[ "${num_of_deployments}" == "0" ]]; } && { [[ -z "${num_of_volumes}" ]] || [[ "${num_of_volumes}" == "0" ]]; }; then
+        if [[ "${num_of_deployments}" == "0" ]] && [[ "${num_of_volumes}" == "0" ]]; then
             info_log "...no deployments, pods, nor volumes detected"
             pods_cleaned=true
         else
