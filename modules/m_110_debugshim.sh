@@ -93,7 +93,7 @@ function wait_for_deployment_deletion_by_app_id() {
             exit_with_error "Timed out waiting for pods to finish terminating.  Check if an error has happened and retry"
         fi
 
-        if [[ "${num_of_deployments}" == "0" ]] && [[ "${num_of_volumes}" == "0" ]]; then
+        if { [[ -z "${num_of_deployments}" ]] || [[ "${num_of_deployments}" == "0" ]]; } && { [[ -z "${num_of_volumes}" ]] || [[ "${num_of_volumes}" == "0" ]]; }; then
             info_log "...no deployments, pods, nor volumes detected"
             pods_cleaned=true
         else
