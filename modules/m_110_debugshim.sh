@@ -83,8 +83,8 @@ function wait_for_deployment_deletion_by_app_id() {
         run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
         run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
         
-        run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\""
-        run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\""
+        run_a_script "kubectl get deployments -A"
+        run_a_script "kubectl get persistentvolumeclaim -A"
 
         current_time=$(date +%s)
         elapsed_time=$((current_time - start_time))
