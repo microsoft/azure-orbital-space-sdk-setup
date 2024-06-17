@@ -1,0 +1,3 @@
+config:
+  annotations:
+    - annotation: org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-platform-mts
