@@ -74,7 +74,7 @@ function wait_for_deployment_deletion_by_app_id() {
     start_time=$(date +%s)
 
     # This returns any pods that are running
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} kubectl get pods -A" k3s_pods
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -A" k3s_pods
 
    
 
