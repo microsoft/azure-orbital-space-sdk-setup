@@ -82,6 +82,29 @@ function pull_config_yamls(){
 
 
 ############################################################
+# Add any extra build artifacts passed from the devcontainer.json to the stage cmd
+############################################################
+function pull_extra_build_artifacts(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ${#DOWNLOAD_ARTIFACTS[@]} -eq 0 ]]; then
+        info_log "...no build artifacts specified in devcontainer.json.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    for artifact in "${DOWNLOAD_ARTIFACTS[@]}"; do
+        if [[ -z "${artifact}" ]]; then
+            continue
+        fi
+        info_log "...adding build artifact '${artifact}' to stage_spacefx cmd..."
+        STAGE_SPACE_FX_CMD_EXTRAS="${STAGE_SPACE_FX_CMD_EXTRAS} --build-artifact ${artifact}"
+    done
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
 # Add any extra containers passed from the devcontainer.json to the stage cmd
 ############################################################
 function pull_extra_containers(){
@@ -202,6 +225,7 @@ function main() {
     calculate_helm_groups
     pull_config_yamls
     pull_extra_containers
+    pull_extra_build_artifacts
     info_log "Starting stage_spacefx.sh..."
     run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh ${STAGE_SPACE_FX_CMD_EXTRAS}"
     info_log "...stage_spacefx.sh completed successfully"

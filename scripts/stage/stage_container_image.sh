@@ -76,7 +76,6 @@ stage_images() {
 
     local img_count=0
     local worker_pids
-    local platform_parameter="amd64"
     worker_pids=()
 
     # Loop through the log files and remove any old ones
