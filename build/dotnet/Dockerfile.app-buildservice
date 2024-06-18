@@ -11,7 +11,7 @@ ARG SPACEFX_VERSION="0.0.1"
 ARG APP_BUILDDATE="20010101T000000"
 ARG ARCHITECTURE=""
 
-FROM ${CONTAINER_REGISTRY}/${APP_NAME}:${SPACEFX_VERSION}_base as svc-base
+FROM ${CONTAINER_REGISTRY}/${APP_NAME}:${SPACEFX_VERSION}_base as app-base
 ARG CONTAINER_REGISTRY="ghcr.io/microsoft/azure-orbital-space-sdk"
 ARG APP_NAME="spacesdk-app"
 ARG APP_VERSION="0.0.1"
@@ -39,6 +39,6 @@ ENV APP_BUILDDATE=${BUILD_DATE}
 ENV ARCHITECTURE=${ARCHITECTURE}
 
 # Copy the minimum files needed to run the service
-COPY --from=svc-base --chmod=0755 /workspaces/${APP_NAME} /workspaces/${APP_NAME}
+COPY --from=app-base --chmod=0755 /workspaces/${APP_NAME} /workspaces/${APP_NAME}
 USER root
 WORKDIR /workspaces/${APP_NAME}
