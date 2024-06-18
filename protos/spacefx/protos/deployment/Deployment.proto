@@ -1,0 +1,80 @@
+syntax = "proto3";
+package Microsoft.Azure.SpaceFx.MessageFormats.PlatformServices.Deployment;
+option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.PlatformServices.Deployment";
+
+import "spacefx/protos/common/Common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+message DeployRequest {
+   enum DeployActions {
+      APPLY = 0;
+      CREATE = 1;
+      DELETE = 2;
+      LOAD_IMAGE_TARBALL = 3;
+      BUILD_IMAGE = 4;
+      RESTART_DEPLOYMENT = 5;
+      UPLINK_FILE = 6;
+   }
+   message AppContextString {
+      string appContext = 1;
+   }
+   message AppContextFile {
+      string fileName = 1;
+      bool required = 2;
+   }
+
+   Common.RequestHeader requestHeader = 1;
+   string appName = 2;
+   string nameSpace = 3;
+   string appGroupLabel = 4;
+   string customerTrackingId = 5;
+   string schedule = 6;
+   google.protobuf.Timestamp startTime = 7;
+   google.protobuf.Duration maxDuration = 8;
+   string yamlFileContents = 9;
+   string containerInjectionTarget = 10;
+   DeployActions deployAction = 11;
+   Common.Priority priority = 12;
+   oneof appContext{
+      AppContextString appContextString = 13;
+      AppContextFile appContextFile = 14;
+   }
+   enum GpuOptions {
+      NONE = 0;
+      NVIDIA = 1;
+   }
+   GpuOptions gpuRequirement = 15;
+
+   message AppContainerImage {
+      string tarballFileName = 1;
+      string destinationRepository = 2;
+      string destinationTag = 3;
+   }
+
+   AppContainerImage appContainerImage = 16;
+
+   message AppContainerBuild {
+      string dockerFile = 1;
+      string destinationRepository = 2;
+      string destinationTag = 3;
+      map<string, string> buildArguments = 4;
+   }
+
+   AppContainerBuild appContainerBuild = 17;
+}
+
+message DeployResponse {
+    Common.ResponseHeader responseHeader = 1;
+    DeployRequest deployRequest = 2;
+}
+
+message ScheduledDeployments {
+   google.protobuf.Timestamp deploymentTime = 1;
+   repeated DeployResponse scheduleQueue = 2;
+}
+
+
+message DeployRequestsCollection {
+   repeated DeployRequest deployRequests = 1;
+ }

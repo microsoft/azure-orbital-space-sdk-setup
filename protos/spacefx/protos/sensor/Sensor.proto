@@ -1,0 +1,59 @@
+syntax = "proto3";
+package Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Sensor;
+option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Sensor";
+
+import "spacefx/protos/common/Common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+
+message SensorsAvailableRequest {
+    Common.RequestHeader requestHeader = 1;
+}
+
+message SensorsAvailableResponse {
+    Common.ResponseHeader responseHeader = 1;
+
+    message SensorAvailable {
+       string sensorID = 1;
+       map<string, string> metadata = 2;
+    }
+    repeated SensorAvailable sensors = 2;
+ }
+
+ message TaskingPreCheckRequest {
+    Common.RequestHeader requestHeader = 1;
+    string sensorID = 2;
+    google.protobuf.Timestamp requestTime = 3;
+    google.protobuf.Timestamp expirationTime = 4;
+    google.protobuf.Any requestData = 5;
+ }
+
+ message TaskingPreCheckResponse {
+    Common.ResponseHeader responseHeader = 1;
+    string sensorID = 2;
+    google.protobuf.Any responseData = 3;
+ }
+
+ message TaskingRequest {
+    Common.RequestHeader requestHeader = 1;
+    string sensorID = 2;
+    google.protobuf.Timestamp requestTime = 3;
+    google.protobuf.Timestamp expirationTime = 4;
+    google.protobuf.Any requestData = 5;
+ }
+
+ message TaskingResponse {
+    Common.ResponseHeader responseHeader = 1;
+    string sensorID = 2;
+    google.protobuf.Any responseData = 3;
+ }
+
+ message SensorData {
+    Common.ResponseHeader responseHeader = 1;
+    string destinationAppId = 2;
+    string sensorID = 3;
+    string taskingTrackingId = 4;
+    google.protobuf.Any data = 5;
+    google.protobuf.Timestamp generatedTime = 6;
+    google.protobuf.Timestamp expirationTime = 7;
+ }

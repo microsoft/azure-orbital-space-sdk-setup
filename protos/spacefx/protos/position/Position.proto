@@ -1,0 +1,45 @@
+syntax = "proto3";
+package Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Position;
+option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Position";
+
+import "spacefx/protos/common/Common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+message PositionRequest {
+    Common.RequestHeader requestHeader = 1;
+}
+
+message PositionResponse {
+    Common.ResponseHeader responseHeader = 1;
+    Position position = 2;
+}
+
+message PositionUpdateRequest {
+  Common.RequestHeader requestHeader = 1;
+  Position position = 2;
+}
+
+message PositionUpdateResponse {
+  Common.ResponseHeader responseHeader = 1;
+}
+
+// Response sent back to the app from a logging request
+message Position {
+   message Attitude {
+     google.protobuf.DoubleValue x = 1;
+     google.protobuf.DoubleValue y = 2;
+     google.protobuf.DoubleValue z = 3;
+     google.protobuf.DoubleValue k = 4;
+   }
+
+   message Point {
+     google.protobuf.DoubleValue x = 1;
+     google.protobuf.DoubleValue y = 2;
+     google.protobuf.DoubleValue z = 3;
+   }
+
+   google.protobuf.Timestamp positionTime = 1;
+   Point point = 2;
+   Attitude attitude = 3;
+}

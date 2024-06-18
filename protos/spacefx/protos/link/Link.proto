@@ -1,0 +1,32 @@
+syntax = "proto3";
+package Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Link;
+option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Link";
+
+import "spacefx/protos/common/Common.proto";
+import "google/protobuf/timestamp.proto";
+
+message LinkRequest {
+    enum LinkType {
+      UNKNOWN = 0;
+      UPLINK = 1;
+      CROSSLINK = 2;
+      APP2APP = 3;
+      DOWNLINK = 4;
+    }
+    Common.RequestHeader requestHeader = 1;
+    LinkType linkType = 2;
+    Common.Priority priority = 3;
+    string fileName = 4;
+    string subdirectory = 5;
+    string destinationAppId = 6;
+    bool overwrite = 7;
+    bool leaveSourceFile = 8;
+    google.protobuf.Timestamp expirationTime = 9;
+}
+
+message LinkResponse {
+    Common.ResponseHeader responseHeader = 1;
+    LinkRequest linkRequest = 2;
+    int64 fileSizeKB = 3;
+    google.protobuf.Timestamp linkProcessedTime = 4;
+}
