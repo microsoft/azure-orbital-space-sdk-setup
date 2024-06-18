@@ -86,6 +86,17 @@ export CONTAINER_WORKING_DIR=${CONTAINER_WORKING_DIR}
 SPACEFX_UPDATE_END" --disable_log
     fi
 
+    # Check and add the dotnet install dir to the app.env file
+    if [[ "$_spacefx_dev_env" != *"DOTNET_INSTALL_DIR"* ]]; then
+        run_a_script "tee -a ${SPACEFX_DEV_ENV} > /dev/null << SPACEFX_UPDATE_END
+export DOTNET_INSTALL_DIR=${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/dotnet
+SPACEFX_UPDATE_END" --disable_log
+        export DOTNET_INSTALL_DIR=${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/dotnet
+        export PATH="${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/dotnet:${PATH}"
+    fi
+
+
+
 
 }
 
