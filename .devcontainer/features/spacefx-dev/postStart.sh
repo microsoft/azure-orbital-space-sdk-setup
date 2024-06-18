@@ -294,8 +294,8 @@ function add_fileserver_creds(){
 
     info_log "Provisioning new fileserver credentials for '${appName}'..."
     CHARSET="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    run_a_script "head /dev/urandom | tr -dc \"${CHARSET}\" | head -c 16 | base64" generated_password
-    run_a_script "base64 <<< ${appName}" generated_username
+    run_a_script "head /dev/urandom | tr -dc \"${CHARSET}\" | head -c 16 | base64" generated_password  --disable_log
+    run_a_script "base64 <<< ${appName}" generated_username --disable_log
 
     run_a_script "kubectl get secret/coresvc-fileserver-config -n coresvc -o json | jq '.data +={\"user-${appName}\": \"${generated_password}\"}'  | kubectl apply -f -" --disable_log
 

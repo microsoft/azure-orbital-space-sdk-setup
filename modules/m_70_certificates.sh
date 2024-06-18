@@ -32,7 +32,7 @@ function check_and_create_certificate_authority() {
     while read -r certFile; do
         if [[ "${certFile}" != "${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem" ]]; then
             debug_log "Removing cert '${certFile}'..."
-            run_a_script "rm ${certFile}"
+            run_a_script "rm ${certFile}" --disable_log
             debug_log "...successfully removed '${certFile}'"
         fi
     done < <(find "${SPACEFX_DIR}/certs" -name "*.crt" -o -name "*.pem")
@@ -48,7 +48,7 @@ function deploy_ca_cert_to_host() {
     # shellcheck disable=SC2154
     if [[ -f "/usr/local/share/ca-certificates/ca.spacefx.local/ca.spacefx.local.crt" ]]; then
         if [[ ! -f "/etc/ssl/certs/ca.spacefx.local.pem" ]]; then
-            run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem /etc/ssl/certs/ca.spacefx.local.pem"
+            run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem /etc/ssl/certs/ca.spacefx.local.pem" --disable_log
         fi
         is_cmd_available "update-ca-certificates" has_cmd
         if [[ "${has_cmd}" == true ]]; then
@@ -60,19 +60,19 @@ function deploy_ca_cert_to_host() {
     info_log "Deploying '${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem' to host..."
     create_directory "/usr/local/share/ca-certificates/ca.spacefx.local"
 
-    run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.crt /usr/local/share/ca-certificates/ca.spacefx.local/ca.spacefx.local.crt"
-    run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem /etc/ssl/certs/ca.spacefx.local.pem"
+    run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.crt /usr/local/share/ca-certificates/ca.spacefx.local/ca.spacefx.local.crt" --disable_log
+    run_a_script "ln -sf ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem /etc/ssl/certs/ca.spacefx.local.pem" --disable_log
 
     info_log "...adding cert..."
 
     # Doing it this way lets us add to the host's chain incase we don't have update-ca-certificates
-    run_a_script "cat ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.crt" space_fx_ca_cert
-    run_a_script "cat /etc/ssl/certs/ca-certificates.crt" current_ca_certs
+    run_a_script "cat ${SPACEFX_DIR}/certs/ca/ca.spacefx.local.crt" space_fx_ca_cert --disable_log
+    run_a_script "cat /etc/ssl/certs/ca-certificates.crt" current_ca_certs --disable_log
 
     run_a_script "tee /etc/ssl/certs/ca-certificates.crt > /dev/null << SPACEFX_UPDATE_END
 ${current_ca_certs}
 ${space_fx_ca_cert}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     is_cmd_available "update-ca-certificates" has_cmd
     if [[ "${has_cmd}" == true ]]; then
@@ -93,7 +93,7 @@ function remove_all_certs() {
 
     while read -r certFile; do
         info_log "...removing '${certFile}'..."
-        run_a_script "rm ${certFile}"
+        run_a_script "rm ${certFile}" --disable_log
         info_log "...successfully removed '${certFile}'..."
     done < <(find "${SPACEFX_DIR}/certs" -name "*.crt" -o -name "*.pem" -o -name "*.key" -o -name "*.csr")
 
@@ -174,7 +174,7 @@ function generate_certificate() {
 
     if [[ -f "${output_dir}/${cert_name}.crt" ]]; then
         debug_log "Removing out-of-date '${output_dir}/${cert_name}.crt'"
-        run_a_script "rm ${output_dir}/${cert_name}.crt"
+        run_a_script "rm ${output_dir}/${cert_name}.crt" --disable_log
         debug_log "...successfully removed out-of-date '${output_dir}/${cert_name}.crt'"
     fi
 
