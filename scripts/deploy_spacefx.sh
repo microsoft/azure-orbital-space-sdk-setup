@@ -174,6 +174,23 @@ SPACEFX_UPDATE_END"
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Copies the regctl binary to the deployment service
+############################################################
+function deploy_regctl_to_deployment_service(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ! -d "${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl" ]]; then
+        run_a_script "mkdir -p ${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl"
+    fi
+
+    info_log "Copying '${SPACEFX_DIR}/bin/${ARCHITECTURE}/regctl/${VER_REGCTL}' to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl/regctl'..."
+    run_a_script "cp ${SPACEFX_DIR}/bin/${ARCHITECTURE}/regctl/${VER_REGCTL}/regctl ${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl/regctl"
+    info_log "...successfully copied regctl binary to '${SPACEFX_DIR}/tmp/platform-deployment/regctl/regctl'"
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
 
 
 function main() {
@@ -190,6 +207,8 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
     deploy_spacefx_service_group --service_group core --wait_for_deployment
+
+    deploy_regctl_to_deployment_service
 
 
     info_log "------------------------------------------"
