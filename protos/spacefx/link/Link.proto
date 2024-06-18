@@ -2,7 +2,7 @@ syntax = "proto3";
 package Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Link;
 option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.HostServices.Link";
 
-import "spacefx/protos/common/Common.proto";
+import "spacefx/common/Common.proto";
 import "google/protobuf/timestamp.proto";
 
 message LinkRequest {
