@@ -45,6 +45,25 @@ STAGE_SPACE_FX_CMD_EXTRAS=""
 ############################################################
 # Install VSDebugger
 ############################################################
+function check_and_install_dotnet(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Checking for dotnet ('${DOTNET_INSTALL_DIR:?}/dotnet')..."
+    if [[ ! -f "${DOTNET_INSTALL_DIR:?}/dotnet" ]]; then
+        info_log "...dotnet not found.  Downloading..."
+        run_a_script "wget -P /tmp -q https://dotnet.microsoft.com/download/dotnet/scripts/v1/dotnet-install.sh" --disable_log
+        run_a_script "chmod +x /tmp/dotnet-install.sh" --disable_log
+        run_a_script "/tmp/dotnet-install.sh --version ${DOTNET_SDK_VERSION:?}" --disable_log
+    fi
+
+    info_log "...dotnet found at '${DOTNET_INSTALL_DIR:?}/dotnet'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Install VSDebugger
+############################################################
 function check_and_install_vsdebugger(){
     info_log "START: ${FUNCNAME[0]}"
 
@@ -72,7 +91,7 @@ function add_spacedev_nuget_source(){
 
     create_directory "${SPACEFX_DIR}/nuget"
 
-    run_a_script "dotnet nuget list source" current_nuget_sources
+    run_a_script "${DOTNET_INSTALL_DIR:?}/dotnet nuget list source" current_nuget_sources
 
     if [[ $current_nuget_sources == *"${SPACEFX_DIR}/nuget"* ]]; then
         info_log "found nuget source '${SPACEFX_DIR}/nuget'.  Nothing to do."
@@ -81,7 +100,7 @@ function add_spacedev_nuget_source(){
     fi
 
     info_log "Adding '${SPACEFX_DIR}/nuget' as a nuget source..."
-    run_a_script "dotnet nuget add source ${SPACEFX_DIR}/nuget"
+    run_a_script "${DOTNET_INSTALL_DIR:?}/dotnet nuget add source ${SPACEFX_DIR}/nuget"
     info_log "...successfully added '${SPACEFX_DIR}/nuget'"
 
 
@@ -300,13 +319,15 @@ SPACEFX_UPDATE_END" --disable_log
 }
 
 function main() {
+    check_and_install_dotnet
+    check_and_install_vsdebugger
+
     add_spacedev_nuget_source
     wipe_bin_and_obj_directories
 
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
-        check_and_install_vsdebugger
         generate_debugshims
         # run_user_requested_yamls
     fi
