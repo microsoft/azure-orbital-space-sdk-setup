@@ -37,6 +37,7 @@ jobs:
           GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
           GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
           SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
 
     - name: Testing Prod Cluster
@@ -70,6 +71,7 @@ jobs:
           GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
           GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
           SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
     - name: Build and publish devcontainer feature
       shell: bash
@@ -114,6 +116,7 @@ jobs:
           GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
           GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
           SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
     - name: Testing dev cluster
       shell: bash
