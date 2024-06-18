@@ -78,10 +78,10 @@ function wait_for_deployment_deletion_by_app_id() {
 
     # This loops and waits for at least 1 pod to flip the running
     while [[ ${pods_cleaned} == false ]]; do
+
         # Letting the pods be terminating status is sufficent for this step
         run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
         run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
-
 
         current_time=$(date +%s)
         elapsed_time=$((current_time - start_time))
