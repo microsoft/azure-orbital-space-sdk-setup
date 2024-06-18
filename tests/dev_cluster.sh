@@ -23,7 +23,8 @@ if docker ps -q | grep -q .; then
 fi
 
 echo "Provisioning devcontainer"
-devcontainer up --workspace-folder "${PWD}"
+# devcontainer up --workspace-folder "${PWD}"
+devcontainer up --workspace-folder "${PWD}" --workspace-mount-consistency cached --id-label devcontainer.local_folder="${PWD}" --default-user-env-probe loginInteractiveShell --build-no-cache --remove-existing-container --mount type=volume,source=vscode,target=/vscode,external=true --update-remote-user-uid-default on --mount-workspace-git-root true
 
 echo "Checking cluster..."
 kubectl get deployment/coresvc-registry -n coresvc
