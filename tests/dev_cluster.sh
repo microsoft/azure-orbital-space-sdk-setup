@@ -18,9 +18,10 @@ fi
 # There's some containers already running.  Reset the environment
 if docker ps -q | grep -q .; then
     echo "Preexisting containers found.  Resetting enviornment with big_red_button.sh"
-    ./.vscode/copy_to_spacedev.sh
     /var/spacedev/scripts/big_red_button.sh
 fi
+
+./.vscode/copy_to_spacedev.sh
 
 echo "Provisioning devcontainer"
 devcontainer up --workspace-folder "${PWD}"
