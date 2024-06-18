@@ -25,7 +25,9 @@ jobs:
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
         env_file: ./env/spacefx.env
-        token: ${{ secrets.GITHUB_TOKEN }}
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
       with:
