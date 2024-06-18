@@ -29,7 +29,6 @@ BUILD_ARGS=""
 EXTRA_PKGS=""
 ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
-IS_BASE_SVC_CONTAINER=false
 SPACEFX_DEV_ENABLED=true
 
 ############################################################
@@ -48,7 +47,6 @@ function show_help() {
    echo "--dockerfile | -d                  [REQUIRED] Relative path to the docker file within repo-dir"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
-   echo "--add-base-suffix                  [OPTIONAL] Add the base image suffix to the image tag.  Used for building base containers for Azure Orbital Space SDK Services"
    echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
@@ -62,9 +60,6 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
-        --add-base-suffix)
-            IS_BASE_SVC_CONTAINER=true
-        ;;
         --no-spacefx-dev)
             SPACEFX_DEV_ENABLED=false
         ;;
@@ -278,9 +273,9 @@ function build_prod_image_container(){
     buildArgs+="--build-arg APP_VERSION=\"${IMAGE_TAG}\" "
     labelArgs+="--label \"org.spacefx.app_version=${IMAGE_TAG}\" "
 
-    buildArgs+="--build-arg SPACEFX_VERSION=\"${SPACEFX_VERSION}\" "
-    buildArgs+="--build-arg SDK_VERSION=\"${SPACEFX_VERSION}\" "
-    labelArgs+="--label \"org.spacefx.spacefx_version=${SPACEFX_VERSION}\" "
+    buildArgs+="--build-arg SPACEFX_VERSION=\"${DEST_SPACEFX_TAG}\" "
+    buildArgs+="--build-arg SDK_VERSION=\"${DEST_SPACEFX_TAG}\" "
+    labelArgs+="--label \"org.spacefx.spacefx_version=${DEST_SPACEFX_TAG}\" "
 
     labelArgs+="--label \"org.spacefx.app_builddate=${BUILDDATE_VALUE}\" "
 
@@ -328,8 +323,11 @@ function main() {
     write_parameter_to_log APP_NAME
     write_parameter_to_log DOCKERFILE
     write_parameter_to_log REPO_DIR
-    write_parameter_to_log BUILD_ARGS
-    write_parameter_to_log IS_BASE_SVC_CONTAINER
+
+    for i in "${!BUILD_ARGS[@]}"; do
+        BUILD_ARG=${BUILD_ARGS[i]}
+        write_parameter_to_log BUILD_ARG
+    done
 
     if [[ -n "${ANNOTATION_CONFIG}" ]]; then
         write_parameter_to_log GITHUB_ANNOTATION
@@ -344,15 +342,19 @@ function main() {
         exit_with_error "No container registries are configured for push.  Unable to deploy container image and manifest"
     fi
 
+
+    check_for_repo_prefix_for_registry --registry "${DEST_CONTAINER_REGISTRY}" --result DEST_CONTAINER_REGISTRY_REPO_PREFIX
+    write_parameter_to_log DEST_CONTAINER_REGISTRY_REPO_PREFIX
+
+    if [[ -n "${DEST_CONTAINER_REGISTRY_REPO_PREFIX}" ]]; then
+        DEST_CONTAINER_REGISTRY="${DEST_CONTAINER_REGISTRY}/${DEST_CONTAINER_REGISTRY_REPO_PREFIX}"
+    fi
+
+
     DEST_SPACEFX_TAG="${SPACEFX_VERSION}"
 
     # Check if we have a tag suffix from our config file
     run_a_script "jq -r 'if (.config | has(\"tagSuffix\")) then .config.tagSuffix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" tag_suffix --disable_log
-
-    if [[ "${IS_BASE_SVC_CONTAINER}" == true ]]; then
-        trace_log "Adding base suffix to image tag"
-        IMAGE_TAG="${IMAGE_TAG}_base"
-    fi
 
     if [[ -n "${tag_suffix}" ]]; then
         IMAGE_TAG="${IMAGE_TAG}${tag_suffix}"

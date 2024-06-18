@@ -75,6 +75,21 @@ spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
 0
 ```
 
+## Building Base Container Images
+Several base container images are used to reduce the filesize of the Microsoft Azure Orbital Space SDK when deployed to a satellite. Follow the below steps to manually build these containers:
+```bash
+# Build and push SpaceSDK-Base
+
+/var/spacedev/build/build_containerImage.sh \
+    --dockerfile /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base \
+    --image-tag 0.11.0 \
+    --architecture "amd64" \
+    --repo-dir ${PWD} \
+    --app-name spacesdk-base \
+    --annotation-config azure-orbital-space-sdk-setup.yaml
+
+```
+
 ## Building the Microsoft Azure Orbital DevContainer Feature
 Microsoft Azure Orbital Space SDK is centrally deployed by a custom devcontainer feature.
 

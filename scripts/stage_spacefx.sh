@@ -34,7 +34,7 @@ function show_help() {
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
    echo "--dev-environment | -d             [OPTIONAL] Stage the environment for development."
-   echo "--artifact                   [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
+   echo "--artifact                         [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
    echo "--container | -c                   [OPTIONAL] name of the container to pull.  Can be passed multiple times"
    echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
@@ -92,15 +92,11 @@ fi
 function calculate_spacefx_registry(){
     info_log "START: ${FUNCNAME[0]}"
 
-    debug_log "Calculating registry repository name..."
-    run_a_script "yq '.services.core.registry.repository' ${SPACEFX_DIR}/chart/values.yaml" REGISTRY_REPO
-    debug_log "...registry repository name calculated as '${REGISTRY_REPO}'"
-
     debug_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result SPACEFX_VERSION_TAG
     info_log "SPACEFX_VERSION_TAG calculated as '${SPACEFX_VERSION_TAG}'"
 
-    find_registry_for_image "${REGISTRY_REPO}:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
+    find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
 
     check_for_repo_prefix_for_registry --registry "${SPACEFX_REGISTRY}" --result SPACEFX_REPO_PREFIX
