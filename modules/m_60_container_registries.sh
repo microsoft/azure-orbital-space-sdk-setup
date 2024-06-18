@@ -74,7 +74,7 @@ function check_for_repo_prefix_for_registry(){
         shift
     done
 
-    if [[ -z "${container_registry}" ]] || [[ -z "${returnResult}" ]]; then
+    if [[ -z "${registry}" ]] || [[ -z "${returnResult}" ]]; then
         exit_with_error "Missing a parameter.  Please use function like check_for_repo_prefix --registry \"registry\" --repo \"repo\" --result \"returnResult\".  Please supply all parameters."
     fi
 

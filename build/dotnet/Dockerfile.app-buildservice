@@ -1,0 +1,44 @@
+# Dockerfile.app-buildservice is the Dockerfile used by the onboard build service
+# to construct a full container image for an app.  This is done by combining the
+# app-base and spacesdk-base images
+
+ARG CONTAINER_REGISTRY="ghcr.io/microsoft/azure-orbital-space-sdk"
+ARG ASPNET_VERSION=6.0.16
+ARG DOTNET_VERSION=6.0
+ARG APP_NAME="spacesdk-app"
+ARG APP_VERSION="0.0.1"
+ARG SPACEFX_VERSION="0.0.1"
+ARG APP_BUILDDATE="20010101T000000"
+ARG ARCHITECTURE=""
+
+FROM ${CONTAINER_REGISTRY}/${APP_NAME}:${SPACEFX_VERSION}_base as svc-base
+ARG CONTAINER_REGISTRY="ghcr.io/microsoft/azure-orbital-space-sdk"
+ARG APP_NAME="spacesdk-app"
+ARG APP_VERSION="0.0.1"
+ARG SPACEFX_VERSION="0.0.1"
+ARG APP_BUILDDATE="20010101T000000"
+ARG ARCHITECTURE=""
+
+FROM ${CONTAINER_REGISTRY}/spacesdk-base:${SPACEFX_VERSION} as core
+ARG CONTAINER_REGISTRY="ghcr.io/microsoft/azure-orbital-space-sdk"
+ARG APP_NAME="spacesdk-app"
+ARG APP_VERSION="0.0.1"
+ARG SPACEFX_VERSION="0.0.1"
+ARG APP_BUILDDATE="20010101T000000"
+ARG ARCHITECTURE=""
+LABEL org.spacesdk.version=$SPACEFX_VERSION
+LABEL org.spacesdk.app.version=$APP_VERSION
+LABEL org.spacesdk.app.name=$APP_NAME
+LABEL org.spacesdk.app.builddate=$APP_BUILDDATE
+LABEL org.spacesdk.architecture=$ARCHITECTURE
+
+ENV APP_NAME=${APP_NAME}
+ENV SPACEFX_VERSION=${SPACEFX_VERSION}
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_BUILDDATE=${BUILD_DATE}
+ENV ARCHITECTURE=${ARCHITECTURE}
+
+# Copy the minimum files needed to run the service
+COPY --from=svc-base --chmod=0755 /workspaces/${APP_NAME} /workspaces/${APP_NAME}
+USER root
+WORKDIR /workspaces/${APP_NAME}

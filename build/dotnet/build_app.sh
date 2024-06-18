@@ -397,8 +397,8 @@ function main() {
     write_parameter_to_log ANNOTATION_CONFIG
 
     if [[ -n "${ANNOTATION_CONFIG}" ]]; then
-        write_parameter_to_log GITHUB_ANNOTATION
         run_a_script "cp ${SPACEFX_DIR}/config/github/annotations/${ANNOTATION_CONFIG} ${SPACEFX_DIR}/config/${ANNOTATION_CONFIG}" --disable_log
+        _annotation_config="--annotation-config ${ANNOTATION_CONFIG}"
         _generate_spacefx_config_json
     fi
 
@@ -472,23 +472,32 @@ function main() {
         info_log "Building container image..."
         build_app --project "${APP_PROJECT}"
         copy_to_output_dir --subfolder "app"
-        local _annotation_config=""
-        [[ -n "${ANNOTATION_CONFIG}" ]] && _annotation_config="--annotation-config ${ANNOTATION_CONFIG}"
+
+
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-                        --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.svc-base \
-                        --image-tag ${APP_VERSION} \
-                        --add-base-suffix \
+                        --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
+                        --image-tag ${APP_VERSION}_base \
                         --no-spacefx-dev \
                         --architecture ${ARCHITECTURE} \
                         --repo-dir ${OUTPUT_DIR}/app \
+                        --build-arg APP_NAME=${APP_NAME} \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
+                        --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
+                        --build-arg ARCHITECTURE=${ARCHITECTURE} \
                         --app-name ${APP_NAME} ${_annotation_config}"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-                --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.svc-base \
+                --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app \
                 --image-tag ${APP_VERSION} \
                 --no-spacefx-dev \
                 --architecture ${ARCHITECTURE} \
                 --repo-dir ${OUTPUT_DIR}/app \
+                --build-arg APP_NAME=${APP_NAME} \
+                --build-arg APP_VERSION=${APP_VERSION} \
+                --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
+                --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
+                --build-arg ARCHITECTURE=${ARCHITECTURE} \
                 --app-name ${APP_NAME} ${_annotation_config}"
 
         info_log "...successfully built container image"
