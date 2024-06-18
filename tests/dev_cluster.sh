@@ -27,6 +27,11 @@ echo "Provisioning devcontainer"
 devcontainer up --workspace-folder "${PWD}" --workspace-mount-consistency cached --id-label devcontainer.local_folder="${PWD}" --default-user-env-probe loginInteractiveShell --build-no-cache --remove-existing-container --mount type=volume,source=vscode,target=/vscode,external=true --update-remote-user-uid-default on --mount-workspace-git-root true
 
 echo "Checking cluster..."
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+if [[ ! -f "${KUBECONFIG}" ]]; then
+    echo "KUBECONFIG '${KUBECONFIG}' not found.  Cluster did not initialize."
+    exit 1
+fi
 kubectl get deployment/coresvc-registry -n coresvc
 kubectl get deployment/coresvc-fileserver -n coresvc
 kubectl get deployment/coresvc-switchboard -n coresvc
