@@ -81,6 +81,10 @@ function remove_k3s() {
 
     info_log "...k3s successfully removed"
 
+    info_log "...cleaned docker containers (if applicable)..."
+    purge_docker
+    info_log "...successfully cleaned docker containers (if applicable)."
+
     info_log "END: ${FUNCNAME[0]}"
 }
 
