@@ -380,8 +380,8 @@ function copy_to_output_dir(){
     done
 
     info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT_DIR}'..."
-    run_a_script "mkdir -p ${OUTPUT_DIR}/${subfolder}"
-    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/${subfolder}* ${OUTPUT_DIR}/${subfolder}"
+    run_a_script "mkdir -p ${OUTPUT_DIR}"
+    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/${subfolder} ${OUTPUT_DIR}/${subfolder}"
     info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT_DIR}'. "
 
     info_log "END: ${FUNCNAME[0]}"
