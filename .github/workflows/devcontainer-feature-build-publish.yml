@@ -31,30 +31,25 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
-      with: 
-        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
-
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
-        env_file: ./env/spacefx.env
-        token: ${{ secrets.GITHUB_TOKEN }}
+          env_file: ./env/spacefx.env
+          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
-      with:
-        registry-name: ${{ env.REGISTRY }}
-        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
-        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
-  
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
-      with:
-        oras_version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
 
     - name: Testing Prod Cluster
       shell: bash
       run: |
+
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        # Copy the scripts ino the entry point for the devcontainer feature
+        echo "Copying all files to /var/spacedev..."
+        ./.vscode/copy_to_spacedev.sh
+
         echo "Running  prod_cluster.sh test..."
         bash ./tests/prod_cluster.sh
 
@@ -71,14 +66,10 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
-        env_file: ./env/spacefx.env
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
-      with:
-        oras_version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+          env_file: ./env/spacefx.env
+          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
     - name: Build and publish devcontainer feature
       shell: bash
@@ -117,31 +108,23 @@ jobs:
     steps:
     - uses: actions/checkout@v2
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-docker@main
-      with: 
-        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
-
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
-        env_file: ./env/spacefx.env
-        token: ${{ secrets.GITHUB_TOKEN }}
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/registry-login@main
-      with:
-        registry-name: ${{ env.REGISTRY }}
-        github-user-name: ${{ secrets.GIT_HUB_USER_NAME }}
-        github-user-token: ${{ secrets.GIT_HUB_USER_TOKEN }}
-  
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-oras@main
-      with:
-        oras-version: 0.16.0
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/install-devcontainer-cli@main
+          env_file: ./env/spacefx.env
+          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
     - name: Testing dev cluster
       shell: bash
       run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        # Copy the scripts ino the entry point for the devcontainer feature
+        echo "Copying all files to /var/spacedev..."
+        ./.vscode/copy_to_spacedev.sh 
+
         echo "Running  dev_cluster.sh test..."
         bash ./tests/dev_cluster.sh
 
