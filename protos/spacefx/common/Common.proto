@@ -1,0 +1,184 @@
+syntax = "proto3";
+
+package Microsoft.Azure.SpaceFx.MessageFormats.Common;
+option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.Common";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+
+enum Topics {
+    HEARTBEAT_PULSE = 0;
+ }
+
+enum StatusCodes {
+    SUCCESSFUL = 0;
+    UNAUTHORIZED = 1;
+    FORBIDDEN = 2;
+    NOT_FOUND = 3;
+    GENERAL_FAILURE = 4;
+    HEALTHY = 5;
+    READY = 6;
+    PENDING = 7;
+    TRANSMITTING = 8;
+    NOT_APPLICABLE = 9;
+    REJECTED = 10;
+    REQUEST = 11;
+    SERVICE_UNAVAILABLE = 12;
+    TIMEOUT = 13;
+    INTERNAL_SERVICE_ERROR = 14;
+    INVALID_ARGUMENT = 15;
+    UNKNOWN = 16;
+}
+
+enum Priority {
+    LOW = 0;
+    MEDIUM = 1;
+    HIGH = 2;
+    CRITICAL = 3;
+}
+
+enum HostServices {
+    LOGGING = 0;
+    POSITION = 1;
+    SENSOR = 2;
+    LINK = 3;
+}
+
+enum PlatformServices {
+    DEPLOYMENT = 0;
+    MTS = 1;
+}
+
+message RequestHeader {
+    string trackingId = 1;
+    string correlationId = 2;
+    string appId = 3;
+    map<string, string> metadata = 4;
+}
+
+message ResponseHeader {
+    string trackingId = 1;
+    string correlationId = 2;
+    StatusCodes status = 3;
+    string message = 4;
+    string appId = 5;
+    map<string, string> metadata = 6;
+}
+
+message HeartBeatPulse {
+    ResponseHeader responseHeader = 1;
+    string appId = 2;
+    google.protobuf.Timestamp currentSystemTime = 4;
+    google.protobuf.Timestamp appStartTime = 5;
+    int32 pulseFrequencyMS = 6;
+    string appVersion = 7;
+}
+
+ message DirectToApp {
+    ResponseHeader responseHeader = 1;
+    string sourceAppId = 3;
+    string messageType = 4;
+    google.protobuf.Any message = 5;
+}
+
+// The health check response
+message CacheItem {
+    RequestHeader requestHeader = 1;
+    string name = 2;
+    google.protobuf.Timestamp creationTime = 3;
+    google.protobuf.Timestamp expirationTime = 4;
+    google.protobuf.Any item = 5;
+}
+
+// The health check request
+message HealthCheckRequest {
+    RequestHeader requestHeader = 1;
+}
+
+// The health check response
+message HealthCheckResponse {
+    ResponseHeader responseHeader = 1;
+}
+
+// The health check request
+message PluginHealthCheckRequest {
+    RequestHeader requestHeader = 1;
+}
+
+// The health check response
+message PluginHealthCheckResponse {
+    ResponseHeader responseHeader = 1;
+}
+
+// The health check request
+message PluginConfigurationRequest {
+    RequestHeader requestHeader = 1;
+}
+
+// The health check response
+message PluginConfigurationResponse {
+    message PluginConfig {
+        StatusCodes status = 1;
+        string pluginName = 2;
+        string pluginPath = 3;
+        int32 processing_order = 4;
+        bool enabled = 5;
+        string corePermissions = 6;
+        string permissions = 7;
+    }
+    ResponseHeader responseHeader = 1;
+    repeated PluginConfig plugins = 2;
+}
+
+message TelemetryMetric {
+    RequestHeader requestHeader = 1;
+    string metricName = 2;
+    google.protobuf.Int32Value metricValue = 3;
+    google.protobuf.Timestamp metricTime = 4;
+}
+
+message TelemetryMultiMetric {
+    RequestHeader requestHeader = 1;
+    repeated TelemetryMetric telemetryMetrics = 2;
+}
+
+message TelemetryMetricResponse {
+    ResponseHeader responseHeader = 1;
+}
+
+message TelemetryMultiMetricResponse {
+    ResponseHeader responseHeader = 1;
+}
+
+message LogMessage {
+    enum LOG_LEVEL{
+       TRACE = 0;
+       DEBUG = 1;
+       INFO = 2;
+       WARNING = 3;
+       ERROR = 4;
+       CRITICAL = 5;
+       NONE = 6;
+       TELEMETRY = 7;
+    }
+    RequestHeader requestHeader = 1;
+
+    LOG_LEVEL logLevel = 2;
+    string message = 3;
+    Priority priority = 4;
+    string category = 5;
+    string subCategory = 6;
+    repeated google.protobuf.Int32Value intValues = 7;
+    repeated google.protobuf.FloatValue floatValues = 8;
+    repeated google.protobuf.Timestamp dateTimeValues = 9;
+    repeated string stringValues = 10;
+    google.protobuf.Timestamp logTime = 11;
+    google.protobuf.Timestamp logReceivedTime = 12;
+    string logTimeUserReadable = 13;
+}
+
+// Response sent back to the app from a logging request
+message LogMessageResponse {
+    ResponseHeader responseHeader = 1;
+}
