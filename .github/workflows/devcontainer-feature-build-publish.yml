@@ -4,7 +4,8 @@ on:
     workflow_dispatch:
     push:
         branches:
-        - main
+        # - main
+        - km/fix_workflow
 
 env:
   REGISTRY: ghcr.io
