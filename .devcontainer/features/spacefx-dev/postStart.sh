@@ -43,7 +43,7 @@ STAGE_SPACE_FX_CMD_EXTRAS=""
 
 
 ############################################################
-# Install VSDebugger
+# Install Dotnet
 ############################################################
 function check_and_install_dotnet(){
     info_log "START: ${FUNCNAME[0]}"
