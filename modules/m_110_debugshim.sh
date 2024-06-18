@@ -74,16 +74,11 @@ function wait_for_deployment_deletion_by_app_id() {
     start_time=$(date +%s)
 
     # This returns any pods that are running
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -A" k3s_pods
-
-   
+    run_a_script "kubectl get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
 
     # This loops and waits for at least 1 pod to flip the running
     while [[ ${pods_cleaned} == false ]]; do
 
-        debug_log "k3s_pods: ${k3s_pods}"
-
-        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -A" k3s_pods
         # Letting the pods be terminating status is sufficent for this step
         run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
         run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
