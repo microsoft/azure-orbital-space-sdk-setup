@@ -8,6 +8,8 @@
 #  "bash ./tests/prod_cluster.sh"
 set -e
 SCRIPT_NAME=$(basename "$0")
+WORKING_DIR="$(git rev-parse --show-toplevel)"
+
 echo "Microsoft Azure Orbital Space SDK - Production Cluster Test"
 
 if [[ -d "/var/spacedev" ]]; then
@@ -16,7 +18,7 @@ if [[ -d "/var/spacedev" ]]; then
 fi
 
 echo "Creating /var/spacedev directory..."
-./.vscode/copy_to_spacedev.sh
+${WORKING_DIR}/.vscode/copy_to_spacedev.sh
 
 
 echo "Staging Microsoft Azure Orbital Space SDK..."
