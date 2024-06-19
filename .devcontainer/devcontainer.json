@@ -8,8 +8,7 @@
 	],
 	"features": {
 		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {
-			"app_name": "spacesdk-setup",
-			"extract_setup_files": "false"
+			"app_name": "spacesdk-setup"
 		}
 	},
 	"hostRequirements": {
@@ -102,6 +101,5 @@
 			}
 		}
 	},
-	"remoteUser": "root",
-	"initializeCommand": "${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output-dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup"
+	"remoteUser": "root"
 }
