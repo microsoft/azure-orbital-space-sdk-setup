@@ -20,7 +20,7 @@ jobs:
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@km/fix_build_image
       with: 
         dockerfile: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
         architecture: amd64
@@ -44,7 +44,7 @@ jobs:
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@km/fix_build_image
       with: 
         dockerfile: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
-        architecture: amd64
+        architecture: arm64
         repo-dir: ${{ github.workspace }}
         app-name: spacesdk-base
         annotation-config: azure-orbital-space-sdk-setup.yaml
