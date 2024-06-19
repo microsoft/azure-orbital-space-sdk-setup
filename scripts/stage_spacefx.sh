@@ -313,9 +313,9 @@ function stage_container_images(){
         if [[ -n "${_container_registry_repo_prefix}" ]]; then
             # Remove ${_container_registry}/$_container_registry_repo_prefix from the image name and just have the container name
             _container_repo=${_full_container_name#"${_container_registry}/${_container_registry_repo_prefix}/"}
-            info_log "...updating registry.spacefx.local/${_container_registry_repo_prefix}/${source_repo_name} to registry.spacefx.local/${_container_repo}..."
-            run_a_script "regctl image copy registry.spacefx.local/${_container_registry_repo_prefix}/${source_repo_name} registry.spacefx.local/${_container_repo}"
-            info_log "...successfully updated registry.spacefx.local/${_container_registry_repo_prefix}/${source_repo_name} to registry.spacefx.local/${_container_repo}"
+            info_log "...updating registry.spacefx.local/${_container_registry_repo_prefix}/${_container_repo} to registry.spacefx.local/${_container_repo}..."
+            run_a_script "regctl image copy registry.spacefx.local/${_container_registry_repo_prefix}/${_container_repo} registry.spacefx.local/${_container_repo}"
+            info_log "...successfully updated registry.spacefx.local/${_container_registry_repo_prefix}/${_container_repo} to registry.spacefx.local/${_container_repo}"
         fi
 
 
