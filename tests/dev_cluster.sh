@@ -44,7 +44,7 @@ fi
 
 has_oras=$(whereis -b "oras")
 
-if [[ $has_devcontainer_cli == "oras:" ]]; then
+if [[ $has_oras == "oras:" ]]; then
     echo "The 'oras' command is not available.  Please install it and retry."
 fi
 
