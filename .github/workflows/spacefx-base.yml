@@ -1,0 +1,50 @@
+name: spacefx-base-image-build-publish
+
+on: 
+    workflow_dispatch:
+    push:
+        branches:
+         - main
+
+jobs:
+  build-spacefx-base-image-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+      with: 
+        docker-file: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
+        architecture: amd64
+        repo-dir: ${{ github.workspace }}
+        app-name: spacesdk-base
+        annotation-config: azure-orbital-space-sdk-setup.yaml
+
+  build-spacefx-base-image-arm64:
+    runs-on: spacesdk-ubuntu-2204LTS-arm64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+      with: 
+        docker-file: ./build/spacesdk-base/Dockerfile.spacesdk-base
+        architecture: arm64
+        repo-dir: ${{ github.workspace }}
+        app-name: spacesdk-base
+        annotation-config: azure-orbital-space-sdk-setup.yaml
