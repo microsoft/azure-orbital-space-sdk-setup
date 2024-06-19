@@ -121,30 +121,37 @@ function _auto_add_downloads() {
             ;;
         "hostsvc-position-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Position.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
             ;;
         "hostsvc-sensor-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Sensor.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("hostsvc-sensor:${_auto_add_tag_spacefx_tag}")
             ;;
         "hostsvc-logging-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Logging.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
             ;;
         "hostsvc-link-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Link.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("hostsvc-link:${_auto_add_tag_spacefx_tag}")
             ;;
         "platform-mts-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.MessageTranslationService.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("platform-mts:${_auto_add_tag_spacefx_tag}")
             ;;
         "platform-deployment-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.Deployment.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("platform-deployment:${_auto_add_tag_spacefx_tag}")
             ;;
         "vth-plugin")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.VTH.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("vth:${_auto_add_tag_spacefx_tag}")
             ;;
     esac
