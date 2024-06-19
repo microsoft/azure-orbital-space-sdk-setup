@@ -16,7 +16,7 @@ VERSION=0.11.0_test_do_not_use
 
 # No other changes needed below this line
 FEATURE=azure-orbital-space-sdk/spacefx-dev
-ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
+ARTIFACT_PATH=${WORKING_DIR}/output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
 
 
@@ -49,14 +49,18 @@ if [[ $has_devcontainer_cli == "oras:" ]]; then
 fi
 
 echo "Building the devcontainer feature '${REGISTRY}/${FEATURE}:${VERSION}'..."
-# Validate the output directory exists and clean it out if there is content already present
+
+
+echo "...cleaning out output directory..."
 [[ -d ./output/spacefx-dev ]] && sudo rm ./output/spacefx-dev/* -rf
 
+echo "...running copy_to_spacedev.sh"
 # Copy the scripts ino the entry point for the devcontainer feature
-./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+${WORKING_DIR}/.vscode/copy_to_spacedev.sh --output-dir ${WORKING_DIR}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
+echo "...building the devcontainer feature..."
 # Build the devcontainer feature
-devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
+devcontainer features package --force-clean-output-folder ${WORKING_DIR}/.devcontainer/features --output-folder ${WORKING_DIR}/output/spacefx-dev
 
 
 echo "Pushing the devcontainer feature '${REGISTRY}/${FEATURE}:${VERSION}'..."
