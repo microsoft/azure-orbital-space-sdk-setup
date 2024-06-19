@@ -111,7 +111,7 @@ function write_to_file(){
     debug_log "Writing to file '${file}'..."
     run_a_script "tee ${file} ${append} > /dev/null << SPACEFX_UPDATE_END
 ${file_contents}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     debug_log "...successfully wrote to file '${file}'"
 }

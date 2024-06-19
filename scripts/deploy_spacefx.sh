@@ -144,20 +144,13 @@ function deploy_spacefx_service_group(){
     fi
 
     info_log "Successfully queued services for deployment.  Generating yaml for service group '${service_group}'..."
-    run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart ${deploy_group_cmd}" yaml
+    run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart ${deploy_group_cmd}" yaml --disable_log
 
-
-# This is only for debugging as it outputs any secrets to plain text on the disk
-    run_a_script "tee ${SPACEFX_DIR}/tmp/yamls/${service_group}.yaml > /dev/null << SPACEFX_UPDATE_END
-${yaml}
-SPACEFX_UPDATE_END"
-
+    write_to_file --file "${SPACEFX_DIR}/tmp/yamls/${service_group}.yaml" --data "${yaml}"
 
     info_log "Deploying '${service_group}' spacefx services..."
 
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
-${yaml}
-SPACEFX_UPDATE_END"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/yamls/${service_group}.yaml"
 
     if [[ "${wait_for_deployment}" == true ]]; then
         for service in $spacefx_services; do
