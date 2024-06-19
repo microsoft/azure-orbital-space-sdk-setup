@@ -8,11 +8,11 @@ on:
             required: false
             type: string
             default: "26.1.3"
-      
+
     push:
         branches:
-        - main
-    
+        - add-test-feature
+
 
 env:
   REGISTRY: ghcr.io
@@ -59,7 +59,7 @@ jobs:
 
   build-publish-feature:
     runs-on: ubuntu-latest
-    needs: test-prod
+    needs: test-dev
 
     permissions:
       contents: read
@@ -106,7 +106,7 @@ jobs:
 
   test-dev:
     runs-on: ubuntu-latest
-    needs: build-publish-feature
+    needs: test-prod
 
 
     permissions:
@@ -135,12 +135,12 @@ jobs:
 
         # Copy the scripts ino the entry point for the devcontainer feature
         echo "Copying all files to /var/spacedev..."
-        ./.vscode/copy_to_spacedev.sh 
+        ./.vscode/copy_to_spacedev.sh
 
         echo "Running  dev_cluster.sh test..."
         bash ./tests/dev_cluster.sh
 
-  
 
 
-  
+
+
