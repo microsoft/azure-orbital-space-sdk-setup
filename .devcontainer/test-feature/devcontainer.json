@@ -1,0 +1,107 @@
+// README at: https://github.com/microsoft/azure-orbital-space-sdk-setup
+{
+	"name": "spacefx-dev",
+	"image": "mcr.microsoft.com/devcontainers/dotnet:0-6.0",
+	"runArgs": [
+		"--name",
+		"spacefx-dev"
+	],
+	"features": {
+		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0_test_do_not_use": {
+			"app_name": "spacesdk-setup",
+			"extract_setup_files": "false"
+		}
+	},
+	"hostRequirements": {
+		"cpus": 8,
+		"memory": "8gb"
+	},
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+			// Add the IDs of extensions you want installed when the container is created.
+			"extensions": [
+				"rogalmic.bash-debug"
+			]
+		},
+		"codespaces": {
+			"repositories": {
+				"microsoft/azure-orbital-space-sdk": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-setup": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-coresvc-registry": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-coresvc-fileserver": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-coresvc-switchboard": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-platform-mts": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-platform-deployment": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-vth": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-link": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-logging": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-position": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				},
+				"microsoft/azure-orbital-space-sdk-hostsvc-sensor": {
+					"permissions": {
+						"contents": "read",
+						"packages": "read"
+					}
+				}
+			}
+		}
+	},
+	"remoteUser": "root",
+	"initializeCommand": "${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output-dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup"
+}

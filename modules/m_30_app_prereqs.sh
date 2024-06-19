@@ -190,6 +190,7 @@ function _app_install_for_helm(){
     url="https://get.helm.sh/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz"
 
     run_a_script "mktemp -d" _helm_install_temp_dir --disable_log
+    run_a_script "chmod 777 ${_helm_install_temp_dir}" --disable_log
 
     destination="/usr/local/bin/helm"
 
