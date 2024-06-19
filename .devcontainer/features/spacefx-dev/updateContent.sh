@@ -235,10 +235,10 @@ function main() {
     pull_extra_containers
     pull_extra_build_artifacts
     info_log "Starting stage_spacefx.sh..."
-    run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh ${STAGE_SPACE_FX_CMD_EXTRAS}"
+    run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh --dev-environment ${STAGE_SPACE_FX_CMD_EXTRAS}"
     info_log "...stage_spacefx.sh completed successfully"
     info_log "Starting deploy_spacefx.sh..."
-    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
+    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh --dev-environment"
     info_log "...deploy_spacefx.sh completed successfully"
 
 
