@@ -35,6 +35,18 @@ fi
 kubectl get deployment/coresvc-registry -n coresvc
 kubectl get deployment/coresvc-fileserver -n coresvc
 kubectl get deployment/coresvc-switchboard -n coresvc
+
+kubectl get deployment/hostsvc-link -n hostsvc
+kubectl get deployment/hostsvc-sensor -n hostsvc
+kubectl get deployment/hostsvc-logging -n hostsvc
+kubectl get deployment/hostsvc-position -n hostsvc
+
+
+kubectl get deployment/platform-deployment -n platformsvc
+kubectl get deployment/platform-mts -n platformsvc
+kubectl get deployment/vth -n platformsvc
+
+
 echo ""
 echo ""
 echo ""
