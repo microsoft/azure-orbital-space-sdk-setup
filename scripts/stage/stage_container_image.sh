@@ -97,7 +97,7 @@ stage_images() {
             local full_image_name
             full_image_name=${IMAGES[i]}
 
-            info_log "START:  ${full_image_name}"
+            echo "START:  ${full_image_name}"
 
             # This removes everything after the last forward slash
             # so ghcr.io/microsoft/image:version becomes ghcr.io/microsoft
@@ -120,13 +120,17 @@ stage_images() {
             # so myacr.azurecr.io/test/image/something/image:version becomes registry.spacefx.local/test/image/something/image:version
             destination_full_name=${full_image_name//$source_registry/registry.spacefx.local}
 
-            info_log "Copying '${full_image_name}' to '${destination_full_name}'..."
+            echo "Copying '${full_image_name}' to '${destination_full_name}'..."
 
-            run_a_script "regctl image copy --platform linux/$ARCHITECTURE ${full_image_name} ${destination_full_name}" --disable_log
+            regctl image copy --platform "linux/$ARCHITECTURE" "${full_image_name}" "${destination_full_name}"
+            if [[ $? -ne 0 ]]; then
+                echo "Failed to copy '${full_image_name}' to '${destination_full_name}'.  See above error for details."
+                return 1
+            fi
 
-            info_log "...successfully copied '${full_image_name}' to '${destination_full_name}'."
+            echo "...successfully copied '${full_image_name}' to '${destination_full_name}'."
 
-            info_log "END:  ${full_image_name}"
+            echo "END:  ${full_image_name}"
         ) &
         worker_pids+=($!)
         sleep 0.1
