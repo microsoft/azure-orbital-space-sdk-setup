@@ -18,7 +18,7 @@ source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@
 NVIDIA_GPU_PLUGIN=false
 CONTAINERS=()
 BUILD_ARTIFACTS=()
-DEV_ENVIRONMENT=false
+DEV_ENVIRONMENT=true # Temporarily setting this to true to unblock work while implementing the build service in parallel
 SPACEFX_REGISTRY=""
 SPACEFX_REPO_PREFIX=""
 SPACEFX_VERSION_TAG=""
