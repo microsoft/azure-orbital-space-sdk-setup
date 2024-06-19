@@ -5,7 +5,7 @@
 
 # Example Usage:
 #
-#  "bash ./tests/all.sh"
+#  "bash ./tests/_all.sh"
 set -e
 WORKING_DIR="$(git rev-parse --show-toplevel)"
 
