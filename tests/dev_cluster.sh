@@ -50,7 +50,7 @@ fi
 
 echo "Building the devcontainer feature '${REGISTRY}/${FEATURE}:${VERSION}'..."
 # Validate the output directory exists and clean it out if there is content already present
-[[ -d ./output/spacefx-dev ]]; sudo rm ./output/spacefx-dev/* -rf
+[[ -d ./output/spacefx-dev ]] && sudo rm ./output/spacefx-dev/* -rf
 
 # Copy the scripts ino the entry point for the devcontainer feature
 ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
