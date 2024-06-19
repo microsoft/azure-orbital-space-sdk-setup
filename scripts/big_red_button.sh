@@ -51,48 +51,21 @@ function show_header() {
     info_log "          |___/                                                    "
 }
 
-
-
-
 ############################################################
-# Uninstall k3s
+# Stops the k3s service if it's running
 ############################################################
-function remove_k3s() {
-    info_log "START: ${FUNCNAME[0]}"
-
-    info_log "Removing k3s..."
-
-    is_cmd_available "k3s" has_cmd
-    # shellcheck disable=SC2154
-    if [[ "${has_cmd}" == false ]]; then
-        info_log "...k3s not found.  Nothing do to"
-        info_log "END: ${FUNCNAME[0]}"
-        return
-    fi
-
-    run_a_script "systemctl is-active k3s" K3S_STATUS --ignore_error
-    if [[ "${K3S_STATUS}" == "active" ]]; then
-        info_log "...stopping k3s..."
+function check_and_disable_k3s() {
+    if [[ -f "/etc/systemd/system/k3s.service" ]]; then
+        info_log "Disabling k3s service"
+        run_a_script "systemctl disable k3s"
         run_a_script "systemctl stop k3s"
     fi
-
-    info_log "...uninstalling k3s..."
-    [[ -f "/usr/local/bin/k3s-uninstall.sh" ]] && run_a_script "/usr/local/bin/k3s-uninstall.sh"
-
-    info_log "...k3s successfully removed"
-
-    info_log "...cleaned docker containers (if applicable)..."
-    purge_docker
-    info_log "...successfully cleaned docker containers (if applicable)."
-
-    info_log "END: ${FUNCNAME[0]}"
 }
 
-
 ############################################################
-# Remove everything in docker
+# Stops and removes all docker containers
 ############################################################
-function purge_docker() {
+function stop_all_docker_containers() {
     info_log "START: ${FUNCNAME[0]}"
 
     is_cmd_available "docker" has_cmd
@@ -104,6 +77,7 @@ function purge_docker() {
         return
     fi
 
+    info_log "Pausing all docker containers..."
     run_a_script "docker ps -q" all_docker_containers --disable_log
 
     for container_id in $all_docker_containers; do
@@ -111,7 +85,7 @@ function purge_docker() {
         run_a_script "docker pause ${container_id}" --ignore_error --disable_log
     done
 
-    info_log "Stoping all docker containers..."
+    info_log "...stopping container processes..."
 
     docker_pids=$(ps -e | grep 'containerd-shim' | awk '{print $1}')
 
@@ -120,7 +94,7 @@ function purge_docker() {
         run_a_script "kill -9 $pid" --disable_log
     done
 
-    info_log "Removing all docker containers...."
+    info_log "...removing containers...."
     run_a_script "docker ps -a -q" all_docker_containers --disable_log
 
     for container_id in $all_docker_containers; do
@@ -130,9 +104,51 @@ function purge_docker() {
 
     info_log "...all docker containers removed."
 
-    info_log "Purging docker..."
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Uninstall k3s
+############################################################
+function remove_k3s() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    is_cmd_available "k3s" has_cmd
+    # shellcheck disable=SC2154
+    if [[ "${has_cmd}" == false ]]; then
+        info_log "...k3s not found.  Nothing do to"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "...k3s found.  Uninstalling..."
+    [[ -f "/usr/local/bin/k3s-uninstall.sh" ]] && run_a_script "/usr/local/bin/k3s-uninstall.sh"
+
+    info_log "...k3s successfully uninstalled"
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Prune Docker
+############################################################
+function prune_docker() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    is_cmd_available "docker" has_cmd
+
+    # shellcheck disable=SC2154
+    if [[ "${has_cmd}" == false ]]; then
+        info_log "...docker not found.  Nothing do to"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Pruning docker..."
     run_a_script "docker system prune --all --volumes --force"
-    info_log "...docker purged."
+    info_log "...docker pruned."
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -140,11 +156,15 @@ function purge_docker() {
 function main() {
     show_header
 
-    purge_docker
+    check_and_disable_k3s
+
+    stop_all_docker_containers
     remove_k3s
+    prune_docker
 
-
+    info_log "Removing '${SPACEFX_DIR:?}'..."
     run_a_script "rm -rf ${SPACEFX_DIR:?}"
+    info_log "...successfully removed '${SPACEFX_DIR:?}'"
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
