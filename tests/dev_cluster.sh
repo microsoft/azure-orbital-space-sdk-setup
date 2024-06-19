@@ -80,7 +80,7 @@ devcontainer up --workspace-folder "${PWD}" \
         --mount type=volume,source=vscode,target=/vscode,external=true \
         --update-remote-user-uid-default on \
         --mount-workspace-git-root true \
-        --override-config "${WORKING_DIR}/.devcontainer/test-feature/devcontainer.json" \
+        --override-config "${WORKING_DIR}/.devcontainer/test-feature/devcontainer.json"
 
 echo "Checking cluster..."
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
