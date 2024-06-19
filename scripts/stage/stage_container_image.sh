@@ -86,16 +86,17 @@ stage_images() {
     # Loop through all the service containers and trigger a background task to pull and export them (if necessary)
     for i in "${!IMAGES[@]}"; do
         info_log "Queuing image - ${IMAGES[i]}..."
+        write_to_file --file "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.stage_images.${i}.input" --file_contents "${IMAGES[i]}"
         ((img_count = img_count + 1))
         (
             # Reroute the stdout to a file so we can uniquely identify this run
             trap "" HUP
-            exec 2> /dev/null
+            exec 2> "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.stage_images.${i}"
             exec 0< /dev/null
             exec 1> "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.stage_images.${i}"
 
             local full_image_name
-            full_image_name=${IMAGES[i]}
+            full_image_name=$(cat "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.stage_images.${i}.input")
 
             echo "START:  ${full_image_name}"
 
@@ -122,11 +123,9 @@ stage_images() {
 
             echo "Copying '${full_image_name}' to '${destination_full_name}'..."
 
-            regctl image copy --platform "linux/$ARCHITECTURE" "${full_image_name}" "${destination_full_name}"
-            if [[ $? -ne 0 ]]; then
-                echo "Failed to copy '${full_image_name}' to '${destination_full_name}'.  See above error for details."
-                return 1
-            fi
+            regctl image copy --platform "linux/$ARCHITECTURE" "${full_image_name}" "${destination_full_name}" \
+            || { echo "Failed to copy '${full_image_name}' to '${destination_full_name}'. See above error for details."; return 1; }
+
 
             echo "...successfully copied '${full_image_name}' to '${destination_full_name}'."
 

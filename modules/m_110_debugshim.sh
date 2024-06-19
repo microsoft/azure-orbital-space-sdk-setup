@@ -113,9 +113,39 @@ function _auto_add_downloads() {
 
     info_log "Adding downloads and artifacts for APP_TYPE '${APP_TYPE}'..."
 
+    calculate_tag_from_channel --tag "${SPACEFX_VERSION}_base" --result _auto_add_tag_spacefx_tag
+
     case "${APP_TYPE}" in
         "sdk-service")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
+            ;;
+        "hostsvc-position-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Position.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "hostsvc-sensor-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Sensor.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("hostsvc-sensor:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "hostsvc-logging-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Logging.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "hostsvc-link-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.HostServices.Link.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("hostsvc-link:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "platform-mts-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.MessageTranslationService.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("platform-mts:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "platform-deployment-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.Deployment.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("platform-deployment:${_auto_add_tag_spacefx_tag}")
+            ;;
+        "vth-plugin")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.VTH.Plugins.${SPACEFX_VERSION}.nupkg")
+            PULL_CONTAINERS+=("vth:${_auto_add_tag_spacefx_tag}")
             ;;
     esac
 
@@ -130,6 +160,12 @@ function _auto_add_downloads() {
     for i in "${!DOWNLOAD_ARTIFACTS[@]}"; do
         DOWNLOAD_ARTIFACT=${DOWNLOAD_ARTIFACTS[i]}
         debug_log "...Artifact: ${DOWNLOAD_ARTIFACT}"
+    done
+
+    debug_log "Containers queued to download:"
+    for i in "${!PULL_CONTAINERS[@]}"; do
+        PULL_CONTAINER=${PULL_CONTAINERS[i]}
+        debug_log "...Container: ${PULL_CONTAINER}"
     done
 
 

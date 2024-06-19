@@ -280,14 +280,21 @@ function stage_container_images(){
 
     for i in "${!CONTAINERS[@]}"; do
         CONTAINER=${CONTAINERS[i]}
-        info_log "Checking container registries for ${CONTAINER}..."
-        find_registry_for_image "${CONTAINER}" _container_registry
+        # Regex pattern to match a container registry and image format like "registry/image:tag"
+        container_registry_pattern='^[a-zA-Z0-9.-]+\/[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$'
+        _stage_container_full_image_name=""
 
-        if [[ -z "${_container_registry}" ]]; then
-            exit_with_error "Unable to find a container registry with container image '${CONTAINER}'.  Please recheck image name, and configured container registries in your config yamls"
+        if [[ $CONTAINER =~ $container_registry_pattern ]]; then
+            info_log "...'$CONTAINER' is a fully qualified container registry and image string.  Skipping container registry search."
+            _stage_container_full_image_name="${CONTAINER}"
+        else
+            info_log "...'$CONTAINER' is not a fully qualified container registry and image string.  Searching for container registry..."
+            find_registry_for_image "${CONTAINER}" _container_registry
+            [[ -z "${_container_registry}" ]] && exit_with_error "Unable to find a container registry with container image '${CONTAINER}'.  Please recheck image name, and configured container registries in your config yamls"
+            get_image_name --registry "${_container_registry}" --repo "${CONTAINER}" --result _stage_container_full_image_name
         fi
 
-        containers_to_stage="${containers_to_stage} --image ${_container_registry}/${CONTAINER}"
+        containers_to_stage="${containers_to_stage} --image ${_stage_container_full_image_name}"
     done
 
     run_a_script "${SPACEFX_DIR}/scripts/stage/stage_container_image.sh --architecture ${ARCHITECTURE} ${containers_to_stage}"

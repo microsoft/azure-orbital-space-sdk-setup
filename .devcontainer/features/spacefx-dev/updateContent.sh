@@ -116,7 +116,7 @@ function pull_extra_containers(){
         return
     fi
 
-    for container in "${CONTAINERS[@]}"; do
+    for container in "${PULL_CONTAINERS[@]}"; do
         if [[ -z "${container}" ]]; then
             continue
         fi

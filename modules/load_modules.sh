@@ -110,4 +110,6 @@ if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
     # _update_bashrc
     _convert_options_to_arrays
     _auto_add_downloads
+    check_and_create_certificate_authority
+
 fi
