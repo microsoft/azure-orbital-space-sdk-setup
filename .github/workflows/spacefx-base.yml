@@ -1,10 +1,10 @@
-name: spacefx-base-image-build
+name: spacefx-base-image-build-publish
 
 on: 
     workflow_dispatch:
     push:
         branches:
-         - km/add_base
+         - main
 
 jobs:
   build-spacefx-base-image-amd64:
@@ -20,7 +20,7 @@ jobs:
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@km/fix_build_image
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
       with: 
         docker-file: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
         architecture: amd64
@@ -41,7 +41,7 @@ jobs:
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@km/fix_build_image
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
       with: 
         docker-file: ./build/spacesdk-base/Dockerfile.spacesdk-base
         architecture: arm64
