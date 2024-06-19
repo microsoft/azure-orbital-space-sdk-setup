@@ -22,6 +22,8 @@ DEV_ENVIRONMENT=false
 SPACEFX_REGISTRY=""
 SPACEFX_REPO_PREFIX=""
 SPACEFX_VERSION_TAG=""
+SPACEFX_VERSION_BASE_TAG=""
+VTH_ENABLED=false
 
 ############################################################
 # Help                                                     #
@@ -33,7 +35,8 @@ function show_help() {
    echo "Syntax: bash ./scripts/stage_spacefx.sh [--architecture arm64 | amd64]"
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
-   echo "--dev-environment | -d             [OPTIONAL] Stage the environment for development."
+   echo "--dev-environment | -d             [OPTIONAL] Setup the environment to support development.  This will enable VTH and downloads full size service container images."
+   echo "--vth | -v                         [OPTIONAL] Enable Virtual Test Harness (VTH)."
    echo "--artifact                         [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
    echo "--container | -c                   [OPTIONAL] name of the container to pull.  Can be passed multiple times"
    echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
@@ -64,6 +67,10 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         -d | --dev-environment)
             DEV_ENVIRONMENT=true
+            VTH_ENABLED=true
+        ;;
+        -v | --vth)
+            VTH_ENABLED=true
         ;;
         -c|--container)
             shift
@@ -94,7 +101,9 @@ function calculate_spacefx_registry(){
 
     debug_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result SPACEFX_VERSION_TAG
+    calculate_tag_from_channel --tag "${SPACEFX_VERSION}_base" --result SPACEFX_VERSION_BASE_TAG
     info_log "SPACEFX_VERSION_TAG calculated as '${SPACEFX_VERSION_TAG}'"
+    info_log "SPACEFX_VERSION_BASE_TAG calculated as '${SPACEFX_VERSION_BASE_TAG}'"
 
     find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
@@ -108,10 +117,29 @@ function calculate_spacefx_registry(){
     write_parameter_to_log SPACEFX_REPO_PREFIX
     write_parameter_to_log SPACEFX_REGISTRY
     write_parameter_to_log SPACEFX_VERSION_TAG
+    write_parameter_to_log SPACEFX_VERSION_BASE_TAG
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Enable VTH if it's not already enabled
+############################################################
+function enable_vth(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${VTH_ENABLED}" == true ]]; then
+        info_log "'VTH_ENABLED' = true.  Enabling VTH..."
+        run_a_script "yq eval '.services.platform.vth.prod.enabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        run_a_script "yq eval '.services.platform.vth.dev.enabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...successfully enabled VTH."
+    else
+        info_log "'VTH_ENABLED' = false.  Nothing to do"
+    fi
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Stage core-registry tarball so we can start it up on the k3s side
@@ -198,8 +226,8 @@ function stage_spacefx_service_images(){
         get_image_name --registry "${SPACEFX_REGISTRY}" --repo "${service_repository}" --result _stage_svc_image_name
 
         if [[ "${service_hasBase}" == true ]]; then
-            info_log "...staging '${service}:${SPACEFX_VERSION}_base'..."
-            stage_container_img_cmd="${stage_container_img_cmd} --image ${_stage_svc_image_name}:${SPACEFX_VERSION_TAG}_base"
+            info_log "...staging '${service}:${SPACEFX_VERSION_BASE_TAG}'..."
+            stage_container_img_cmd="${stage_container_img_cmd} --image ${_stage_svc_image_name}:${SPACEFX_VERSION_BASE_TAG}"
         else
             info_log "...staging '${service}'..."
             stage_container_img_cmd="${stage_container_img_cmd} --image ${_stage_svc_image_name}:${SPACEFX_VERSION_TAG}"
@@ -220,8 +248,8 @@ function stage_spacefx_service_images(){
             dest_repo_name="registry.spacefx.local/${service_repository}:${SPACEFX_VERSION}"
 
             if [[ "${service_hasBase}" == true ]]; then
-                source_repo_name="${source_repo_name}_base"
-                dest_repo_name="${dest_repo_name}_base"
+                source_repo_name="registry.spacefx.local/${SPACEFX_REPO_PREFIX}/${service_repository}:${SPACEFX_VERSION_BASE_TAG}"
+                dest_repo_name="registry.spacefx.local/${service_repository}:${SPACEFX_VERSION_BASE_TAG}"
             fi
 
             info_log "...updating ${source_repo_name} to ${dest_repo_name}..."
@@ -295,6 +323,7 @@ function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
     write_parameter_to_log NVIDIA_GPU_PLUGIN
+    write_parameter_to_log VTH_ENABLED
 
     for i in "${!CONTAINERS[@]}"; do
         CONTAINER=${CONTAINERS[i]}
@@ -314,6 +343,8 @@ function main() {
     fi
 
     calculate_spacefx_registry
+
+    enable_vth
 
     info_log "Staging coresvc-registry..."
     stage_coresvc_registry
@@ -345,8 +376,8 @@ function main() {
 
     info_log "Staging service images..."
     stage_spacefx_service_images --service_group core
-    # stage_spacefx_service_images --service_group platform
-    # stage_spacefx_service_images --service_group host
+    stage_spacefx_service_images --service_group platform
+    stage_spacefx_service_images --service_group host
     info_log "...service images successfully staged."
 
 
