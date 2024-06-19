@@ -76,7 +76,7 @@ SPACEFX_UPDATE_END" --disable_log
         if [[ "$HOSTNAME" == "codespaces"* ]]; then
             run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].HostConfig.Mounts[0].Target'" CONTAINER_WORKING_DIR
         else
-            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Mounts[] | select(.Source == \"${HOST_FOLDER}\") | .Destination'" CONTAINER_WORKING_DIR
+            run_a_script "jq <${SPACEFX_DIR}/tmp/${APP_NAME}/container_info.json -r '.[0].Mounts[] | select(.Source | startswith(\"${HOST_FOLDER}\")) | .Destination'" CONTAINER_WORKING_DIR
         fi
 
 
