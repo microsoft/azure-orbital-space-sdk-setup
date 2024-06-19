@@ -70,7 +70,20 @@ function export_parent_service_binaries(){
 
     if [[ ! -d "${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}" ]]; then
         info_log "Extracting '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
-        run_a_script "tar -xzvf ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar -C ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
+
+        # Rebuild the image filesystem by enumerates the manifest.json file and extracting each layer in order
+        run_a_script "mktemp -d" _image_export_dir --disable_log
+        run_a_script "tar -xvf ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar -C ${_image_export_dir}"
+
+        run_a_script "mktemp -d" _image_rebuild --disable_log
+        _svc_layers=$(jq -r '.[].Layers[]' "$_image_export_dir/manifest.json")
+
+        for _svc_layer in $_svc_layers; do
+            run_a_script "tar -xf ${_image_export_dir}/${_svc_layer} -C ${_image_rebuild}"
+        done
+
+        create_directory "${CONTAINER_WORKING_DIR}/.git/workspaces"
+        run_a_script "cp ${_image_rebuild}/workspaces/${SVC_IMG} ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG} -r"
     fi
 
 
