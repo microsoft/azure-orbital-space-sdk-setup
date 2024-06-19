@@ -39,6 +39,7 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
+        --dev-environment) DEV_ENVIRONMENT=true ;;
         *) echo "Unknown parameter '$1'"; show_help ;;
     esac
     shift
@@ -69,7 +70,6 @@ function deploy_spacefx_service_group(){
     info_log "START: ${FUNCNAME[0]}"
 
     local service_group=""
-    local stage_container_img_cmd=""
     local deploy_group_cmd=""
     local wait_for_deployment=false
 
@@ -192,6 +192,33 @@ function deploy_regctl_to_deployment_service(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Run any yaml files found in yamls/deploy directory
+############################################################
+function deploy_prestaged_yamls(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Deploying any pre-staged yaml files found in '${SPACEFX_DIR}/yamls/deploy'..."
+    if [[ ! -d "${SPACEFX_DIR}/yamls/deploy" ]]; then
+        info_log "'${SPACEFX_DIR}/yamls/deploy' doesn't exist.  Nothing to do."
+        info_log "FINISHED: ${FUNCNAME[0]}"
+        return
+    fi
+    while read -r yamlFile; do
+        info_log "Deploying '${yamlFile}'..."
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${yamlFile}" --ignore_error
+        if [[ "${RETURN_CODE}" == 0 ]]; then
+            info_log "...'${yamlFile}' successfully deployed."
+        else
+            error_log "...'${yamlFile}' failed to deploy.  See logs for more information."
+        fi
+    done < <(find "${SPACEFX_DIR}/yamls/deploy" -iname "*.yaml")
+
+    info_log "All pre-staged yaml files have been deployed."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
 
 function main() {
     write_parameter_to_log ARCHITECTURE
@@ -207,8 +234,11 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
     deploy_spacefx_service_group --service_group core --wait_for_deployment
+    deploy_spacefx_service_group --service_group platform
+    deploy_spacefx_service_group --service_group host
 
     deploy_regctl_to_deployment_service
+    deploy_prestaged_yamls
 
 
     info_log "------------------------------------------"

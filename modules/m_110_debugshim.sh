@@ -116,7 +116,6 @@ function _auto_add_downloads() {
     case "${APP_TYPE}" in
         "sdk-service")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
-            DOWNLOAD_ARTIFACTS+=("Common.proto")
             ;;
     esac
 
@@ -126,6 +125,13 @@ function _auto_add_downloads() {
     #     EXTRA_PACKAGES+=("socat")
     #     EXTRA_PACKAGES+=("nuget")
     # fi
+
+    debug_log "Artifacts queued to download:"
+    for i in "${!DOWNLOAD_ARTIFACTS[@]}"; do
+        DOWNLOAD_ARTIFACT=${DOWNLOAD_ARTIFACTS[i]}
+        debug_log "...Artifact: ${DOWNLOAD_ARTIFACT}"
+    done
+
 
     info_log "END: ${FUNCNAME[0]}"
 }

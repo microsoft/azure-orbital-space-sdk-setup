@@ -8,6 +8,8 @@
 #  "bash ./tests/prod_cluster.sh"
 set -e
 SCRIPT_NAME=$(basename "$0")
+WORKING_DIR="$(git rev-parse --show-toplevel)"
+
 echo "Microsoft Azure Orbital Space SDK - Production Cluster Test"
 
 if [[ -d "/var/spacedev" ]]; then
@@ -16,7 +18,7 @@ if [[ -d "/var/spacedev" ]]; then
 fi
 
 echo "Creating /var/spacedev directory..."
-./.vscode/copy_to_spacedev.sh
+${WORKING_DIR}/.vscode/copy_to_spacedev.sh
 
 
 echo "Staging Microsoft Azure Orbital Space SDK..."
@@ -35,6 +37,16 @@ fi
 kubectl get deployment/coresvc-registry -n coresvc
 kubectl get deployment/coresvc-fileserver -n coresvc
 kubectl get deployment/coresvc-switchboard -n coresvc
+
+kubectl get deployment/hostsvc-link -n hostsvc
+kubectl get deployment/hostsvc-sensor -n hostsvc
+kubectl get deployment/hostsvc-logging -n hostsvc
+kubectl get deployment/hostsvc-position -n hostsvc
+
+
+kubectl get deployment/platform-deployment -n platformsvc
+kubectl get deployment/platform-mts -n platformsvc
+
 echo ""
 echo ""
 echo ""

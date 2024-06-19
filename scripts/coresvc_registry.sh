@@ -219,6 +219,23 @@ SPACEFX_UPDATE_END"
 function start_registry_docker(){
     info_log "START: ${FUNCNAME[0]}"
 
+    info_log "Checking if '${REGISTRY_REPO}' is already running in Docker..."
+
+    run_a_script "docker container ls -a --format '{{json .}}' | jq -r 'if any(.Names; .== \"${REGISTRY_REPO}\") then .State else empty end'" container_status
+
+    if [[ "${container_status}" == "running" ]]; then
+        info_log "...found previous instance of '${REGISTRY_REPO}' in running in Docker. Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    # Container status is not empty, but not "running" either.  There's a stopped container that we need to remove
+    if [[ -n "${container_status}" ]]; then
+        info_log "...found non-running instance of '${REGISTRY_REPO}' in Docker.  Removing..."
+        run_a_script "docker container rm ${REGISTRY_REPO} -f"
+        info_log "...successfully removed ${REGISTRY_REPO} in Docker"
+    fi
+
     # Calculate the image tag based on the channel and then check the registries to find it
     info_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}" --result spacefx_version_tag
@@ -241,6 +258,8 @@ function start_registry_docker(){
         run_a_script "docker pull ${coresvc_registry_parent}/${_repo_name}:${spacefx_version_tag}"
         info_log "...successfully pulled ${coresvc_registry_parent}/${_repo_name}:${spacefx_version_tag} to Docker."
     fi
+
+
 
 
     info_log "Starting '${REGISTRY_REPO}'..."
