@@ -95,19 +95,28 @@ fi
 _app_prereqs_validate
 _generate_spacefx_config_json
 
-_update_regctl_config
-_check_for_coresvc_registry_hosts_entry
+
 
 # Load the modules and function used by devcontainers
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
+
+    _update_regctl_config_devcontainer
+    check_and_create_certificate_authority
+
+
     if [[ -f "/devfeature/k3s-on-host/k3s.devcontainer.yaml" ]]; then
         run_a_script "mkdir -p $(dirname ${KUBECONFIG})" --disable_log
         run_a_script "cp /devfeature/k3s-on-host/k3s.devcontainer.yaml ${KUBECONFIG}"
     fi
 
-
+    _check_for_coresvc_registry_hosts_entry_devcontainer
     _collect_container_info
     # _update_bashrc
     _convert_options_to_arrays
     _auto_add_downloads
+
+else
+# Load modules that are targetted only for the host
+    _update_regctl_config_host
+    _check_for_coresvc_registry_hosts_entry
 fi

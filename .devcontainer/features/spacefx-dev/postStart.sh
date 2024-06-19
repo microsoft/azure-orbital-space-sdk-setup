@@ -42,6 +42,56 @@ run_a_script "touch /spacefx-dev/postStart.start"
 STAGE_SPACE_FX_CMD_EXTRAS=""
 
 
+
+############################################################
+# Export parent service code from its base container if this is a plugin app
+############################################################
+function export_parent_service_binaries(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    # Check if the app_type is "-plugin"
+    if [[ ${APP_TYPE} != *"-plugin" ]]; then
+        info_log "Not a plugin app type.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Checking for '${SVC_IMG}' binaries..."
+
+    calculate_tag_from_channel --tag "${SPACEFX_VERSION}_base" --result _export_parent_service_binaries_tag
+
+    if [[ ! -f "${SPACEFX_DIR}/tmp/${SVC_IMG}.tar" ]]; then
+        info_log "'${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' not found.  Exporting registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} to ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar..."
+        run_a_script "regctl image export registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar"
+        info_log "...successfully exported parent service binaries from '${SVC_IMG}'"
+    fi
+
+    info_log "...'${SVC_IMG}' binaries found at '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar'"
+
+    if [[ ! -d "${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}" ]]; then
+        info_log "Extracting '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
+
+        # Rebuild the image filesystem by enumerates the manifest.json file and extracting each layer in order
+        run_a_script "mktemp -d" _image_export_dir --disable_log
+        run_a_script "tar -xvf ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar -C ${_image_export_dir}"
+
+        run_a_script "mktemp -d" _image_rebuild --disable_log
+        _svc_layers=$(jq -r '.[].Layers[]' "$_image_export_dir/manifest.json")
+
+        for _svc_layer in $_svc_layers; do
+            run_a_script "tar -xf ${_image_export_dir}/${_svc_layer} -C ${_image_rebuild}"
+        done
+
+        create_directory "${CONTAINER_WORKING_DIR}/.git/workspaces"
+        run_a_script "cp ${_image_rebuild}/workspaces/${SVC_IMG} ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG} -r"
+    fi
+
+
+    info_log "...successfully extracted '${SVC_IMG}' binaries to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
 ############################################################
 # Install Dotnet
 ############################################################
@@ -329,6 +379,7 @@ function main() {
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
         generate_debugshims
+        export_parent_service_binaries
         # run_user_requested_yamls
     fi
 

@@ -93,7 +93,7 @@ function deploy_spacefx_service_group(){
     info_log "Scanning '${service_group}' spacefx services for deploying..."
 
     run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group} | to_entries[] | select(.value.${enabled_filter} == true) | .key' -r" spacefx_services
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o json" services_deployed_cache
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o json" services_deployed_cache --disable_log
 
     for service in $spacefx_services; do
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.appName' -r" spacefx_service_appName
@@ -144,20 +144,21 @@ function deploy_spacefx_service_group(){
     fi
 
     info_log "Successfully queued services for deployment.  Generating yaml for service group '${service_group}'..."
-    run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart ${deploy_group_cmd}" yaml
+
+    run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart ${deploy_group_cmd}" yaml --disable_log
 
 
-# This is only for debugging as it outputs any secrets to plain text on the disk
+    # This is only for debugging as it outputs any secrets to plain text on the disk
     run_a_script "tee ${SPACEFX_DIR}/tmp/yamls/${service_group}.yaml > /dev/null << SPACEFX_UPDATE_END
 ${yaml}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
 
     info_log "Deploying '${service_group}' spacefx services..."
 
     run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
 ${yaml}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     if [[ "${wait_for_deployment}" == true ]]; then
         for service in $spacefx_services; do
