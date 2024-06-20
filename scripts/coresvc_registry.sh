@@ -206,7 +206,7 @@ function start_registry_k3s(){
 ${registry_yaml}
 SPACEFX_UPDATE_END"
 
-    # run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployment/core-registry -n ${NAMESPACE} --output=json | jq '.status.conditions[] | select(.type == \"Available\").status' -r" K3S_STATUS --ignore_error
+    wait_for_deployment --namespace "coresvc" --deployment "coresvc-registry"
 
 
     info_log "END: ${FUNCNAME[0]}"
