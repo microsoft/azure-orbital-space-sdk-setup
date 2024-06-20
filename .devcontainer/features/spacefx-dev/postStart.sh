@@ -56,36 +56,39 @@ function export_parent_service_binaries(){
         return
     fi
 
-    info_log "Checking for '${SVC_IMG}' binaries..."
+    info_log "Exporting '${SVC_IMG}' binaries..."
 
     calculate_tag_from_channel --tag "${SPACEFX_VERSION}_base" --result _export_parent_service_binaries_tag
 
-    if [[ ! -f "${SPACEFX_DIR}/tmp/${SVC_IMG}.tar" ]]; then
-        info_log "'${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' not found.  Exporting registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} to ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar..."
-        run_a_script "regctl image export registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar"
-        info_log "...successfully exported parent service binaries from '${SVC_IMG}'"
-    fi
+    # Remove any old instances to ensure we're running the most recent version
+    [[ -f "${SPACEFX_DIR}/tmp/${SVC_IMG}.tar" ]] && run_a_script "rm ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar"
+    [[ -d "${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}" ]] && run_a_script "rm ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG} -rf"
 
-    info_log "...'${SVC_IMG}' binaries found at '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar'"
 
-    if [[ ! -d "${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}" ]]; then
-        info_log "Extracting '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
+    info_log "Exporting registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} to ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar..."
+    run_a_script "regctl image export registry.spacefx.local/${SVC_IMG}:${_export_parent_service_binaries_tag} ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar"
+    info_log "...successfully exported parent service binaries from '${SVC_IMG}'"
 
-        # Rebuild the image filesystem by enumerates the manifest.json file and extracting each layer in order
-        run_a_script "mktemp -d" _image_export_dir --disable_log
-        run_a_script "tar -xvf ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar -C ${_image_export_dir}"
+    info_log "Extracting '${SPACEFX_DIR}/tmp/${SVC_IMG}.tar' to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
+    debug_log "Rebuilding '${SVC_IMG}' image filesystem..."
 
-        run_a_script "mktemp -d" _image_rebuild --disable_log
-        _svc_layers=$(jq -r '.[].Layers[]' "$_image_export_dir/manifest.json")
+    # Rebuild the image filesystem by enumerating the manifest.json file and extracting each layer in order
+    run_a_script "mktemp -d" _image_export_dir --disable_log
+    run_a_script "tar -xvf ${SPACEFX_DIR}/tmp/${SVC_IMG}.tar -C ${_image_export_dir}" --disable_log
 
-        for _svc_layer in $_svc_layers; do
-            run_a_script "tar -xf ${_image_export_dir}/${_svc_layer} -C ${_image_rebuild}"
-        done
+    run_a_script "mktemp -d" _image_rebuild --disable_log
+    _svc_layers=$(jq -r '.[].Layers[]' "$_image_export_dir/manifest.json")
 
-        create_directory "${CONTAINER_WORKING_DIR}/.git/workspaces"
-        run_a_script "cp ${_image_rebuild}/workspaces/${SVC_IMG} ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG} -r"
-    fi
+    for _svc_layer in $_svc_layers; do
+        run_a_script "tar -xf ${_image_export_dir}/${_svc_layer} -C ${_image_rebuild}"
+    done
 
+    create_directory "${CONTAINER_WORKING_DIR}/.git/workspaces"
+    run_a_script "cp ${_image_rebuild}/workspaces/${SVC_IMG} ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG} -r"
+
+    # Cleanup
+    run_a_script "rm ${_image_export_dir} -rf"
+    run_a_script "rm ${_image_rebuild} -rf"
 
     info_log "...successfully extracted '${SVC_IMG}' binaries to ${CONTAINER_WORKING_DIR}/.git/workspaces/${SVC_IMG}"
 
@@ -193,11 +196,13 @@ function generate_debugshims(){
     fi
 
     for debug_shim in "${DEBUG_SHIMS[@]}"; do
-        if [[ "$debug_shim" == "$APP_NAME"* ]]; then
-            generate_debugshim --debug_shim "${debug_shim}"
-        else
-            generate_debugshim --debug_shim "${APP_NAME}-${debug_shim}"
-        fi
+        base_name="${APP_NAME}"
+        [[ ${APP_TYPE} == *"-plugin" ]] && base_name="${SVC_IMG}"
+
+        _debug_shim_name="${base_name}"
+        [[ "$debug_shim" != "$base_name"* ]] && _debug_shim_name="${base_name}-${debug_shim}"
+
+        generate_debugshim --debug_shim "${_debug_shim_name}"
     done
 
 
@@ -238,6 +243,8 @@ function generate_debugshim(){
     remove_deployment_by_app_id --app_id "${debug_shim}"
     wait_for_deployment_deletion_by_app_id --app_id "${debug_shim}"
 
+    debug_log "Generating '${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml' for '${debug_shim}'..."
+
     run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart \
         ${extra_cmd} \
         --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.appName=${debug_shim} \
@@ -248,11 +255,11 @@ function generate_debugshim(){
         --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.provisionVolumes=true         \
         --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.workingDir=${CONTAINER_WORKING_DIR} \
         --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.repository=${CONTAINER_IMAGE} \
-        --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.hostSourceCodeDir=${HOST_FOLDER}" yaml
+        --set services.${HELM_SVC_GROUP}.${HELM_SVC_NAME}.hostSourceCodeDir=${HOST_FOLDER}" yaml --disable_log
 
     run_a_script "tee ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml > /dev/null << SPACEFX_UPDATE_END
 ${yaml}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
 
     check_service_account $debug_shim
@@ -274,13 +281,13 @@ function check_service_account(){
     local appName=$1
 
     debug_log "Validating service account '${appName}' exists in payload-app..."
-    run_a_script "kubectl get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account
+    run_a_script "kubectl get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account --disable_log
 
     debug_log "Service_account: ${service_account}"
 
     if [[ -z "${service_account}" ]]; then
         debug_log "...not found.  Creating service account '${appName}' in payload-app..."
-        run_a_script "kubectl create serviceaccount ${appName} -n payload-app"
+        run_a_script "kubectl create serviceaccount ${appName} -n payload-app" --disable_log
         debug_log "...successfully creatied service account '${appName}'."
     else
         debug_log "...found service account '${appName}' in payload-app"
