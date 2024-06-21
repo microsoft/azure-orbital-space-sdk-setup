@@ -89,9 +89,6 @@ function stage_k3s(){
     # Download k3s airgap images
     _app_install --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --source "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
 
-    # Download kubectl
-    _app_install --app "kubectl" --source "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl" --url "https://dl.k8s.io/release/${VER_KUBECTL}/bin/linux/${ARCHITECTURE}/kubectl" --destination "${DEST_STAGE_DIR}/kubectl/${VER_KUBECTL}/kubectl"
-
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
