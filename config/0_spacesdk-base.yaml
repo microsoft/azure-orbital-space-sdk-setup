@@ -50,4 +50,6 @@ config:
       push_enabled: true
       pull_enabled: true
       login_enabled: true
+      login_username_file: ${HOME}/.ssh/ghcr_username
+      login_password_file: ${HOME}/.ssh/ghcr_password
   hostDirectoryMounts:

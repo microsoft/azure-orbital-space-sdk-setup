@@ -140,6 +140,7 @@ stage_images() {
     # Loop through the background pids and get their return codes
     had_error=false
     for pid in "${worker_pids[@]}"; do
+        debug_log "Waiting for worker pid: $pid..."
         local return_code
         wait "$pid"
         return_code=$?

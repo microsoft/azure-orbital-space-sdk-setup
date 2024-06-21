@@ -16,6 +16,7 @@ source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@
 ############################################################
 START_REGISTRY=false
 STOP_REGISTRY=false
+IS_RUNNING=false
 HAS_DOCKER=false
 HAS_K3S=false
 DESTINATION_HOST=""
@@ -108,17 +109,66 @@ function check_prerequisites(){
     info_log "END: ${FUNCNAME[0]}"
 }
 
+
+
+############################################################
+# Check if the registry is already up and running
+############################################################
+function check_if_registry_is_already_running(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${HAS_K3S}" == true ]]; then
+        info_log "Checking if '${REGISTRY_REPO}' is deployed to K3s..."
+
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o jsonpath=\"{.items[?(@.metadata.name=='${REGISTRY_REPO}')].metadata.name}\"" _previous_deployment --ignore_error
+
+        if [[ -n "${_previous_deployment}" ]]; then
+            info_log "...found '${REGISTRY_REPO}' running in K3s."
+            IS_RUNNING=true
+        fi
+    fi
+
+    # shellcheck disable=SC2154
+    if [[ "${HAS_DOCKER}" == true ]]; then
+        info_log "Checking if '${REGISTRY_REPO}' is already running in Docker..."
+
+        run_a_script "docker container ls -a --format '{{json .}}' | jq -r 'if any(.Names; .== \"${REGISTRY_REPO}\") then .State else empty end'" container_status --disable_log
+
+        if [[ "${container_status}" == "running" ]]; then
+            info_log "...found previous instance of '${REGISTRY_REPO}' in running in Docker"
+            IS_RUNNING=true
+        else
+            # Container status is not empty, but not "running" either.  There's a stopped container that we need to remove
+            if [[ -n "${container_status}" ]]; then
+                info_log "...found non-running instance of '${REGISTRY_REPO}' in Docker.  Removing..."
+                run_a_script "docker container rm ${REGISTRY_REPO} -f"
+                info_log "...successfully removed ${REGISTRY_REPO} in Docker"
+            fi
+        fi
+    fi
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+
 ############################################################
 # Stop the registry
 ############################################################
 function stop_registry(){
     info_log "START: ${FUNCNAME[0]}"
 
+    if [[ "${IS_RUNNING}" == false ]]; then
+        info_log "No previous instance of '${REGISTRY_REPO}' found.  Nothing to do"
+        return
+    fi
+
     if [[ "${HAS_DOCKER}" == true ]]; then
         info_log "Checking for ${REGISTRY_REPO} in Docker..."
-        run_a_script "docker container inspect ${REGISTRY_REPO} | jq '.[0].State.Status' -r" docker_status --ignore_error
+        run_a_script "docker container ls -a --format json | jq '. | select(.Names == \"${REGISTRY_REPO}\")'" docker_container --disable_log
 
-        if [[ -n "${docker_status}" ]]; then
+        if [[ -n "${docker_container}" ]]; then
             info_log "...found ${REGISTRY_REPO} in Docker.  Stopping..."
             run_a_script "docker remove --force ${REGISTRY_REPO}"
             info_log "...successfully stopped ${REGISTRY_REPO} in Docker"
@@ -130,12 +180,16 @@ function stop_registry(){
     if [[ "${HAS_K3S}" == true ]]; then
         info_log "Checking for ${REGISTRY_REPO} in K3s..."
 
-        # run_a_script "helm --kubeconfig ${KUBECONFIG} show values ${SPACEFX_DIR}/chart | yq '.services.core.registry.repository'" REPOSITORY
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o jsonpath=\"{.items[?(@.metadata.name=='${REGISTRY_REPO}')].metadata.name}\"" _previous_deployment --ignore_error
 
-
-        #TODO: Add
-        # kubectl get pods -l app.kubernetes.io/instance=${REGISTRY_REPO}
+        if [[ -n "${_previous_deployment}" ]]; then
+            info_log "...found '${REGISTRY_REPO}' running in K3s.  Stopping..."
+            run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete deployment/${REGISTRY_REPO} -n ${NAMESPACE}"
+            info_log "...successfully stopped ${REGISTRY_REPO} in K3s"
+        fi
     fi
+
+    IS_RUNNING=false
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -146,7 +200,6 @@ function stop_registry(){
 ############################################################
 function start_registry_k3s(){
     info_log "START: ${FUNCNAME[0]}"
-
 
     info_log "Checking for namespace '${NAMESPACE}'..."
 
@@ -195,6 +248,7 @@ function start_registry_k3s(){
 
     fi
 
+    # Run a helm dependency update so we can
     if [[ ! -f "${SPACEFX_DIR}/chart/Chart.lock" ]]; then
         run_a_script "helm --kubeconfig ${KUBECONFIG} dependency update ${SPACEFX_DIR}/chart"
     fi
@@ -206,7 +260,7 @@ function start_registry_k3s(){
 ${registry_yaml}
 SPACEFX_UPDATE_END"
 
-    wait_for_deployment --namespace "coresvc" --deployment "coresvc-registry"
+    wait_for_deployment --namespace "${NAMESPACE}" --deployment "${REGISTRY_REPO}"
 
 
     info_log "END: ${FUNCNAME[0]}"
@@ -218,23 +272,6 @@ SPACEFX_UPDATE_END"
 ############################################################
 function start_registry_docker(){
     info_log "START: ${FUNCNAME[0]}"
-
-    info_log "Checking if '${REGISTRY_REPO}' is already running in Docker..."
-
-    run_a_script "docker container ls -a --format '{{json .}}' | jq -r 'if any(.Names; .== \"${REGISTRY_REPO}\") then .State else empty end'" container_status
-
-    if [[ "${container_status}" == "running" ]]; then
-        info_log "...found previous instance of '${REGISTRY_REPO}' in running in Docker. Nothing to do"
-        info_log "END: ${FUNCNAME[0]}"
-        return
-    fi
-
-    # Container status is not empty, but not "running" either.  There's a stopped container that we need to remove
-    if [[ -n "${container_status}" ]]; then
-        info_log "...found non-running instance of '${REGISTRY_REPO}' in Docker.  Removing..."
-        run_a_script "docker container rm ${REGISTRY_REPO} -f"
-        info_log "...successfully removed ${REGISTRY_REPO} in Docker"
-    fi
 
     # Calculate the image tag based on the channel and then check the registries to find it
     info_log "Locating parent registry and calculating tags for '${REGISTRY_REPO}'..."
@@ -259,9 +296,6 @@ function start_registry_docker(){
         info_log "...successfully pulled ${coresvc_registry_parent}/${_repo_name}:${spacefx_version_tag} to Docker."
     fi
 
-
-
-
     info_log "Starting '${REGISTRY_REPO}'..."
     run_a_script "docker run -d \
             -p 5000:5000 \
@@ -282,6 +316,7 @@ function main() {
     write_parameter_to_log STOP_REGISTRY
 
     check_prerequisites
+    check_if_registry_is_already_running
 
     if [[ "${STOP_REGISTRY}" == true ]]; then
         stop_registry
@@ -296,12 +331,19 @@ function main() {
 
         if [[ ! -f "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.crt" ]]; then
             info_log "Missing certificates detected.  Generating certificates and restarting ${REGISTRY_REPO} (if applicable)"
+            # We have to stop the registry if we have to regen the certificates
+            stop_registry
 
+            # Generate the new certificates for SSL/TLS
             generate_certificate --profile "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl.json" --config "${SPACEFX_DIR}/certs/registry/registry.spacefx.local.ssl-config.json" --output "${SPACEFX_DIR}/certs/registry"
         fi
 
-        [[ "${DESTINATION_HOST}" == "docker" ]] && start_registry_docker
-        [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
+        if [[ "${IS_RUNNING}" == true ]]; then
+            info_log "Registry is already running.  Nothing to do"
+        else
+            [[ "${DESTINATION_HOST}" == "docker" ]] && start_registry_docker
+            [[ "${DESTINATION_HOST}" == "k3s" ]] && start_registry_k3s
+        fi
 
         info_log "------------------------------------------"
         info_log "END: ${SCRIPT_NAME}"

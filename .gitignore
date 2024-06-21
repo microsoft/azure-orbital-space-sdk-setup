@@ -6,3 +6,7 @@ output
 not
 a
 tty
+certs/*/*.pem
+certs/*/*.crt
+certs/*/*.csr
+certs/*/*.key

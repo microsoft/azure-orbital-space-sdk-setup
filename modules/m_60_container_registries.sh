@@ -217,19 +217,29 @@ function find_registry_for_image(){
     fi
 
     info_log "Locating registry for '${container_image}'..."
-
     run_a_script "jq -r '.config.containerRegistries[] | select(.pull_enabled == true) | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" container_registries --disable_log
 
     REGISTRY_IMAGE_NAME=""
 
     for row in $container_registries; do
         parse_json_line --json "${row}" --property ".url" --result container_registry
+        parse_json_line --json "${row}" --property ".login_enabled" --result login_enabled
+        parse_json_line --json "${row}" --property ".login_username_file" --result login_username_file
+        parse_json_line --json "${row}" --property ".login_password_file" --result login_password_file
 
         check_for_repo_prefix --registry "${container_registry}" --repo "${container_image}" --result _find_registry_for_image_repo
 
         info_log "Checking container registry '${container_registry}' for image '${_find_registry_for_image_repo}'..."
 
-        run_a_script "regctl image manifest ${container_registry}/${_find_registry_for_image_repo}" --ignore_error --disable_log
+        if [[ "${login_enabled}" == "true" ]]; then
+            login_to_container_registry --container_registry "${container_registry}" --container_registry_username_file "${login_username_file}" --container_registry_password_file "${login_password_file}"
+        fi
+
+        run_a_script "regctl image manifest ${container_registry}/${_find_registry_for_image_repo}" _find_registry_for_image_result --ignore_error --disable_log
+
+        if [[ "${_find_registry_for_image_result}" == *"unauthorized"* ]]; then
+            exit_with_error "Unauthorized to access image to container registry '${container_registry}'.  Please login with docker login '${container_registry}', regctl registry login '${container_registry}' --user <username> --pass <password>, or use the config login_username_file and login_password_file configuration options"
+        fi
 
         if [[ "${RETURN_CODE}" -eq 0 ]]; then
             info_log "...image '${container_image}' FOUND in container registry '${container_registry}' (as '${_find_registry_for_image_repo}')"
@@ -243,6 +253,103 @@ function find_registry_for_image(){
     eval "$return_result_var='$REGISTRY_IMAGE_NAME'"
 }
 
+############################################################
+# Login to container registry
+############################################################
+function login_to_container_registry(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    local container_registry=""
+    local container_registry_username_file=""
+    local container_registry_password_file=""
+
+    local is_logged_in=false
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+        --container_registry)
+            shift
+            container_registry=$1
+            ;;
+        --container_registry_username_file)
+            shift
+            container_registry_username_file=$1
+            ;;
+        --container_registry_password_file)
+            shift
+            container_registry_password_file=$1
+            ;;
+        esac
+        shift
+    done
+
+    [[ -z "${container_registry}" ]] && exit_with_error "--container_registry empty.  Please supply a container registry to login to"
+
+    info_log "container_registry_username_file '${container_registry_username_file}'..."
+
+    is_cmd_available "docker" HAS_DOCKER
+
+    if [[ "${HAS_DOCKER}" == true ]]; then
+        trace_log "Docker detected.  Checking if we're already logged in to '${container_registry}'..."
+
+        if [[ -f "${HOME}/.docker/config.json" ]]; then
+            run_a_script "jq -r '.auths | has(\"${container_registry}\")' ${HOME}/.docker/config.json" is_logged_in
+        fi
+
+        if [[ "${is_logged_in}" == false ]]; then
+            run_a_script "docker logout ${container_registry}" --ignore_error --disable_log
+            run_a_script "docker logout ${container_registry}" --ignore_error --disable_log --no_sudo
+
+            [[ -z "${container_registry_username_file}" ]] && exit_with_error "--container_registry_username_file empty. Please supply a container registry username file to login to"
+            [[ -z "${container_registry_password_file}" ]] && exit_with_error "--container_registry_password_file empty.  Please supply a container registry password file to login to"
+            [[ ! -f "${container_registry_username_file}" ]] && exit_with_error "Unable to login to '${container_registry}'.  Username file '${container_registry_username_file}' not found"
+            [[ ! -f "${container_registry_password_file}" ]] && exit_with_error "Unable to login to '${container_registry}'.  Password file '${container_registry_password_file}' not found"
+
+            run_a_script "cat ${container_registry_username_file}" container_registry_username --disable_log
+            run_a_script "cat ${container_registry_password_file}" container_registry_password --disable_log
+            run_a_script "docker login ${container_registry} --username '${container_registry_username}' --password '${container_registry_password}'" --disable_log
+            run_a_script "docker login ${container_registry} --username '${container_registry_username}' --password '${container_registry_password}'" --disable_log --no_sudo
+
+            is_logged_in=true
+        else
+            info_log "Already logged in to '${container_registry}' with Docker."
+            info_log "END: ${FUNCNAME[0]}"
+            return
+        fi
+    fi
+
+    # This will allow us to login with regctl if docker is not available
+    is_cmd_available "regctl" HAS_REGCTL
+    if [[ "${HAS_REGCTL}" == true ]]; then
+        trace_log "Regctl detected.  Checking if we're already logged in to '${container_registry}'..."
+
+        if [[ -f "${HOME}/.regctl/config.json" ]]; then
+            run_a_script "jq -r '.hosts | has(\"${container_registry}\")' ${HOME}/.regctl/config.json" is_logged_in --disable_log
+        fi
+
+        if [[ "${is_logged_in}" == false ]]; then
+            run_a_script "regctl registry logout ${container_registry}" --ignore_error --disable_log
+            run_a_script "regctl registry logout ${container_registry}" --ignore_error --disable_log --no_sudo
+
+            [[ -z "${container_registry_username_file}" ]] && exit_with_error "--container_registry_username_file empty. Please supply a container registry username file to login to"
+            [[ -z "${container_registry_password_file}" ]] && exit_with_error "--container_registry_password_file empty.  Please supply a container registry password file to login to"
+            [[ ! -f "${container_registry_username_file}" ]] && exit_with_error "Unable to login to '${container_registry}'.  Username file '${container_registry_username_file}' not found"
+            [[ ! -f "${container_registry_password_file}" ]] && exit_with_error "Unable to login to '${container_registry}'.  Password file '${container_registry_password_file}' not found"
+
+            run_a_script "cat ${container_registry_username_file}" container_registry_username --disable_log
+            run_a_script "cat ${container_registry_password_file}" container_registry_password --disable_log
+            run_a_script "regctl registry login ${container_registry} --user '${container_registry_username}' --pass '${container_registry_password}'" --disable_log
+            run_a_script "regctl registry login ${container_registry} --user '${container_registry_username}' --pass '${container_registry_password}'" --disable_log --no_sudo
+
+            is_logged_in=true
+        else
+            trace_log "Already logged in to '${container_registry}' with Regctl."
+        fi
+    fi
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Push a local image to a repository

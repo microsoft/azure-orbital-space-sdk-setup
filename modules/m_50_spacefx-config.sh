@@ -31,8 +31,9 @@ function _generate_spacefx_config_json() {
     create_directory "${SPACEFX_DIR}/tmp/config"
 
     if [[ "${SPACEFX_CHANNEL}" != "stable" ]]; then
-        [[ ! -f "${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml" ]] && exit_with_error "Channel '${SPACEFX_CHANNEL}' does not exist. Please update the channel in spacefx.env and try again."
-        run_a_script "cp ${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml ${SPACEFX_DIR}/config/${SPACEFX_CHANNEL}.yaml"
+        debug_log "Channel '${SPACEFX_CHANNEL}' detected.  Copying channel config '${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml' to '${SPACEFX_DIR}/config/${SPACEFX_CHANNEL}.yaml'."
+        [[ ! -f "${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml" ]] && exit_with_error "Channel config '${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml' does not exist. Please update the channel in spacefx.env and try again."
+        run_a_script "cp ${SPACEFX_DIR}/config/channels/${SPACEFX_CHANNEL}.yaml ${SPACEFX_DIR}/config/${SPACEFX_CHANNEL}.yaml" --disable_log
     fi
 
     # Build the JSON output from the configuration in yq

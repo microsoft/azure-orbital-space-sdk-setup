@@ -9,7 +9,7 @@
 ############################################################
 # Script variables
 ############################################################
-REPO_ROOT_DIR=$(dirname "$0")
+REPO_ROOT_DIR=$(git rev-parse --show-toplevel)
 OUTPUT_DIR=""
 ############################################################
 # Process the input options.
@@ -27,20 +27,41 @@ done
 ############################################################
 # Clean up the destination directory by removing the sensitive parts so they can be restaged
 ############################################################
-function clean_up_dest_directory(){
-  [[ -d "${OUTPUT_DIR}/logs" ]] &&  sudo rm -rf "${OUTPUT_DIR}/logs"
-  [[ -d "${OUTPUT_DIR}/tmp" ]] &&  sudo rm -rf "${OUTPUT_DIR}/tmp"
-  [[ -d "${OUTPUT_DIR}/output" ]] &&  sudo rm -rf "${OUTPUT_DIR}/output"
-  [[ -d "${OUTPUT_DIR}/xfer" ]] &&  sudo rm -rf "${OUTPUT_DIR}/xfer"
-  [[ -d "${OUTPUT_DIR}/plugins" ]] &&  sudo rm -rf "${OUTPUT_DIR}/plugins"
-  [[ -f "${OUTPUT_DIR}/chart/Charts.lock" ]] &&  sudo rm -f "${OUTPUT_DIR}/chart/Charts.lock"
-  [[ -f "${OUTPUT_DIR}/certs/*/*.crt" ]] &&  sudo rm -f "${OUTPUT_DIR}/certs/*/*.crt"
+function copy_directory_to_dest(){
+  local directory=""
 
+  while [[ "$#" -gt 0 ]]; do
+      case $1 in
+          --directory)
+              shift
+              directory=$1
+              ;;
+          *)
+              echo "Unknown parameter '$1'"
+              exit 1
+              ;;
+      esac
+      shift
+  done
 
-  while read -r shellFile; do
-    chmod +x ${shellFile}
-    chmod 777 ${shellFile}
-  done < <(find "${OUTPUT_DIR}" -iname "*.sh")
+  echo "...copying '${REPO_ROOT_DIR}/${directory}' to '${OUTPUT_DIR}/${directory}'..."
+
+  sudo mkdir -p "${OUTPUT_DIR}/${directory}"
+  sudo rsync -a --update --no-links \
+        --exclude='/*.log' \
+        --exclude='/*.pem' \
+        --exclude='/*.csr' \
+        --exclude='/*.key' \
+        --exclude='/*.crt' \
+        "${REPO_ROOT_DIR}/${directory}/" "${OUTPUT_DIR}/${directory}/"
+
+  if [[ $? -gt 0 ]]; then
+    echo "...error copying '${REPO_ROOT_DIR}/${directory}' to '${OUTPUT_DIR}/${directory}'"
+    exit 1
+  fi
+
+  echo "...successfully copied '${REPO_ROOT_DIR}/${directory}' to '${OUTPUT_DIR}/${directory}'..."
+
 }
 
 function main() {
@@ -56,32 +77,23 @@ function main() {
 
   [[ ! -d "${OUTPUT_DIR}" ]] && sudo mkdir -p "${OUTPUT_DIR}"
 
-  echo "...outputting to '${OUTPUT_DIR}'..."
+  echo "Copying Azure Orbital Space SDK to '${OUTPUT_DIR}'..."
 
-  eval "sudo rsync -a --update --no-links \
-        --exclude='/.devcontainer' \
-        --exclude='/.pipelines' \
-        --exclude='/.vscode' \
-        --exclude='/.git' \
-        --exclude='/.git*' \
-        --exclude='/docs' \
-        --exclude='/tmp' \
-        --exclude='/logs' \
-        --exclude='/output' \
-        --exclude='/owners.txt' \
-        --exclude='/*.md' \
-        --exclude='/LICENSE' \
-        --exclude='/*.log' \
-        --exclude='/*.gitignore' \
-        --exclude='/*.gitattributes' \
-        --exclude='/spacedev_cache' \
-        --exclude='/.shellcheckrc' \
-        --exclude='/tests' \
-        '${REPO_ROOT_DIR}/' '${OUTPUT_DIR}/'"
+  copy_directory_to_dest --directory "build"
+  copy_directory_to_dest --directory "certs"
+  copy_directory_to_dest --directory "chart"
+  copy_directory_to_dest --directory "config"
+  copy_directory_to_dest --directory "env"
+  copy_directory_to_dest --directory "modules"
+  copy_directory_to_dest --directory "protos"
+  copy_directory_to_dest --directory "scripts"
 
-  clean_up_dest_directory
+  while read -r shellFile; do
+    chmod +x ${shellFile}
+    chmod 777 ${shellFile}
+  done < <(find "${OUTPUT_DIR}" -iname "*.sh")
 
-  echo "...successfully outputted to '${OUTPUT_DIR}'."
+  echo "...successfully copied Azure Orbital Space SDK to '${OUTPUT_DIR}'."
 
   sudo chown -R "${USER:-$(id -un)}" "${OUTPUT_DIR}"
 
@@ -89,4 +101,6 @@ function main() {
 
 
 main
+
+
 
