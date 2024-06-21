@@ -153,6 +153,22 @@ function prune_docker() {
     info_log "END: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Check if registry is still running by PID and if so, remove it
+############################################################
+function prune_registry() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "lsof -i -P -n | grep LISTEN | grep registry" pid --disable_log --ignore_error
+
+    if [[ -n "${pid}" ]]; then
+        pid=$(echo $pid | cut -d ' ' -f 2)
+        run_a_script "kill -9 ${pid}"
+    fi
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
 function main() {
     show_header
 
@@ -161,6 +177,7 @@ function main() {
     stop_all_docker_containers
     remove_k3s
     prune_docker
+    prune_registry
 
     info_log "Removing '${SPACEFX_DIR:?}'..."
     run_a_script "rm -rf ${SPACEFX_DIR:?}"
