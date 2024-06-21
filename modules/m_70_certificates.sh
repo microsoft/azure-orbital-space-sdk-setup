@@ -170,7 +170,7 @@ function generate_certificate() {
         return
     fi
 
-    create_directory ${output_dir}
+    create_directory "${output_dir}"
 
     if [[ -f "${output_dir}/${cert_name}.crt" ]]; then
         debug_log "Removing out-of-date '${output_dir}/${cert_name}.crt'"
@@ -182,7 +182,7 @@ function generate_certificate() {
 
     cd "${output_dir}" || exit_with_error "Failed to cd to '${output_dir}'"
 
-    run_a_script "cfssl gencert -ca=${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem -ca-key=${SPACEFX_DIR}/certs/ca/ca.spacefx.local.key -config=${cert_config} -profile=server ${cert_profile} | cfssljson -bare ${cert_name}" --no_log_results
+    run_a_script "cfssl gencert -ca=${SPACEFX_DIR}/certs/ca/ca.spacefx.local.pem -ca-key=${SPACEFX_DIR}/certs/ca/ca.spacefx.local.key -config=${cert_config} -profile=server ${cert_profile} | cfssljson -bare ${cert_name}" --disable_log
 
     cd - || exit_with_error "Failed to cd back"
 

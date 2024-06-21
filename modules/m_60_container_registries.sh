@@ -217,7 +217,6 @@ function find_registry_for_image(){
     fi
 
     info_log "Locating registry for '${container_image}'..."
-
     run_a_script "jq -r '.config.containerRegistries[] | select(.pull_enabled == true) | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" container_registries --disable_log
 
     REGISTRY_IMAGE_NAME=""
