@@ -87,11 +87,6 @@ stage_artifacts() {
     local worker_pids
     worker_pids=()
 
-    # Loop through the log files and remove any old ones
-    while IFS= read -r -d '' worker_log_file; do
-        rm "${worker_log_file}"
-    done < <(find "${SPACEFX_DIR}/tmp/" -iname "${SCRIPT_NAME}.log.stage_build_artifacts.*" -type f -print0)
-
     # Loop through all the service containers and trigger a background task to pull and export them (if necessary)
     for i in "${!ARTIFACTS[@]}"; do
         artifact="${ARTIFACTS[i]}"
@@ -124,11 +119,14 @@ stage_artifacts() {
 
     for i in "${!ARTIFACTS[@]}"; do
         artifact="${ARTIFACTS[i]}"
-        log_file_suffix=$(echo -n "$artifact" | base64)
-        cat "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.${log_file_suffix}" >>"${LOG_FILE}"
-        cat "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.${log_file_suffix}"
-        if [[ "$had_error" == false ]]; then
-            run_a_script "rm ${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.${log_file_suffix}" --disable_log
+        log_file_suffix=$(echo -n "$artifact" | base64 --wrap=0)
+        _worker_log_file="${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.${log_file_suffix}"
+        if [[ -f "${_worker_log_file}" ]]; then
+            cat "${_worker_log_file}" >>"${LOG_FILE}"
+            cat "${_worker_log_file}"
+            if [[ "$had_error" == false ]]; then
+                run_a_script "rm ${_worker_log_file}" --disable_log
+            fi
         fi
     done
 
@@ -147,7 +145,7 @@ stage_artifacts() {
 function download_artifact() {
     local i="$1"
     local fileName="$2"
-    log_file_suffix=$(echo -n "$artifact" | base64)
+    log_file_suffix=$(echo -n "$artifact" | base64 --wrap=0)
     # Reroute the stdout to a file so we can uniquely identify this run
     trap "" HUP
     exec 2> "${SPACEFX_DIR}/tmp/${SCRIPT_NAME}.log.${log_file_suffix}"
