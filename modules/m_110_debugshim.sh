@@ -150,7 +150,7 @@ function _auto_add_downloads() {
             PULL_CONTAINERS+=("platform-deployment:${_auto_add_tag_spacefx_tag}")
             ;;
         "vth-plugin")
-            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.PlatformServices.VTH.Plugins.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.VTH.Plugins.${SPACEFX_VERSION}.nupkg")
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             PULL_CONTAINERS+=("vth:${_auto_add_tag_spacefx_tag}")
             ;;
