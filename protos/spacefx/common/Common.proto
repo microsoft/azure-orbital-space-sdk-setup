@@ -109,6 +109,7 @@ message PluginHealthCheckRequest {
 // The health check response
 message PluginHealthCheckResponse {
     ResponseHeader responseHeader = 1;
+    repeated ResponseHeader pluginResponseHeaders = 2;
 }
 
 // The health check request
