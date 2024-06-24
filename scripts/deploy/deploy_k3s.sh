@@ -129,12 +129,12 @@ function wait_for_k3s_to_finish_initializing(){
     info_log "Found a completed deployment.  Waiting for all deployments to finish (max 5 mins)..."
 
     # This returns any pods that are not completed nor succeeded
-    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase!=Running,status.phase!=Succeeded -A --ignore-not-found" k3s_deployments
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase!=Running,status.phase!=Succeeded -n kube-system --ignore-not-found" k3s_deployments
 
     start_time=$(date +%s)
 
     while [[ -n $k3s_deployments ]]; do
-        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase!=Running,status.phase!=Succeeded -A --ignore-not-found" k3s_deployments
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase!=Running,status.phase!=Succeeded -n kube-system --ignore-not-found" k3s_deployments
 
         current_time=$(date +%s)
         elapsed_time=$((current_time - start_time))
