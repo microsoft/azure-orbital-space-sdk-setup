@@ -164,6 +164,7 @@ SPACEFX_UPDATE_END" --disable_log
         for service in $spacefx_services; do
             run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.appName' -r" service_appName
             run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.serviceNamespace' -r" service_nameSpace
+
             info_log "...waiting for '${service}' (Deployment Namespace: ${service_nameSpace} Name:${service_appName}) to finish provisioning..."
             wait_for_deployment --namespace "${service_nameSpace}" --deployment "${service_appName}"
             info_log "...'${service}' is online."
@@ -234,7 +235,7 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --start"
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
-    deploy_spacefx_service_group --service_group core --wait_for_deployment
+    deploy_spacefx_service_group --service_group core
     deploy_spacefx_service_group --service_group platform
     deploy_spacefx_service_group --service_group host
 

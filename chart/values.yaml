@@ -36,6 +36,7 @@ global:
     - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
       level: Debug
   devEnvironment: false
+  fileserverSMB: false
   nvidia:
     gpuLimitsName: nvidia.com/gpu
     gpuLimitsValue: 1

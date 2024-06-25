@@ -16,6 +16,7 @@ source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@
 # Script variables
 ############################################################
 NVIDIA_GPU_PLUGIN=false
+SMB_ENABLED=false
 CONTAINERS=()
 BUILD_ARTIFACTS=()
 DEV_ENVIRONMENT=true # Temporarily setting this to true to unblock work while implementing the build service in parallel
@@ -38,6 +39,7 @@ function show_help() {
    echo "--dev-environment | -d             [OPTIONAL] Setup the environment to support development.  This will enable VTH and downloads full size service container images."
    echo "--vth | -v                         [OPTIONAL] Enable Virtual Test Harness (VTH)."
    echo "--artifact                         [OPTIONAL] Add a build artifact to download and stage.  Must have match in  buildartifacts.json.  Can be passed multiple times"
+   echo "--smb                              [OPTIONAL] Enable SMB support in the FileServer component for multi-node clusters."
    echo "--container | -c                   [OPTIONAL] name of the container to pull.  Can be passed multiple times"
    echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
@@ -64,6 +66,9 @@ while [[ "$#" -gt 0 ]]; do
             ;;
         --nvidia-gpu-plugin)
             NVIDIA_GPU_PLUGIN=true
+            ;;
+        --smb)
+            SMB_ENABLED=true
             ;;
         -d | --dev-environment)
             DEV_ENVIRONMENT=true
@@ -118,6 +123,32 @@ function calculate_spacefx_registry(){
     write_parameter_to_log SPACEFX_REGISTRY
     write_parameter_to_log SPACEFX_VERSION_TAG
     write_parameter_to_log SPACEFX_VERSION_BASE_TAG
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
+
+
+############################################################
+# Enable FileServer components if user has requested it
+############################################################
+function enable_fileserver(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${SMB_ENABLED}" == true ]]; then
+        info_log "'SMB_ENABLED' = true.  Enabling SMB components..."
+        run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = true' -i \"${SPACEFX_DIR}/config/0_spacesdk-base.yaml\""
+        run_a_script "yq eval '.global.fileserverSMB = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+
+        info_log "...successfully enabled SMB."
+    else
+        info_log "'SMB_ENABLED' = false.  Disabling SMB components"
+        run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        run_a_script "yq eval '.global.fileserverSMB = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...successfully disabled SMB."
+    fi
+
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -369,6 +400,7 @@ function main() {
     write_parameter_to_log DEV_ENVIRONMENT
     write_parameter_to_log NVIDIA_GPU_PLUGIN
     write_parameter_to_log VTH_ENABLED
+    write_parameter_to_log SMB_ENABLED
 
     for i in "${!CONTAINERS[@]}"; do
         CONTAINER=${CONTAINERS[i]}
@@ -390,6 +422,8 @@ function main() {
     calculate_spacefx_registry
 
     enable_vth
+    enable_fileserver
+    _generate_spacefx_config_json
 
     info_log "Staging coresvc-registry..."
     stage_coresvc_registry
