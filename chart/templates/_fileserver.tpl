@@ -124,8 +124,8 @@ spec:
 {{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
 - name: {{ $shareName | quote}}
   mountPath: {{ $mountPath }}
-  {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeDirName "allxfer") }}
-  mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeDirName }}
+  {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeName "allxfer") }}
+  mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeName }}
   {{- else }}
   mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
   {{- end }}

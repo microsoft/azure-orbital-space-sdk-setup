@@ -263,7 +263,11 @@ SPACEFX_UPDATE_END" --disable_log
 
 
     check_service_account $debug_shim
-    check_fileserver_creds $debug_shim
+
+    if [[ "${SMB_ENABLED_IN_CLUSTER}" == "true" ]]; then
+        check_fileserver_creds $debug_shim
+    fi
+
 
     run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
 
