@@ -183,6 +183,14 @@ function stage_coresvc_registry(){
 
     run_a_script "docker save ${_stage_registry_image_name}:${SPACEFX_VERSION_TAG} --output ${SPACEFX_DIR}/images/${ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar"
 
+    if [[ "${ARCHITECTURE}" != "${HOST_ARCHITECTURE}" ]]; then
+        info_log "Detected cross-architecture staging.  Removing non-platform coresvc-registry image from Docker..."
+        run_a_script "docker rmi ${_stage_registry_image_name}:${SPACEFX_VERSION_TAG}" --ignore_error
+        run_a_script "docker rmi ${_stage_DEST_REGISTRY}/${_stage_REGISTRY_DEST_REPO}:${SPACEFX_VERSION}" --ignore_error
+        info_log "...successfully removed non-platform coresvc-registry image from Docker."
+    fi
+
+
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
