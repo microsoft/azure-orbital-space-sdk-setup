@@ -235,7 +235,18 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --start"
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
-    deploy_spacefx_service_group --service_group core
+
+    run_a_script "jq -r '.config.charts[] | select(.group == \"smb\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" smb_enabled --disable_log
+
+    if [[ "${smb_enabled}" == "true" ]]; then
+        # SMB takes a moment to come online.  We need to wait for it
+        deploy_spacefx_service_group --service_group core --wait_for_deployment
+    else
+        # No SMB means no cross-pod depenendcies.  No need to wait
+        deploy_spacefx_service_group --service_group core
+    fi
+
+
     deploy_spacefx_service_group --service_group platform
     deploy_spacefx_service_group --service_group host
 

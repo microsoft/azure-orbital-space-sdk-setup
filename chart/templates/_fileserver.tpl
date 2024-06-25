@@ -67,10 +67,9 @@ spec:
   storageClassName: local-path
   hostPath:
     {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeDirName "allxfer") }}
-    path: {{ $globalValues.spacefxDirectories.base }}
+    path: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.xfer }}
     {{- else }}
-    {{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeDirName $serviceValues.appName }}
-    path: {{ $mountPath }}
+    path: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeDirName $serviceValues.appName }}
     {{- end }}
     type: DirectoryOrCreate
 {{- end }}
@@ -110,8 +109,9 @@ spec:
   volumeName: {{ $volumeName }}-pv
 {{- if eq $globalValues.fileserverSMB true }}
   storageClassName: smb
-{{- end }}
+{{- else }}
   storageClassName: local-path
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -124,6 +124,11 @@ spec:
 {{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
 - name: {{ $shareName | quote}}
   mountPath: {{ $mountPath }}
+  {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeDirName "allxfer") }}
+  mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeDirName }}
+  {{- else }}
+  mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
+  {{- end }}
 {{- end }}
 
 {{- define "spacefx.fileserver.clientapp.volume" }}

@@ -299,6 +299,8 @@ services:
           value: 5000
         - name: leaveSourceFilePropertyValue
           value: false
+        - name: allxferDirectory
+          value: allxfer
       appName: hostsvc-link
       debugShim: false
       repository: hostsvc-link
