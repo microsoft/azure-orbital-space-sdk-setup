@@ -122,6 +122,11 @@
       "default": false,
       "description": "If true, will force spacefx_config to be regenned.  Useful if you're getting a new config file via download_artifacts"
     },
+    "smb_enabled_in_cluster": {
+      "type": "boolean",
+      "default": false,
+      "description": "Provision a cluster with coresvc-fileserver in preparation of a multinode cluster.  Will trigger a stage_spacefx.sh with the --smb switch"
+    },
     "log_level": {
       "type": "string",
       "enum": [

@@ -229,6 +229,11 @@ function main() {
         return
     fi
 
+
+    if [[ "${SMB_ENABLED_IN_CLUSTER}" == "true" ]]; then
+        STAGE_SPACE_FX_CMD_EXTRAS+=" --smb"
+    fi
+
     add_symlink_to_spacedev
     calculate_helm_groups
     pull_config_yamls
