@@ -22,7 +22,7 @@ ${WORKING_DIR}/.vscode/copy_to_spacedev.sh
 
 
 echo "Staging Microsoft Azure Orbital Space SDK..."
-/var/spacedev/scripts/stage_spacefx.sh
+/var/spacedev/scripts/stage_spacefx.sh --smb
 
 echo "Deploying Microsoft Azure Orbital Space SDK..."
 /var/spacedev/scripts/deploy_spacefx.sh
@@ -35,6 +35,7 @@ if [[ ! -f "${KUBECONFIG}" ]]; then
 fi
 
 kubectl get deployment/coresvc-registry -n coresvc
+kubectl get deployment/coresvc-fileserver -n coresvc
 kubectl get deployment/coresvc-switchboard -n coresvc
 
 kubectl get deployment/hostsvc-link -n hostsvc
