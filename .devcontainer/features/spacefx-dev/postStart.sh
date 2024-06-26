@@ -195,16 +195,23 @@ function generate_debugshims(){
         run_a_script "kubectl apply -f ${DEBUG_SHIM_PRE_YAML_FILE}"
     fi
 
-    for debug_shim in "${DEBUG_SHIMS[@]}"; do
-        base_name="${APP_NAME}"
-        [[ ${APP_TYPE} == *"-plugin" ]] && base_name="${SVC_IMG}"
+    for i in "${!DEBUG_SHIMS[@]}"; do
+        debug_shim=${DEBUG_SHIMS[i]}
 
-        _debug_shim_name="${base_name}"
-        [[ "$debug_shim" != "$base_name"* ]] && _debug_shim_name="${base_name}-${debug_shim}"
+        _debug_shim_name="${APP_NAME}"
 
+        # Plugins always use the service as the debugshim name so we
+        # can interact as the parent service in the cluster
+        [[ ${APP_TYPE} == *"-plugin" ]] && _debug_shim_name="${SVC_IMG}"
+
+        # The first debugshim is the main one; the rest get the suffixes
+        if [[ $i -gt 0 ]]; then
+            _debug_shim_name="${_debug_shim_name}-${debug_shim}"
+        fi
+
+        # Generate the debugshim with the calculated name
         generate_debugshim --debug_shim "${_debug_shim_name}"
     done
-
 
     if [[ -n "${DEBUG_SHIM_POST_YAML_FILE}" ]]; then
         info_log "Running DEBUG_SHIM_POST_YAML_FILE '${DEBUG_SHIM_POST_YAML_FILE}'..."
