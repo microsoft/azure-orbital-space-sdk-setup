@@ -17,6 +17,10 @@ echo "Running prod_cluster.sh"
 ${WORKING_DIR}/tests/prod_cluster.sh
 echo "prod_cluster.sh successfully passed"
 
+echo "Running prod_cluster_with_smb.sh"
+${WORKING_DIR}/tests/prod_cluster_with_smb.sh
+echo "prod_cluster_with_smb.sh successfully passed"
+
 echo ""
 echo ""
 echo ""
