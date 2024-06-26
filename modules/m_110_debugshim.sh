@@ -34,13 +34,15 @@ function remove_deployment_by_app_id() {
 
     debug_log "Removing volume claims for '${appId}'..."
 
-    run_a_script "kubectl get persistentvolumeclaim --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pvc_name: .metadata.name, pvc_namespace: .metadata.namespace} | @base64'" pvcs
+    run_a_script "kubectl get persistentvolumeclaim --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pvc_name: .metadata.name, pvc_namespace: .metadata.namespace, volume_name: .spec.volumeName} | @base64'" pvcs
 
     for pvc in $pvcs; do
         parse_json_line --json "${pvc}" --property ".pvc_name" --result pvc_name
+        parse_json_line --json "${pvc}" --property ".volume_name" --result volume_name
         parse_json_line --json "${pvc}" --property ".pvc_namespace" --result pvc_namespace
         debug_log "Deleting PVC '${pvc_name}' from namespace '${pvc_namespace}'..."
         run_a_script "kubectl delete persistentvolumeclaim/${pvc_name} -n ${pvc_namespace} --now=true"
+        run_a_script "kubectl delete persistentvolume/${volume_name} --now=true"
     done
 
     debug_log "...all volume claims for '${appId}' have been removed"
