@@ -93,7 +93,6 @@ if [[ ! -f "${KUBECONFIG}" ]]; then
     exit 1
 fi
 kubectl get deployment/coresvc-registry -n coresvc
-kubectl get deployment/coresvc-fileserver -n coresvc
 kubectl get deployment/coresvc-switchboard -n coresvc
 
 kubectl get deployment/hostsvc-link -n hostsvc
