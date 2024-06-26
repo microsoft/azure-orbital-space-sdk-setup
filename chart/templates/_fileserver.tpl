@@ -27,15 +27,17 @@ data:
 {{- $volumesList = append $volumesList $serviceVolumeName }}
 {{- end }}
 {{- end }}
-{{- range $volumeKey, $volumeName := $volumesList }}
-{{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeName }}
+{{- range $volumeKey, $volumeDirName := $volumesList }}
+{{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeDirName }}
 {{- $volumeNameFQDN := printf "%s.%s.svc.cluster.local/%s" $fileServerValues.appName $fileServerValues.serviceNamespace $volumeName }}
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
+{{- if eq $globalValues.fileserverSMB true }}
   annotations:
     pv.kubernetes.io/provisioned-by: smb.csi.k8s.io
+{{- end }}
   labels:
     microsoft.azureorbital/serviceName: {{ $serviceValues.appName | quote }}
     microsoft.azureorbital/appName: {{ $serviceValues.appName | quote }}
@@ -47,6 +49,7 @@ spec:
   accessModes:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Delete
+{{- if eq $globalValues.fileserverSMB true }}
   storageClassName: smb
   mountOptions:
     - dir_mode=0777
@@ -60,6 +63,16 @@ spec:
     nodeStageSecretRef:
       name: fileserver-{{ $serviceValues.appName }}
       namespace: {{ $serviceValues.serviceNamespace }}
+{{- else }}
+  storageClassName: local-path
+  hostPath:
+    {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeDirName "allxfer") }}
+    path: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.xfer }}
+    {{- else }}
+    path: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeDirName $serviceValues.appName }}
+    {{- end }}
+    type: DirectoryOrCreate
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -94,7 +107,11 @@ spec:
     limits:
       storage: {{ $globalValues.xferDirectoryQuota }}
   volumeName: {{ $volumeName }}-pv
+{{- if eq $globalValues.fileserverSMB true }}
   storageClassName: smb
+{{- else }}
+  storageClassName: local-path
+{{- end }}
 {{- end }}
 {{- end }}
 
@@ -107,6 +124,11 @@ spec:
 {{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
 - name: {{ $shareName | quote}}
   mountPath: {{ $mountPath }}
+  {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeName "allxfer") }}
+  mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeName }}
+  {{- else }}
+  mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
+  {{- end }}
 {{- end }}
 
 {{- define "spacefx.fileserver.clientapp.volume" }}

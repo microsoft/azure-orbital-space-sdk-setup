@@ -80,6 +80,7 @@ data:
   payloadappconfig: {{ $payloadappconfig | b64enc }}
   payloadapplabels: {{ toYaml $serviceValues.payloadAppInjections.labels | b64enc }}
   payloadappenvironmentvariables: {{ toYaml $serviceValues.payloadAppInjections.environmentVariables | b64enc }}
+  fileserversmb: {{ $globalValues.fileserverSMB | quote | b64enc }}
   {{- end }}
 {{- end }}
 

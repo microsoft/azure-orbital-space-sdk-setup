@@ -15,6 +15,9 @@
 {{- end }}
 {{- range $key, $val := $allServices }}
 {{- include "spacefx.service_account" (dict "serviceValues" $val "globalValues" $globalValues) }}
+{{- end }}
+{{- if eq $globalValues.fileserverSMB true }}
+{{- range $key, $val := $allServices }}
 {{- include "spacefx.fileserver.clientapp.creds" (dict "serviceValues" $val "username" $val.appName "password" $val.password ) }}
 {{- end }}
 {{- $imgName := printf "%s/%s:%s" (include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues)) $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
@@ -104,6 +107,7 @@ spec:
         - name: {{ $serviceValues.appName }}-config
           secret:
             secretName: {{ $serviceValues.appName }}-config
+{{- end }}
 {{ range $key, $val := $allServices }}
 {{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}

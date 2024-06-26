@@ -15,7 +15,7 @@ config:
           repository: daprio/daprd
           tag: 1.9.6
     - group: smb
-      enabled: true
+      enabled: false
       version: 1.14.0
       containers:
         - registry: registry.k8s.io

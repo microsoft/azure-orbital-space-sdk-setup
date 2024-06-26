@@ -120,6 +120,15 @@ function deploy_nvidia_plugin(){
 function deploy_smb_plugin(){
     info_log "START: ${FUNCNAME[0]}"
 
+    run_a_script "jq -r '.config.charts[] | select(.group == \"smb\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" smb_enabled --disable_log
+
+    if [[ "${smb_enabled}" == "false" ]]; then
+        info_log "SMB is disabled (from config).  Skipping SMB plugin deployment"
+        info_log "FINISHED: ${FUNCNAME[0]}"
+        return
+    fi
+
+
     info_log "Checking for SMB plugin..."
     run_a_script "helm --kubeconfig ${KUBECONFIG} list --all-namespaces | grep 'csi-driver-smb'" has_smb_plugin --ignore_error
 

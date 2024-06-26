@@ -25,7 +25,6 @@ SPACEFX_END" --disable_log
 # Generate the spacefx-config.json file used by the rest of the scripts
 ############################################################
 function _generate_spacefx_config_json() {
-    local yq_query=""
     trace_log "Generating '${SPACEFX_DIR}/tmp/config/spacefx-config.json'..."
 
     create_directory "${SPACEFX_DIR}/tmp/config"

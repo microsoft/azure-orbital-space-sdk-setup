@@ -36,6 +36,7 @@ global:
     - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
       level: Debug
   devEnvironment: false
+  fileserverSMB: false
   nvidia:
     gpuLimitsName: nvidia.com/gpu
     gpuLimitsValue: 1
@@ -298,6 +299,8 @@ services:
           value: 5000
         - name: leaveSourceFilePropertyValue
           value: false
+        - name: allxferDirectory
+          value: allxfer
       appName: hostsvc-link
       debugShim: false
       repository: hostsvc-link
