@@ -113,6 +113,10 @@ function calculate_spacefx_registry(){
     find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
 
+    if [[ -z "${SPACEFX_REGISTRY}" ]]; then
+        exit_with_error "Unable to find a registry for 'spacesdk-base:${SPACEFX_VERSION_TAG}'.  Please check that you have the right channel, that you have access to all the container registries in ${SPACEFX_DIR}/config/*.yaml, login to all container registries in ${SPACEFX_DIR}/config/*.yaml (if applicable), and/or update your ${SPACEFX_DIR}/config/*.yaml to include a container registry with spacesdk-base:${SPACEFX_VERSION_TAG}."
+    fi
+
     check_for_repo_prefix_for_registry --registry "${SPACEFX_REGISTRY}" --result SPACEFX_REPO_PREFIX
     info_log "SPACEFX_REPO_PREFIX calculated as '${SPACEFX_REPO_PREFIX}'"
 
