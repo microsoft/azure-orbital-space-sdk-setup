@@ -331,7 +331,6 @@ function build_nuget_package(){
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
     info_log "...project ${project} successfully generated"
 
 }
