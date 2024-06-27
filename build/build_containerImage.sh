@@ -29,6 +29,7 @@ BUILD_ARGS=""
 EXTRA_PKGS=""
 ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
+DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 SPACEFX_DEV_ENABLED=true
 
 ############################################################
@@ -48,6 +49,7 @@ function show_help() {
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
    echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
+   echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -62,6 +64,10 @@ while [[ "$#" -gt 0 ]]; do
         -h|--help) show_help ;;
         --no-spacefx-dev)
             SPACEFX_DEV_ENABLED=false
+        ;;
+        --devcontainer-json)
+            shift
+            DEVCONTAINER_JSON_FILE=$1
         ;;
         --annotation-config)
             shift
@@ -113,7 +119,6 @@ done
 
 check_for_cmd --app "docker" --documentation-url "https://docs.docker.com/engine/install/ubuntu/"
 check_for_cmd --app "devcontainer" --documentation-url "https://code.visualstudio.com/docs/devcontainers/devcontainer-cli"
-
 
 ############################################################
 # Helper function to update an option in devcontainer.json
@@ -219,14 +224,14 @@ function gather_devcontainer_values(){
     info_log "Container image name calculated as '${CONTAINER_IMAGE}'"
 
     # Query to get the base image
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" devcontainer_json
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" devcontainer_json
     run_a_script "jq -r '.configuration.image' <<< \${devcontainer_json}" DEV_CONTAINER_BASE_IMAGE
 
     # Query if there's extra packages to apt-get install against
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
 
     if [[ -n ${has_spacefx_feature} ]]; then
-        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq -r '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.extra_packages'" extra_packages --ignore_error
+        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq -r '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.extra_packages'" extra_packages --ignore_error
 
         if [[ -n "${extra_packages}" ]]; then
             info_log "Extra packages detected in spacefx-dev container feature (${extra_packages}).  Adding them to container image"
@@ -377,9 +382,9 @@ function main() {
     write_parameter_to_log DEST_REPO
     provision_emulator
 
-    if [[ -f "${REPO_DIR}/.devcontainer/devcontainer.json" ]] && [[ "${SPACEFX_DEV_ENABLED}" == true ]]; then
+    if [[ -f "${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" ]] && [[ "${SPACEFX_DEV_ENABLED}" == true ]]; then
         info_log "Checking for spacefx-dev..."
-        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
+        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
         info_log "Result: ${has_spacefx_feature}"
 
         if [[ -n ${has_spacefx_feature} ]]; then

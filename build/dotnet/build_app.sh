@@ -23,7 +23,7 @@ CONTAINER_WORKSPACE_FOLDER=""
 DIR_DATESTAMP_VALUE=$(date -u +'%Y-%m-%d-%H-%M-%S')
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 CONTAINER_BUILD=true
-
+DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 APP_NAME=""
 CONTAINER_ID=""
 DEVCONTAINER_JSON=""
@@ -39,12 +39,13 @@ function show_help() {
    echo "options:"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--architecture | -a                [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
-   echo "--app-project | -p                 [REQUIRED] Relative path to the app's project file"
+   echo "--app-project | -p                 [REQUIRED] Relative path to the app's project file from within the devcontainer.  Will generate "
    echo "--app-version | -v                 [REQUIRED] Major version number to assign to the generated nuget package"
    echo "--output-dir | -o                  [REQUIRED] Local output directory to deliver any nuget packages to.  Will automatically get architecture appended.  Parameter is optional if no nuget packages are specified"
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
-   echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable).  Will generate a nuget package in the output directory.  Can be passed multiple times"
+   echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable) from within the devcontainer.  Will generate a nuget package in the output directory.  Can be passed multiple times"
    echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build nuget packages"
+   echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -67,6 +68,10 @@ while [[ "$#" -gt 0 ]]; do
                 echo "Annotation configuration file '${ANNOTATION_CONFIG}' not found in '${SPACEFX_DIR}/config/github/annotations'"
                 show_help
             fi
+        ;;
+        --devcontainer-json)
+            shift
+            DEVCONTAINER_JSON_FILE=$1
         ;;
         -p|--app-project)
             shift
@@ -125,8 +130,8 @@ if [[ ! -d "$REPO_DIR" ]]; then
     show_help
 fi
 
-if [[ ! -f "$REPO_DIR/.devcontainer/devcontainer.json" ]]; then
-    echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/.devcontainer/devcontainer.json' not found.  Build service requires a devcontainer.json file to run"
+if [[ ! -f "${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" ]]; then
+    echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/${DEVCONTAINER_JSON_FILE}' not found.  Build service requires a devcontainer.json file to run"
     show_help
 fi
 
@@ -141,18 +146,6 @@ if [[ -z "$APP_PROJECT" ]]; then
     echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Mising --app-project parameter"
     show_help
 fi
-
-if [[ ! -f "${REPO_DIR}/${APP_PROJECT}" ]]; then
-    echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/${APP_PROJECT}' not found.  Check your --app-project path and try again"
-    show_help
-fi
-
-for NUGET_PROJECT in "${NUGET_PROJECTS[@]}"; do
-    if [[ ! -f "${REPO_DIR}/${NUGET_PROJECT}" ]]; then
-        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/${NUGET_PROJECT}' not found.  Check your --nuget-project path and try again"
-        show_help
-    fi
-done
 
 check_for_cmd --app "docker" --documentation-url "https://docs.docker.com/engine/install/ubuntu/"
 check_for_cmd --app "devcontainer" --documentation-url "https://code.visualstudio.com/docs/devcontainers/devcontainer-cli"
@@ -181,8 +174,8 @@ function _update_devcontainer_option(){
     done
 
     if [[ -z "${DEVCONTAINER_JSON}" ]]; then
-        debug_log "DEVCONTAINER_JSON is empty.  Reading values '${REPO_DIR}/.devcontainer/devcontainer.json'"
-        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" DEVCONTAINER_JSON
+        debug_log "DEVCONTAINER_JSON is empty.  Reading values '${REPO_DIR}/${DEVCONTAINER_JSON_FILE}'"
+        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" DEVCONTAINER_JSON
 
         # Remove the extra .configuration.configFilePath that gets added by devcontainer cli
         run_a_script "jq 'del(.configuration.configFilePath)' <<< \${DEVCONTAINER_JSON}" DEVCONTAINER_JSON
@@ -241,21 +234,21 @@ function gather_devcontainer_values(){
     run_a_script "docker ps -q --filter \"label=devcontainer.local_folder=${REPO_DIR}\"" CONTAINER_ID
     info_log "...container id calculated as '${CONTAINER_ID}'"
 
-    run_a_script "docker inspect ${CONTAINER_ID} | jq -r '.[0].Mounts[] | select(.Source == \"${REPO_DIR}\") | .Destination'" CONTAINER_WORKSPACE_FOLDER
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq -r '.workspace.workspaceFolder'" CONTAINER_WORKSPACE_FOLDER
     info_log "Container workspace folder calculated as '${CONTAINER_WORKSPACE_FOLDER}'"
 
     run_a_script "docker inspect ${CONTAINER_ID} | jq -r '.[0].Config.Image'" CONTAINER_IMAGE
     info_log "Container image name calculated as '${CONTAINER_IMAGE}'"
 
     # Query to get the base image
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR}" devcontainer_json
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" devcontainer_json
     run_a_script "jq -r '.configuration.image' <<< \${devcontainer_json}" DEV_CONTAINER_BASE_IMAGE
 
     # Query if there's extra packages to apt-get install against
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
 
     if [[ -n ${has_spacefx_feature} ]]; then
-        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq -r '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.extra_packages'" extra_packages --ignore_error
+        run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq -r '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | .value.extra_packages'" extra_packages --ignore_error
 
         if [[ -n "${extra_packages}" ]]; then
             info_log "Extra packages detected in spacefx-dev container feature (${extra_packages}).  Adding them to container image"
@@ -328,10 +321,17 @@ function build_nuget_package(){
         shift
     done
 
-    info_log "Building nuget package for project '${project}'..."
+    info_log "Checking for '${CONTAINER_WORKSPACE_FOLDER}/${project}' in container"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json test -f \"${CONTAINER_WORKSPACE_FOLDER}/${project}\"" --ignore_error
+    if [[ $RETURN_CODE -gt 0 ]]; then
+        exit_with_error "Project '${project}' not found in container workspace.  Please check your --nuget-project path and try again"
+    fi
+
+    info_log "...found project '${project}'.  Building..."
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet pack \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
     info_log "...project ${project} successfully generated"
 
 }
@@ -353,7 +353,14 @@ function build_app(){
         shift
     done
 
-    info_log "Building app '${project}'..."
+    info_log "Checking for '${CONTAINER_WORKSPACE_FOLDER}/${project}' in container"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json test -f \"${CONTAINER_WORKSPACE_FOLDER}/${project}\"" --ignore_error
+    if [[ $RETURN_CODE -gt 0 ]]; then
+        exit_with_error "Project '${project}' not found in container workspace.  Please check your --app-project path and try again"
+    fi
+
+    info_log "...found project '${project}'.  Building..."
+
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/app"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/app\" --configuration Release"
@@ -447,7 +454,7 @@ function main() {
     provision_emulator
 
     info_log "Checking for spacefx-dev feature in devcontainer.json..."
-    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
+    run_a_script "devcontainer read-configuration --workspace-folder ${REPO_DIR} --config ${REPO_DIR}/${DEVCONTAINER_JSON_FILE} | jq '.configuration.features | to_entries[] | select(.key | contains(\"spacefx-dev\")) | true'" has_spacefx_feature --ignore_error
     info_log "Result: ${has_spacefx_feature}"
 
     [[ -z "${has_spacefx_feature}" ]] && exit_with_error "spacefx-dev feature not found in devcontainer.json.  Please add the feature to the devcontainer.json file before trying to use this script"
@@ -468,11 +475,11 @@ function main() {
         info_log "All nuget packages successfully built"
     fi
 
+    build_app --project "${APP_PROJECT}"
+    copy_to_output_dir --subfolder "app"
+
     if [[ "${CONTAINER_BUILD}" == "true" ]]; then
         info_log "Building container image..."
-        build_app --project "${APP_PROJECT}"
-        copy_to_output_dir --subfolder "app"
-
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
                         --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
