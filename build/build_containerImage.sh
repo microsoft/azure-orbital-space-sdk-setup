@@ -120,12 +120,6 @@ done
 check_for_cmd --app "docker" --documentation-url "https://docs.docker.com/engine/install/ubuntu/"
 check_for_cmd --app "devcontainer" --documentation-url "https://code.visualstudio.com/docs/devcontainers/devcontainer-cli"
 
-
-if [[ ! -f "${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" ]]; then
-    echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/${DEVCONTAINER_JSON_FILE}' not found.  Build service requires a devcontainer.json file to run"
-    show_help
-fi
-
 ############################################################
 # Helper function to update an option in devcontainer.json
 ############################################################
