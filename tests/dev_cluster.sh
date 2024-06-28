@@ -40,12 +40,14 @@ has_devcontainer_cli=$(whereis -b "devcontainer")
 
 if [[ $has_devcontainer_cli == "devcontainer:" ]]; then
     echo "The 'devcontainer' command is not available.  Please install it and retry."
+    exit 1
 fi
 
 has_oras=$(whereis -b "oras")
 
 if [[ $has_oras == "oras:" ]]; then
     echo "The 'oras' command is not available.  Please install it and retry."
+    exit 1
 fi
 
 echo "Building the devcontainer feature '${REGISTRY}/${FEATURE}:${VERSION}'..."
