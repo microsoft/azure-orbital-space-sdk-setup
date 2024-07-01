@@ -112,6 +112,10 @@ function check_and_install_dotnet(){
         run_a_script "ln -s ${DOTNET_INSTALL_DIR:?}/dotnet /usr/local/bin/dotnet"
     fi
 
+    if [[ ! -f "/usr/local/bin/dotnet" ]] && [[ ! -L "/usr/local/bin/dotnet" ]]; then
+        run_a_script "ln -s ${DOTNET_INSTALL_DIR:?}/dotnet /usr/local/bin/dotnet"
+    fi
+
     info_log "...dotnet found at '${DOTNET_INSTALL_DIR:?}/dotnet'"
 
     info_log "END: ${FUNCNAME[0]}"
@@ -143,7 +147,7 @@ function python_copy_spacesdk_wheel(){
     info_log "...successfully removed all poetry.lock files"
 
     # Python SDK doesn't get the wheel because it's the wheel builder
-    if [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
+    if [[ "${APP_TYPE}" == "payloadapp" ]]; then
         info_log "Copying wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'..."
 
         create_directory "${CONTAINER_WORKING_DIR}/.wheel"
@@ -665,7 +669,50 @@ function main() {
         fi
     fi
 
+
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
+        info_log "Python detected.  Setting up environment for python development and debug..."
+        python_copy_spacesdk_wheel
+        python_check_dev_app_dependencies
+
+        debug_log "Triggering poetry to install app dependencies..."
+        if [[ "${CLUSTER_ENABLED}" == true ]]; then
+            python_poetry_install --no-root --all-extras
+        else
+            python_poetry_install --no-root --no-spacefx-dev
+        fi
+
+        debug_log "...poetry successfully installed app dependencies."
+
+        python_compile_protos
+
+        debug_log "Triggering poetry to install app..."
+        if [[ "${CLUSTER_ENABLED}" == true ]]; then
+            python_poetry_install --all-extras
+        else
+            python_poetry_install --no-spacefx-dev
+        fi
+
+        debug_log "...poetry successfully installed app."
+
+        # Python Client SDK needs the protos in the right spot
+        if [[ "${APP_TYPE}" == "spacesdk-client" ]]; then
+            info_log "SpaceSDK-Client detected.  Moving compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'..."
+            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx"
+            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/ ${CONTAINER_WORKING_DIR:?}/spacefx/"
+            info_log "...successfully moved compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'"
+        fi
+    fi
+
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
+
+        # Python needs the debugshim image updated with the changes from the python installs above
+        if [[ "${DEV_PYTHON}" == "true" ]]; then
+            info_log "Committing changes to container for debugshim..."
+            run_a_script "docker commit ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
+            info_log "...image updated"
+        fi
+
 
         # Python needs the debugshim image updated with the changes from the python installs above
         if [[ "${DEV_PYTHON}" == "true" ]]; then

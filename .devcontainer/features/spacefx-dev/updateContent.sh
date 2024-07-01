@@ -177,6 +177,7 @@ function calculate_helm_groups(){
 
     # Calculate the service group and service name if it's not one of the default ones
     if ! [[ "${APP_TYPE}" =~ ^(spacesdk-core|payloadapp|spacesdk-client)$ ]]; then
+    if ! [[ "${APP_TYPE}" =~ ^(spacesdk-core|payloadapp|spacesdk-client)$ ]]; then
         run_a_script "yq '.' --output-format=json ${SPACEFX_DIR}/chart/values.yaml | jq -r ' .services[] | to_entries[] | select(.value.appName == \"${SVC_IMG}\") | .key'" HELM_SVC_NAME
         run_a_script "yq '.' --output-format=json ${SPACEFX_DIR}/chart/values.yaml | jq -r ' .services | to_entries[] | select(.value | has(\"${HELM_SVC_NAME}\")) | .key'" HELM_SVC_GROUP
     fi
@@ -232,7 +233,7 @@ function main() {
 
     # Replace the SPACEFX_VERSION in the payload-app-python-min.toml file with
     # the actual SPACEFX_VERSION we're loading from here
-    run_a_script "cat /spacefx-dev/payload-app-python-min.toml" payload_app_python_min_toml
+    run_a_script "cat /spacefx-dev/payload-app-python-min.toml" payload_app_python_min_toml --disable_log
     payload_app_python_min_toml="${payload_app_python_min_toml/\$SPACEFX_VERSION/$SPACEFX_VERSION}"
 
     run_a_script "tee /spacefx-dev/payload-app-python-min.toml > /dev/null << SPACEFX_END
