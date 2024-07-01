@@ -200,6 +200,10 @@ function _auto_add_downloads() {
             DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
             ;;
     esac
+        "spacesdk-client")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
+            ;;
+    esac
 
     debug_log "Artifacts queued to download:"
     for i in "${!DOWNLOAD_ARTIFACTS[@]}"; do
@@ -215,6 +219,54 @@ function _auto_add_downloads() {
 
 
     info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Compile any of the protos found
+############################################################
+function python_compile_protos() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    # Building the .protos directory
+    create_directory "${CONTAINER_WORKING_DIR:?}/.protos"
+
+    info_log "Compiling protos from '${SPACEFX_DIR}/protos/spacefx'..."
+    run_a_script "find ${SPACEFX_DIR}/protos/spacefx -iname '*.proto' -type f" protos_found
+
+    for proto in $protos_found; do
+        info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${SPACEFX_DIR}/protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos"
+        info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos'..."
+    done
+    info_log "...successfully compiled protos from '${SPACEFX_DIR}/protos/spacefx'"
+
+    info_log "Compiling protos from '${CONTAINER_WORKING_DIR:?}/.protos'..."
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -iname '*.proto' -type f" protos_found
+
+    for proto in $protos_found; do
+        info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR:?}/.protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos"
+        info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos'..."
+    done
+    info_log "...successfully compiled protos from '${CONTAINER_WORKING_DIR:?}/.protos'"
+
+
+    info_log "Adding __init__.py to directories..."
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -type d" proto_dirs
+
+    for proto_dir in $proto_dirs; do
+        info_log "Checking for '${proto_dir}/__init__.py'..."
+        if [[ ! -f "${proto_dir}/__init__.py" ]]; then
+            info_log "...'${proto_dir}/__init__.py' not found.  Adding..."
+            run_a_script "touch ${proto_dir}/__init__.py"
+            info_log "...successfully added '${proto_dir}/__init__.py'"
+        else
+            info_log "...'${proto_dir}/__init__.py' found."
+        fi
+    done
+
+    info_log "...successfully added __init__.py to directories."
 }
 
 
