@@ -51,7 +51,6 @@ LOG_LEVEL=${LOG_LEVEL^^} # Force to uppercase
 SPACEFX_VERSION_LATEST="0.11.0"
 
 ALLOWED_APP_TYPES=("none"
-                    "sdk-service"
                     "payloadapp"
                     "hostsvc-sensor-plugin"
                     "hostsvc-logging-plugin"
@@ -60,8 +59,8 @@ ALLOWED_APP_TYPES=("none"
                     "platform-mts-plugin"
                     "platform-deployment-plugin"
                     "vth-plugin"
-                    "sdk"
-                    "spacesdk-core")
+                    "spacesdk-core"
+                    "spacesdk-client")
 
 ALLOWED_LOG_LEVELS=("ERROR"
                     "WARN"
@@ -135,6 +134,7 @@ function build_dest_directory() {
 
     echo "Copying scripts to /spacefx-dev/..."
     cp ./*.sh /spacefx-dev/
+    cp ./payload-app-python-min.toml /spacefx-dev/
     cp ./azure-orbital-space-sdk-setup /azure-orbital-space-sdk-setup/ -r
 
 
@@ -265,6 +265,7 @@ export EXTRA_PACKAGES_BASE64=${EXTRA_PACKAGES}
 export ADDL_CONFIG_YAMLS_BASE64=${ADDL_CONFIG_YAMLS}
 export EXTRACT_SETUP_FILES=${EXTRACT_SETUP_FILES}
 export SVC_IMG=${SVC_IMG}
+export DEV_DOTNET=true
 UPDATE_END
 
 }
@@ -280,6 +281,8 @@ function gen_config_files() {
     echo "${SPACEFX_VERSION}" > /spacefx-dev/config/spacefx_version
     echo "${APP_NAME}" > /spacefx-dev/config/app_name
     echo "${APP_TYPE}" > /spacefx-dev/config/app_type
+    echo "true" > /spacefx-dev/config/dev_dotnet
+
 }
 
 

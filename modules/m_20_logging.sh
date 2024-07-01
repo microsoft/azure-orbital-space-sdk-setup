@@ -184,21 +184,21 @@ function _calculate_root_tty(){
     current_pid=$$
     # Iteratively find the parent process until we reach a non-root process
     while :; do
-        ppid=$(ps -o ppid= -p $current_pid)
+        ppid=$(ps -o ppid= -p $current_pid 2>/dev/null)
         ppid=$(echo $ppid | tr -d ' ')  # Trim spaces
 
         if [ -z "$ppid" ] || [ "$ppid" -eq 1 ]; then
-            echo "Unable to calculate TTY; Reached the top of the process tree without finding a non-root process.  Will not output to the terminal."
+            echo "Unable to calculate TTY; Logging may not work as expected"
             break
         fi
 
-        tty=$(ps -o tty= -p $ppid)
+        tty=$(ps -o tty= -p $ppid 2>/dev/null)
         tty=$(echo $tty | tr -d ' ')  # Trim spaces
 
-        euid=$(ps -o euid= -p $ppid)
+        euid=$(ps -o euid= -p $ppid 2>/dev/null)
         euid=$(echo $euid | tr -d ' ')  # Trim spaces
 
-        if [ "$euid" -ne 0 ]; then
+        if [[ "$euid" -ne 0 ]]; then
             ROOT_TTY="/dev/$tty"
             break
         fi
