@@ -139,9 +139,11 @@ function _check_for_python() {
 export DEV_PYTHON=true
 SPACEFX_UPDATE_END" --disable_log
 
+    run_a_script "tee -a  /spacefx-dev/config/dev_python > /dev/null << SPACEFX_UPDATE_END
+true
+SPACEFX_UPDATE_END" --disable_log
 
-    echo "true" > /spacefx-dev/config/dev_python
-    export DEV_PYTHON=true
+    source "${SPACEFX_DEV_ENV}"
 
     info_log "Successfully updated environment with Python dependencies."
     info_log "END: ${FUNCNAME[0]}"
