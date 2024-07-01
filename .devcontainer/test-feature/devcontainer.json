@@ -9,6 +9,7 @@
 	"features": {
 		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0_test_do_not_use": {
 			"app_name": "spacesdk-setup",
+			"app_type": "none",
 			"extract_setup_files": "false"
 		}
 	},

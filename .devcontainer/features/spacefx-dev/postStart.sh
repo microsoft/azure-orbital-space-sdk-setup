@@ -143,7 +143,7 @@ function python_copy_spacesdk_wheel(){
     info_log "...successfully removed all poetry.lock files"
 
     # Python SDK doesn't get the wheel because it's the wheel builder
-    if [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
+    if [[ "${APP_TYPE}" == "payloadapp" ]]; then
         info_log "Copying wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'..."
 
         create_directory "${CONTAINER_WORKING_DIR}/.wheel"
