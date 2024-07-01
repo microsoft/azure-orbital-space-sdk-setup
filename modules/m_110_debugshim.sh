@@ -122,6 +122,13 @@ function _check_for_python() {
         return
     fi
 
+    if [[ "${APP_TYPE}" != "payloadapp" ]] && [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
+        info_log "Python found, but APP_TYPE of '${APP_TYPE-client}' is not 'payloadapp' nor 'spacesdk-client'.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+
     info_log "Python found.  Updating environment with dependencies..."
     debug_log "...adding socat and nuget to EXTRA_PACKAGES..."
     EXTRA_PACKAGES+=("socat")
