@@ -232,7 +232,7 @@ function main() {
 
     # Replace the SPACEFX_VERSION in the payload-app-python-min.toml file with
     # the actual SPACEFX_VERSION we're loading from here
-    run_a_script "cat /spacefx-dev/payload-app-python-min.toml" payload_app_python_min_toml
+    run_a_script "cat /spacefx-dev/payload-app-python-min.toml" payload_app_python_min_toml --disable_log
     payload_app_python_min_toml="${payload_app_python_min_toml/\$SPACEFX_VERSION/$SPACEFX_VERSION}"
 
     run_a_script "tee /spacefx-dev/payload-app-python-min.toml > /dev/null << SPACEFX_END
