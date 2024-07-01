@@ -177,7 +177,6 @@ function calculate_helm_groups(){
 
     # Calculate the service group and service name if it's not one of the default ones
     if ! [[ "${APP_TYPE}" =~ ^(spacesdk-core|payloadapp|spacesdk-client)$ ]]; then
-    if ! [[ "${APP_TYPE}" =~ ^(spacesdk-core|payloadapp|spacesdk-client)$ ]]; then
         run_a_script "yq '.' --output-format=json ${SPACEFX_DIR}/chart/values.yaml | jq -r ' .services[] | to_entries[] | select(.value.appName == \"${SVC_IMG}\") | .key'" HELM_SVC_NAME
         run_a_script "yq '.' --output-format=json ${SPACEFX_DIR}/chart/values.yaml | jq -r ' .services | to_entries[] | select(.value | has(\"${HELM_SVC_NAME}\")) | .key'" HELM_SVC_GROUP
     fi
