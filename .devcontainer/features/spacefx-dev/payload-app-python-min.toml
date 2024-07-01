@@ -1,0 +1,19 @@
+[tool.poetry.dependencies]
+grpcio-tools = "^1.26.0"
+grpcio = "^1.26.0"
+protobuf = "^3.20.1"
+
+[tool.poetry.dependencies.microsoftazurespacefx]
+path = ".wheel/microsoftazurespacefx-$SPACEFX_VERSION-py3-none-any.whl"
+develop = false
+
+[tool.poetry.group.spacefx-dev.dependencies]
+pytest = "^7.2.1"
+pip = "*"
+setuptools = "*"
+wheel = "*"
+build = "*"
+mypy = "*"
+mypy-extensions = "*"
+mypy-protobuf = "*"
+debugpy = "*"

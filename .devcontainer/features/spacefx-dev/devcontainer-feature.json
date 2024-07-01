@@ -27,8 +27,8 @@
       "type": "string",
       "enum": [
         "none",
-        "framework-core",
-        "sdk",
+        "spacesdk-core",
+        "spacesdk-client",
         "sdk-service",
         "payloadapp",
         "hostsvc-sensor-plugin",

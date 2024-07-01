@@ -15,7 +15,6 @@ if [ "$(id -u)" -ne 0 ]; then
     exit 1
 fi
 
-# Setup the directory on the host so we can copy our files over to it
 set -e
 
 # If we're running in the devcontainer with the k3s-on-host feature, source the .env file
@@ -109,7 +108,245 @@ function check_and_install_dotnet(){
         run_a_script "/tmp/dotnet-install.sh --version ${DOTNET_SDK_VERSION:?}" --disable_log
     fi
 
+    if [[ ! -f "/usr/local/bin/dotnet" ]] && [[ ! -L "/usr/local/bin/dotnet" ]]; then
+        run_a_script "ln -s ${DOTNET_INSTALL_DIR:?}/dotnet /usr/local/bin/dotnet"
+    fi
+
     info_log "...dotnet found at '${DOTNET_INSTALL_DIR:?}/dotnet'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Copy the space SDK wheel (if applicable)
+############################################################
+function python_copy_spacesdk_wheel(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${DEV_PYTHON}" != "true" ]]; then
+        info_log "Python not found.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Python detected (DEV_PYTHON=true)"
+
+    info_log "Searching and removing any poetry.lock files..."
+    run_a_script "find ${CONTAINER_WORKING_DIR} -name 'poetry.lock' -type f" poetry_lock_files
+
+    for poetry_lock_file in $poetry_lock_files; do
+        info_log "...removing '${poetry_lock_file}'..."
+        run_a_script "rm -f ${poetry_lock_file}"
+        info_log "...successfully removed '${poetry_lock_file}..."
+    done
+
+    info_log "...successfully removed all poetry.lock files"
+
+    # Python SDK doesn't get the wheel because it's the wheel builder
+    if [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
+        info_log "Copying wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'..."
+
+        create_directory "${CONTAINER_WORKING_DIR}/.wheel"
+        run_a_script "cp ${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl ${CONTAINER_WORKING_DIR}/.wheel"
+
+        info_log "...successfully copied wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'"
+    fi
+
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Install Apps used by Python
+############################################################
+function python_check_dev_app_dependencies(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Checking for poetry..."
+    is_cmd_available "poetry" has_cmd
+    if [[ "${has_cmd}" == false ]]; then
+        info_log "Poetry not found.  Installing..."
+        run_a_script "curl -sSL https://install.python-poetry.org | POETRY_HOME=/root/.local python3 -"
+        run_a_script "chmod +x /root/.local/bin/poetry"
+        run_a_script "/root/.local/bin/poetry config virtualenvs.create false"
+    fi
+
+    info_log "Poetry found...setting config to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry'..."
+    create_directory "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry"
+    run_a_script "/root/.local/bin/poetry config cache-dir ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry"
+    info_log "...poetry successfully installed."
+
+    info_log "Updating pip cache to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pip'..."
+    create_directory "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pip"
+    run_a_script "tee /etc/pip.conf > /dev/null << PIP_UPDATE_END
+[global]
+cache-dir = ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pip
+PIP_UPDATE_END"
+    info_log "...successfully updated pip cache to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pip'."
+
+    info_log "Installing remarshal..."
+    run_a_script "pip install remarshal"
+    info_log "...successfully installed remarshal"
+
+    info_log "Installing socat to host (if missing)..."
+    run_a_script_on_host "apt-get install -y --no-install-recommends socat"
+    info_log "...successfully installed socat"
+
+
+    python_check_pyproject_toml
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Install Poetry for python apps
+############################################################
+function python_poetry_install(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ! -f "${CONTAINER_WORKING_DIR:?}/pyproject.toml" ]]; then
+        warn_log "No '${CONTAINER_WORKING_DIR:?}/pyproject.toml' found.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    local extra_cmd=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --no-root)
+                extra_cmd="${extra_cmd} --no-root"
+                ;;
+            --no-spacefx-dev)
+                extra_cmd="${extra_cmd} --without spacefx-dev"
+                ;;
+            --all-extras)
+                extra_cmd="${extra_cmd} --all-extras"
+                ;;
+        esac
+        shift
+    done
+
+    run_a_script "/root/.local/bin/poetry install ${extra_cmd}"
+
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Python dependency installs
+############################################################
+function python_check_pyproject_toml(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${APP_TYPE}" != "payloadapp" ]]; then
+        info_log "Dev Dependency checks only apply to Payload Apps.  '${APP_TYPE}' is not 'payloadapp'.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    local PYPROJECT_TOML_PATH="${CONTAINER_WORKING_DIR}/pyproject.toml"
+    local PYPROJECT_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/pyproject.json"
+    local REQUIRED_DEPENDENCIES_TOML_PATH="/spacefx-dev/spacefx.toml"
+    local REQUIRED_DEPENDENCIES_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/spacefx.json"
+
+    pyproject_toml_out_of_date=false
+
+    create_directory "${SPACEFX_DIR}/tmp/${APP_NAME}"
+
+    [[ -f "${PYPROJECT_JSON_PATH}" ]] && run_a_script "rm ${PYPROJECT_JSON_PATH}"
+    [[ -f "${REQUIRED_DEPENDENCIES_JSON_PATH}" ]] && run_a_script "rm ${REQUIRED_DEPENDENCIES_JSON_PATH}"
+
+    # Check if the pyproject.toml file exists
+    if [[ ! -f "${PYPROJECT_TOML_PATH}" ]]; then
+        exit_with_error "pyproject.toml not found at '${PYPROJECT_TOML_PATH}'."
+    fi
+
+    # Check if the required dependencies file exists
+    if [[ ! -f "${REQUIRED_DEPENDENCIES_TOML_PATH}" ]]; then
+        exit_with_error "Required dependencies file not found at '${REQUIRED_DEPENDENCIES_TOML_PATH}'."
+    fi
+
+    write_parameter_to_log AUTO_INJECT_PYTHON_DEV_DEPENDENCIES
+
+    info_log "Running dependency check against ${PYPROJECT_TOML_PATH}..."
+
+    debug_log "Converting ${PYPROJECT_TOML_PATH} and ${REQUIRED_DEPENDENCIES_TOML_PATH} to JSON at '${PYPROJECT_JSON_PATH}' and '${REQUIRED_DEPENDENCIES_JSON_PATH}'..."
+    # Convert both TOML files to JSON
+    run_a_script "remarshal -if toml -of json ${PYPROJECT_TOML_PATH} ${PYPROJECT_JSON_PATH}"
+    run_a_script "remarshal -if toml -of json ${REQUIRED_DEPENDENCIES_TOML_PATH} ${REQUIRED_DEPENDENCIES_JSON_PATH}"
+    debug_log "...successfully converted ${PYPROJECT_TOML_PATH} and ${REQUIRED_DEPENDENCIES_TOML_PATH} to JSON"
+
+    # Find the paths of all scalar values in the reference JSON file - this essentially flattens all the paths in the JSON file
+    run_a_script "jq -r 'paths(scalars) | join(\".\")' ${REQUIRED_DEPENDENCIES_JSON_PATH}" required_dependencies
+
+    # Store the JSON contents in memory so we can access it faster
+    run_a_script "cat ${PYPROJECT_JSON_PATH}" pyproject_json
+    run_a_script "cat ${REQUIRED_DEPENDENCIES_JSON_PATH}" reqd_json
+
+    # Loop through all paths in the reference JSON and add them to the project JSON if they don't already exist
+    for path in $required_dependencies; do
+        # store the non-converted path for use later
+        orig_path="${path}"
+
+        # Convert the path from a.b.c.d to ["a"].["b"].["c"].["d"] to make it json safe
+        path="${path//./\"].[\"}"
+        path="[\"${path}\"]"
+
+        # Query the value in both the project and reference JSON files
+        run_a_script "jq -r '.$path'  <<< \$reqd_json" reqd_value
+        run_a_script "jq -r '.$path'  <<< \${pyproject_json}" proj_value
+
+        # The values differ between the project and reference JSON files
+        if [[ "${proj_value}" != "${reqd_value}" ]]; then
+            warn_log "Detected a missing / out-of-date dependency in '${PYPROJECT_TOML_PATH}': '${orig_path}' = '${proj_value}'.  Required value: '${reqd_value}'."
+            pyproject_toml_out_of_date=true
+
+            # Let the dev know they need to update something
+            if [[ "${AUTO_INJECT_PYTHON_DEV_DEPENDENCIES}" == false ]]; then
+                run_a_script "cat ${REQUIRED_DEPENDENCIES_TOML_PATH}" required_dependencies_toml
+                warn_log "Detected missing dependencies and auto_inject_python_dev_dependencies = 'false'.   To auto-inject, set auto_inject_python_dev_dependencies = 'true' in your devcontainer.json file."
+                exit_with_error "Detected missing dependencies. Please add the following dependencies to your pyproject.toml file:\n\n${required_dependencies_toml}\n\nThen rebuild your devcontainer."
+            fi
+
+            # This gets the parent path without the last leaf (i.e. the ["a"].["b"].["c"] if the full path is ["a"].["b"].["c"].["d"])
+            parent_path="${path%.*}"
+
+            # Orig_path is a.b.c.d.  This get the last item (i.e. d) and the += is already json safe, so we don't need to escape it
+            key="${orig_path##*.}"
+
+            info_log "AUTO_INJECT_PYTHON_DEV_DEPENDENCIES = 'true'.  Updating '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
+            run_a_script "jq '.$parent_path += {\"$key\": \"$reqd_value\"}' <<< \${pyproject_json}" pyproject_json
+            info_log "...successfully updated '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
+        fi
+    done
+
+    if [[ "${pyproject_toml_out_of_date}" == false ]]; then
+        info_log "All dependencies verified.  Nothing to do"
+        [[ -f "${PYPROJECT_JSON_PATH}" ]] && run_a_script "rm ${PYPROJECT_JSON_PATH}"
+        [[ -f "${REQUIRED_DEPENDENCIES_JSON_PATH}" ]] && run_a_script "rm ${REQUIRED_DEPENDENCIES_JSON_PATH}"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Detected missing dependencies.  Updating '${PYPROJECT_TOML_PATH}'..."
+
+    # write the updated JSON back to the json file
+    run_a_script "tee ${PYPROJECT_JSON_PATH} > /dev/null << SPACEFX_UPDATE_END
+${pyproject_json}
+SPACEFX_UPDATE_END"
+
+    # Convert the updated JSON back to TOML
+    run_a_script "remarshal --input ${PYPROJECT_JSON_PATH} --input-format json --output ${PYPROJECT_TOML_PATH} --output-format toml"
+
+    info_log "...successfully updated '${PYPROJECT_TOML_PATH}' with required dependencies"
+
+    # Cleanup
+    [[ -f "${PYPROJECT_JSON_PATH}" ]] && run_a_script "rm ${PYPROJECT_JSON_PATH}"
+    [[ -f "${REQUIRED_DEPENDENCIES_JSON_PATH}" ]] && run_a_script "rm ${REQUIRED_DEPENDENCIES_JSON_PATH}"
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -393,7 +630,50 @@ function main() {
     add_spacedev_nuget_source
     wipe_bin_and_obj_directories
 
+
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
+        info_log "Python detected.  Setting up environment for python development and debug..."
+        python_copy_spacesdk_wheel
+        python_check_dev_app_dependencies
+
+        debug_log "Triggering poetry to install app dependencies..."
+        if [[ "${CLUSTER_ENABLED}" == true ]]; then
+            python_poetry_install --no-root --all-extras
+        else
+            python_poetry_install --no-root --no-spacefx-dev
+        fi
+
+        debug_log "...poetry successfully installed app dependencies."
+
+        python_compile_protos
+
+        debug_log "Triggering poetry to install app..."
+        if [[ "${CLUSTER_ENABLED}" == true ]]; then
+            python_poetry_install --all-extras
+        else
+            python_poetry_install --no-spacefx-dev
+        fi
+
+        debug_log "...poetry successfully installed app."
+
+        # Python Client SDK needs the protos in the right spot
+        if [[ "${APP_TYPE}" == "spacesdk-client" ]]; then
+            info_log "SpaceSDK-Client detected.  Moving compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'..."
+            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx"
+            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/ ${CONTAINER_WORKING_DIR:?}/spacefx/"
+            info_log "...successfully moved compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'"
+        fi
+    fi
+
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
+
+        # Python needs the debugshim image updated with the changes from the python installs above
+        if [[ "${DEV_PYTHON}" == "true" ]]; then
+            info_log "Committing changes to container for debugshim..."
+            run_a_script "docker commit ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
+            info_log "...image updated"
+        fi
+
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
         generate_debugshims
