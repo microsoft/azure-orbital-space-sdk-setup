@@ -88,7 +88,7 @@ SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
 # Build and push SpaceSDK-Base
 /var/spacedev/build/build_containerImage.sh \
     --dockerfile /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base \
-    --image-tag ${SPACEFX_VERSION_CHANNEL_TAG} \
+    --image-tag ${SPACEFX_VERSION} \
     --repo-dir ${PWD} \
     --app-name spacesdk-base \
     --annotation-config azure-orbital-space-sdk-core.yaml
