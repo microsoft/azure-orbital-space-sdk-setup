@@ -21,11 +21,6 @@ on:
         SETUP_REPO_URL:
             required: true
 
-
-env:
-  REGISTRY: ghcr.io
-  FEATURE: microsoft/azure-orbital-space-sdk/spacefx-dev
-
 jobs:
 
   test-prod:
@@ -43,11 +38,11 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
-          env_file: ./env/spacefx.env
-          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
-          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
-          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
-          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+        env_file: ./env/spacefx.env
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
     - name: Testing Prod Cluster
       shell: bash
@@ -74,11 +69,11 @@ jobs:
 
     - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
       with:
-          env_file: ./env/spacefx.env
-          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
-          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
-          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
-          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+        env_file: ./env/spacefx.env
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
     - name: Testing dev cluster
       shell: bash
