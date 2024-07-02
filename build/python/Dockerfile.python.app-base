@@ -1,4 +1,4 @@
-# Dockerfile.app-base is used to build a minimal container image with a payload-app's generated code.
+# Dockerfile.python.app-base is used to build a minimal container image with a payload-app's generated code.
 # It is intended to generate a container image that can be uplinked to a satellite, then used by
 # coresvc-buildservice to build a full payload-app container image.
 
@@ -9,7 +9,7 @@ ARG APP_BUILDDATE="20010101T000000"
 ARG ARCHITECTURE=""
 
 FROM scratch as svc-base
-ARG APP_NAME="hostsvc-logging"
+ARG APP_NAME="spacesdk-app"
 ARG APP_VERSION="0.0.1"
 ARG SPACEFX_VERSION="0.0.1"
 ARG APP_BUILDDATE="20010101T000000"
