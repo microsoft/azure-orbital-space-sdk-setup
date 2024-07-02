@@ -1,0 +1,78 @@
+# This builds an intermediate Python image layer that can be used to build a Python-based payload-app container image
+
+ARG PYTHON_VERSION="0.0"
+
+# Create a venv so we can get our python dependencies
+#FROM mcr.microsoft.com/mirror/docker/library/python:${PYTHON_VERSION}-slim as builder
+FROM mcr.microsoft.com/devcontainers/python:1-${PYTHON_VERSION} as builder
+ARG PYTHON_VERSION
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHON_VERSION=${PYTHON_VERSION} \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive
+
+
+# Download python dependencies
+RUN apt-get update && apt-get install --no-install-suggests -y build-essential \
+                ca-certificates curl dirmngr gcc gnupg2 libbz2-dev \
+                libffi-dev libgdbm-dev liblzma-dev libncurses5-dev \
+                libncursesw5-dev libreadline-dev libsqlite3-dev \
+                libssl-dev libxml2-dev libxmlsec1-dev llvm make \
+                tar tk-dev uuid-dev wget xz-utils zlib1g-dev \
+                && rm -rf /var/lib/apt/lists/*
+
+# Download python source code
+RUN PYTHON_INSTALLED_VERSION=$(python --version 2>&1 | awk '{print $2}') \
+    && curl --silent --fail --create-dirs --output /tmp/Python-${PYTHON_INSTALLED_VERSION}.tgz -L https://www.python.org/ftp/python/${PYTHON_INSTALLED_VERSION}/Python-${PYTHON_INSTALLED_VERSION}.tgz \
+    && mkdir -p /tmp/python-src \
+    && mkdir -p /opt/python \
+    && mkdir -p /opt/python-symlinks/bin \
+    && mkdir -p /opt/python-symlinks/usr/local/bin \
+    && tar -xzvf /tmp/Python-${PYTHON_INSTALLED_VERSION}.tgz -C /tmp/python-src --strip-components=1 \
+    && cd /tmp/python-src \
+    && ./configure --enable-shared --with-ensurepip=install --with-threads --enable-optimizations \
+    && make -j$(nproc) \
+    && make altinstall DESTDIR=/opt/python
+
+# Add some symlinks to make stuff easier
+RUN ln -s /usr/local/bin/python${PYTHON_VERSION} /opt/python-symlinks/bin/python3 \
+    && ln -s /usr/local/bin/python${PYTHON_VERSION} /opt/python-symlinks/bin/python \
+    && ln -s /usr/local/bin/python${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/python \
+    && ln -s /usr/local/bin/python${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/python3 \
+    && ln -s /usr/local/bin/idle${PYTHON_VERSION} /opt/python-symlinks/bin/idle3 \
+    && ln -s /usr/local/bin/idle${PYTHON_VERSION} /opt/python-symlinks/bin/idle   \
+    && ln -s /usr/local/bin/idle${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/idle3 \
+    && ln -s /usr/local/bin/idle${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/idle   \
+    && ln -s /usr/local/bin/pydoc${PYTHON_VERSION} /opt/python-symlinks/bin/pydoc3 \
+    && ln -s /usr/local/bin/pydoc${PYTHON_VERSION} /opt/python-symlinks/bin/pydoc     \
+    && ln -s /usr/local/bin/pydoc${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/pydoc3 \
+    && ln -s /usr/local/bin/pydoc${PYTHON_VERSION} /opt/python-symlinks/usr/local/bin/pydoc
+
+# Trim some extra stuff
+RUN [ -d /opt/python/usr/local/lib/python${PYTHON_VERSION}/test ] && rm -rf /opt/python/usr/local/lib/python${PYTHON_VERSION}/test
+
+
+# Download and build libffi.  Libffi is used by grpcio
+RUN apt-get update \
+&& apt-get install -y \
+        curl \
+        dpkg-dev \
+        build-essential \
+        wget
+
+# Create target directory for the libffi-dev extraction
+WORKDIR /libffi
+
+# Download, compile, and install libffi
+RUN wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz \
+    && tar -xzf libffi-3.4.6.tar.gz \
+    && cd libffi-3.4.6 \
+    && ./configure --prefix=/usr \
+    && make \
+    && make install
+
+
+FROM scratch as final
+COPY --from=builder /opt/python/ /
+COPY --from=builder /opt/python-symlinks/ /python-symlinks/
+COPY --from=builder /libffi/libffi-3.4.6/*/.libs/* /usr/local/lib/

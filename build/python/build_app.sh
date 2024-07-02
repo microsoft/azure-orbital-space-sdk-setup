@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-# Builds and pushes an app built with the Azure Orbital Space SDK.  Will push both a full and base container image.  Will build any nuget packages specified by nuget-project parameter
+# Builds and pushes an app built with the Azure Orbital Space SDK.  Will push both a full and base container image.
 #
 #
 
@@ -15,7 +15,6 @@ APP_VERSION="0.0.1"
 REPO_DIR=""
 OUTPUT=""
 APP_PROJECT=""
-NUGET_PROJECTS=()
 ANNOTATION_CONFIG=""
 BUILD_OUTPUT_DIR=""
 CONTAINER_WORKSPACE_FOLDER=""
@@ -32,19 +31,18 @@ DEVCONTAINER_JSON=""
 ############################################################
 function show_help() {
    # Display Help
-   echo "Builds and pushes the Azure Orbital Space SDK container images and nuget packages"
+   echo "Builds and pushes a Python app container image using the Microsoft Azure Orbital Space SDK and python wheels"
    echo
-   echo "Syntax: bash ./build/dotnet/build_app.sh --repo-dir ~/repos/project_source_code --app-project src/project.csproj --nuget-project src/project.csproj --architecture amd64 --output-dir ./tmp/someDirectory --app-version 0.0.1"
+   echo "Syntax: bash ./build/python/build_app.sh --repo-dir ~/repos/project_source_code --app-project src/app --architecture amd64 --output-dir ./tmp/someDirectory --app-version 0.0.1"
    echo "options:"
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--architecture | -a                [OPTIONAL] The processor architecture for the final build.  Must be either arm64 or amd64.   Allows for cross compiling.  If no architecture is provided, the host architecture will be used."
-   echo "--app-project | -p                 [REQUIRED] Relative path to the app's project file from within the devcontainer"
+   echo "--app-project | -p                 [REQUIRED] Relative path to the app's project file from within the devcontainer.  Will generate "
    echo "--app-version | -v                 [REQUIRED] Major version number to assign to the generated nuget package"
    echo "--output-dir | -o                  [REQUIRED] Local output directory to deliver any nuget packages to.  Will automatically get architecture appended.  Parameter is optional if no nuget packages are specified"
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
-   echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable) from within the devcontainer.  Will generate a nuget package in the output directory.  Can be passed multiple times"
-   echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build nuget packages"
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
+   echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build the python app"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -57,9 +55,6 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
-        --no-container-build)
-            CONTAINER_BUILD=false
-        ;;
         --annotation-config)
             shift
             ANNOTATION_CONFIG=$1
@@ -68,6 +63,9 @@ while [[ "$#" -gt 0 ]]; do
                 show_help
             fi
         ;;
+        --no-container-build)
+            CONTAINER_BUILD=false
+        ;;
         --devcontainer-json)
             shift
             DEVCONTAINER_JSON_FILE=$1
@@ -75,10 +73,6 @@ while [[ "$#" -gt 0 ]]; do
         -p|--app-project)
             shift
             APP_PROJECT=$1
-            ;;
-        -n|--nuget-project)
-            shift
-            NUGET_PROJECTS+=($1)
             ;;
         -a|--architecture)
             shift
@@ -132,13 +126,6 @@ fi
 if [[ ! -f "${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" ]]; then
     echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: '${REPO_DIR}/${DEVCONTAINER_JSON_FILE}' not found.  Build service requires a devcontainer.json file to run"
     show_help
-fi
-
-if [[ -z "$OUTPUT_DIR" ]]; then
-    if [ ${#NUGET_PROJECTS[@]} -gt 0 ]; then
-        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Mising --output-dir parameter"
-        show_help
-    fi
 fi
 
 if [[ -z "$APP_PROJECT" ]]; then
@@ -302,68 +289,44 @@ function provision_devcontainer(){
     info_log "END: ${FUNCNAME[0]}"
 }
 
-
 ############################################################
-# Build the nuget package project
-############################################################
-function build_nuget_package(){
-
-    local project=""
-
-    while [[ "$#" -gt 0 ]]; do
-        case $1 in
-            --project)
-                shift
-                project=$1
-                ;;
-        esac
-        shift
-    done
-
-    info_log "Checking for '${CONTAINER_WORKSPACE_FOLDER}/${project}' in container"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json test -f \"${CONTAINER_WORKSPACE_FOLDER}/${project}\"" --ignore_error
-    if [[ $RETURN_CODE -gt 0 ]]; then
-        exit_with_error "Project '${project}' not found in container workspace.  Please check your --nuget-project path and try again"
-    fi
-
-    info_log "...found project '${project}'.  Building..."
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/nuget"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/nuget\" --configuration Release"
-    info_log "...project ${project} successfully generated"
-
-}
-
-############################################################
-# Build the app that will be backed into a container
+# Build the app
 ############################################################
 function build_app(){
 
-    local project=""
-
-    while [[ "$#" -gt 0 ]]; do
-        case $1 in
-            --project)
-                shift
-                project=$1
-                ;;
-        esac
-        shift
-    done
-
-    info_log "Checking for '${CONTAINER_WORKSPACE_FOLDER}/${project}' in container"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json test -f \"${CONTAINER_WORKSPACE_FOLDER}/${project}\"" --ignore_error
-    if [[ $RETURN_CODE -gt 0 ]]; then
-        exit_with_error "Project '${project}' not found in container workspace.  Please check your --app-project path and try again"
+    if [[ -d "${REPO_DIR}/dist" ]]; then
+        info_log "Cleaning dist directory..."
+        run_a_script "rm ${REPO_DIR}/dist/* -rf"
+        info_log "...dist directory cleaned"
     fi
+
+    info_log "Checking for '${CONTAINER_WORKSPACE_FOLDER}/${APP_PROJECT}' in container"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json test -d \"${CONTAINER_WORKSPACE_FOLDER}/${APP_PROJECT}\"" --ignore_error
+    if [[ $RETURN_CODE -gt 0 ]]; then
+        exit_with_error "Project '${APP_PROJECT}' not found in container workspace.  Please check your --app-project path and try again"
+    fi
+
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/dist"
+
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json find ${CONTAINER_WORKSPACE_FOLDER}/${APP_PROJECT} -iname '*.sln' -type f" dotnet_solutions_found
+
+    for dotnet_solution_file in $dotnet_solutions_found; do
+        info_log "Found a dotnet solution file '${dotnet_solution_file}'.  Triggering dotnet build..."
+        # We trigger two builds here so we can get the output where the python directory might be expecting it, but also to the app output directory so we can copy it to the output directory
+        run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build ${dotnet_solution_file} /p:Version=${APP_VERSION} --configuration Release"
+        run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build ${dotnet_solution_file} /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/dist\" --configuration Release"
+        info_log "...successfully ran dotnet build on '${dotnet_solution_file}'"
+    done
 
     info_log "...found project '${project}'.  Building..."
 
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json mkdir -p ${BUILD_OUTPUT_DIR}/app"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet restore \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION}"
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json dotnet build \"${CONTAINER_WORKSPACE_FOLDER}/${project}\" /p:Version=${APP_VERSION} --output \"${BUILD_OUTPUT_DIR}/app\" --configuration Release"
-    info_log "...project ${project} successfully generated"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json /root/.local/bin/poetry build"
 
+    info_log "...project ${project} successfully built.  Copying output to '${BUILD_OUTPUT_DIR}/dist'"
+
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp ${CONTAINER_WORKSPACE_FOLDER}/dist ${BUILD_OUTPUT_DIR}/"
+
+    info_log "...successfully copied to '${BUILD_OUTPUT_DIR}/dist'"
 }
 
 ############################################################
@@ -406,10 +369,6 @@ function main() {
         _annotation_config="--annotation-config ${ANNOTATION_CONFIG}"
         _generate_spacefx_config_json
     fi
-
-    for NUGET_PROJECT in "${NUGET_PROJECTS[@]}"; do
-        write_parameter_to_log NUGET_PROJECT
-    done
 
     if [[ "$OUTPUT_DIR" != *"$ARCHITECTURE" ]]; then
         OUTPUT_DIR="${OUTPUT_DIR}/${ARCHITECTURE}"
@@ -461,54 +420,8 @@ function main() {
     provision_devcontainer
     gather_devcontainer_values
 
-    if [ ${#NUGET_PROJECTS[@]} -gt 0 ]; then
-        info_log "Building nuget packages..."
-
-        for NUGET_PROJECT in "${NUGET_PROJECTS[@]}"; do
-            build_nuget_package --project "${NUGET_PROJECT}"
-        done
-
-        copy_to_output_dir --subfolder "nuget"
-
-        info_log "All nuget packages successfully built"
-    fi
-
-    build_app --project "${APP_PROJECT}"
-    copy_to_output_dir --subfolder "app"
-
-    if [[ "${CONTAINER_BUILD}" == "true" ]]; then
-        info_log "Building container image..."
-
-        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-                        --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
-                        --image-tag ${APP_VERSION}_base \
-                        --no-spacefx-dev \
-                        --architecture ${ARCHITECTURE} \
-                        --repo-dir ${OUTPUT_DIR}/app \
-                        --build-arg APP_NAME=${APP_NAME} \
-                        --build-arg APP_VERSION=${APP_VERSION} \
-                        --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
-                        --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
-                        --build-arg ARCHITECTURE=${ARCHITECTURE} \
-                        --app-name ${APP_NAME} ${_annotation_config}"
-
-        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-                --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app \
-                --image-tag ${APP_VERSION} \
-                --no-spacefx-dev \
-                --architecture ${ARCHITECTURE} \
-                --repo-dir ${OUTPUT_DIR}/app \
-                --build-arg APP_NAME=${APP_NAME} \
-                --build-arg APP_VERSION=${APP_VERSION} \
-                --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
-                --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
-                --build-arg ARCHITECTURE=${ARCHITECTURE} \
-                --app-name ${APP_NAME} ${_annotation_config}"
-
-        info_log "...successfully built container image"
-    fi
-
-
+    build_app
+    copy_to_output_dir --subfolder "dist"
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"

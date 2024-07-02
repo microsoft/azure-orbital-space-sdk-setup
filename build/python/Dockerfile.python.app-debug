@@ -1,0 +1,84 @@
+# Dockerfile.python.app-debug is used to build a full size debug container image with a payload-app's generated code.
+# It is intended ground-based review and is not size optimized.
+
+ARG APP_NAME="spacesdk-app"
+ARG APP_VERSION="0.0.1"
+ARG SPACEFX_VERSION="0.0.1"
+ARG APP_BUILDDATE="20010101T000000"
+ARG ARCHITECTURE=""
+ARG WORKDIR="/workspaces/${APP_NAME}"
+ARG PYTHON_VERSION="3.10"
+ARG ASPNET_VERSION=6.0.16
+ARG DOTNET_VERSION=6.0
+ARG EXTRA_PKGS=""
+ARG DEV_CONTAINER_BASE_IMG=""
+
+
+FROM ${DEV_CONTAINER_BASE_IMG}
+ARG APP_NAME="spacesdk-app"
+ARG APP_VERSION="0.0.1"
+ARG SPACEFX_VERSION="0.0.1"
+ARG APP_BUILDDATE="20010101T000000"
+ARG ARCHITECTURE=""
+ARG WORKDIR=""
+ARG APP_ENTRYPOINT
+ARG PYTHON_VERSION
+ARG SDK_VERSION
+ARG ASPNET_VERSION
+ARG DOTNET_VERSION
+ARG EXTRA_PKGS
+
+LABEL org.spacesdk.version=$SPACEFX_VERSION
+LABEL org.spacesdk.app.version=$APP_VERSION
+LABEL org.spacesdk.app.name=$APP_NAME
+LABEL org.spacesdk.app.builddate=$APP_BUILDDATE
+LABEL org.spacesdk.architecture=$ARCHITECTURE
+
+ENV PYTHON_VERSION=${PYTHON_VERSION} \
+    SDK_VERSION=${SDK_VERSION} \
+    ASPNET_VERSION=${ASPNET_VERSION} \
+    DOTNET_VERSION=${DOTNET_VERSION} \
+    DOTNET_CLI_TELEMETRY_OPTOUT=true \
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    DOTNET_NOLOGO=true \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    DOTNET_USE_POLLING_FILE_WATCHER=true \
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+    APP_ENTRYPOINT=${APP_ENTRYPOINT} \
+    PATH=/root/.dotnet/:${PATH} \
+    EXTRA_PKGS=${EXTRA_PKGS}
+
+ENV APP_NAME=${APP_NAME}
+ENV SPACEFX_VERSION=${SPACEFX_VERSION}
+ENV APP_VERSION=${APP_VERSION}
+ENV APP_BUILDDATE=${BUILD_DATE}
+ENV ARCHITECTURE=${ARCHITECTURE}
+ENV WORKDIR=${WORKDIR}
+
+WORKDIR ${WORKDIR}
+
+
+# Add the dependencies needed to install dotnet
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        apt-transport-https \
+        wget \
+        gnupg \
+        software-properties-common
+
+# Install .NET SDK from the official install script
+RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh \
+    && chmod +x ./dotnet-install.sh \
+    && ./dotnet-install.sh --channel ${DOTNET_VERSION}
+
+RUN if [ "${EXTRA_PKGS}" != "null" ]; then \
+    apt-get update && apt-get install -y  --no-install-recommends ${EXTRA_PKGS}; \
+    fi
+
+COPY . .
+
+
+
+RUN python3 -m pip install --upgrade pip \
+    && pip install ${WORKDIR}

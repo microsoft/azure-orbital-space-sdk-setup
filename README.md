@@ -79,15 +79,53 @@ spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
 ## Building Base Container Images
 Several base container images are used to reduce the filesize of the Microsoft Azure Orbital Space SDK when deployed to a satellite. Follow the below steps to manually build these containers:
 ```bash
-# Build and push SpaceSDK-Base
 
+# Load the configuration and get the channel for the tag
+source /var/spacedev/env/spacefx.env
+SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
+[[ "${SPACEFX_CHANNEL}" != "stable" ]] && SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}-${SPACEFX_CHANNEL}"
+
+# Build and push SpaceSDK-Base
 /var/spacedev/build/build_containerImage.sh \
     --dockerfile /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base \
-    --image-tag 0.11.0 \
-    --architecture "amd64" \
+    --image-tag ${SPACEFX_VERSION} \
     --repo-dir ${PWD} \
     --app-name spacesdk-base \
-    --annotation-config azure-orbital-space-sdk-setup.yaml
+    --annotation-config azure-orbital-space-sdk-core.yaml
+
+
+# Python container base images
+PYTHON_VERSIONS=("3.10" "3.9")
+for i in "${!PYTHON_VERSIONS[@]}"; do
+    PYTHON_VERSION=${PYTHON_VERSIONS[i]}
+    PYTHON_VERSION_TAG_CHANNEL=${PYTHON_VERSION}
+    [[ "${SPACEFX_CHANNEL}" != "stable" ]] && PYTHON_VERSION_TAG_CHANNEL="${PYTHON_VERSION_TAG_CHANNEL}-${SPACEFX_CHANNEL}"
+
+    # Build and push Python-Base images.  This is an intermediate layer with only Python (built from source)
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/python/Dockerfile.python-base \
+        --image-tag ${PYTHON_VERSION} \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name python-base \
+        --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+    # Build spacesdk-python-base, which is a combination of spacesdk-base and python-base
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/python/Dockerfile.python-spacesdk-base \
+        --image-tag 0.11.0_${PYTHON_VERSION} \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name spacesdk-base-python \
+        --build-arg PYTHON_VERSION="${PYTHON_VERSION_TAG_CHANNEL}" \
+        --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+done
+
+
+
 
 ```
 
