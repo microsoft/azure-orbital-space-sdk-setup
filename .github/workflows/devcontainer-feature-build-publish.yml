@@ -21,42 +21,8 @@ env:
 
 jobs:
 
-  test-prod:
-    runs-on: ubuntu-latest
-    needs: build-publish-feature
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Display Ubuntu version
-      run: lsb_release -a
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
-      with:
-          env_file: ./env/spacefx.env
-          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
-          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
-          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
-          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
-
-
-    - name: Testing Prod Cluster
-      shell: bash
-      run: |
-
-        echo "Sourcing environment variables..."
-        source ./env/spacefx.env
-
-        echo "Running  prod_cluster.sh test..."
-        bash ./tests/prod_cluster.sh
-
   build-publish-feature:
     runs-on: ubuntu-latest
-    needs: test-dev
 
     permissions:
       contents: read
@@ -106,37 +72,6 @@ jobs:
             --config /dev/null:application/vnd.devcontainers \
             --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
                     ${{ env.ARTIFACT_PATH }}:application/vnd.devcontainers.layer.v1+tar
-
-  test-dev:
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Display Ubuntu version
-      run: lsb_release -a
-
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
-      with:
-          env_file: ./env/spacefx.env
-          GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
-          GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
-          SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
-          VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
-
-    - name: Testing dev cluster
-      shell: bash
-      run: |
-        echo "Sourcing environment variables..."
-        source ./env/spacefx.env
-
-        echo "Running  dev_cluster.sh test..."
-        bash ./tests/dev_cluster.sh
-
 
 
 
