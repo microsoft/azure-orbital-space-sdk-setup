@@ -41,11 +41,11 @@ function show_help() {
    echo
    echo "Syntax: bash /var/spacedev/build/build_containerImage.sh --dockerfile Dockerfiles/Dockerfile --image-tag 0.0.1 --architecture arm64 --repo-dir ~/repos/project_source_code"
    echo "options:"
-   echo "--architecture | -a                [REQUIRED] The processor architecture for the final build.  Must be either arm64 or amd64"
    echo "--app-name | -n                    [REQUIRED] The name of the app to build - this will be the name of the image that's generated"
    echo "--image-tag | -t                   [REQUIRED] The image tag for the final container image.  Will be suffixed with the processor architecture.  (i.e. 0.0.1_arm64)."
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
    echo "--dockerfile | -d                  [REQUIRED] Relative path to the docker file within repo-dir"
+   echo "--architecture | -a                [OPTIONAL] The processor architecture for the final build.  Must be either arm64 or amd64.  Allows for cross compiling.  If no architecture is provided, the host architecture will be used."
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
    echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
