@@ -25,11 +25,6 @@ jobs:
 
   test-prod:
     runs-on: ${{ inputs.WORKFLOW_AGENT }}
-
-    permissions:
-      contents: read
-      packages: write
-
     steps:
     - uses: actions/checkout@v2
 
@@ -56,10 +51,6 @@ jobs:
 
   test-dev:
     runs-on: ${{ inputs.WORKFLOW_AGENT }}
-
-    permissions:
-      contents: read
-      packages: write
 
     steps:
     - uses: actions/checkout@v2
