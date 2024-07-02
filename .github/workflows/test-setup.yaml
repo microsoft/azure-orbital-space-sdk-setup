@@ -21,7 +21,7 @@ jobs:
   test-setup-amd64:
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     uses: ./.github/workflows/run-setup-tests.yaml
     with:
@@ -34,7 +34,7 @@ jobs:
   test-setup-arm64:
     permissions:
       contents: read
-      packages: write
+      packages: read
 
     uses: ./.github/workflows/run-setup-tests.yaml
     with:
