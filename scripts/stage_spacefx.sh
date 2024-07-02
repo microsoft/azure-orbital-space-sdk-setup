@@ -132,8 +132,6 @@ function calculate_spacefx_registry(){
 }
 
 
-
-
 ############################################################
 # Enable FileServer components if user has requested it
 ############################################################
@@ -153,6 +151,28 @@ function enable_fileserver(){
         info_log "...successfully disabled SMB."
     fi
 
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Toggle the security restrictions between dev versus prod
+############################################################
+function toggle_security_restrictions(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${DEV_ENVIRONMENT}" == true ]]; then
+        info_log "'DEV_ENVIRONMENT' = true.  Disabling Network and Topic Restrictions..."
+        run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        run_a_script "yq eval '.global.security.topicRestrictionEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Network and Topic restrictions successfully disabled."
+    else
+        info_log "'DEV_ENVIRONMENT' = false.  Enabling Network and Topic Restrictions..."
+        run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        run_a_script "yq eval '.global.security.topicRestrictionEnabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Network and Topic restrictions successfully enabled."
+    fi
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -424,7 +444,7 @@ function main() {
     fi
 
     calculate_spacefx_registry
-
+    toggle_security_restrictions
     enable_vth
     enable_fileserver
     _generate_spacefx_config_json

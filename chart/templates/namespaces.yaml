@@ -11,4 +11,24 @@ metadata:
   annotations:
     "helm.sh/resource-policy": "keep"
 {{- end }}
+{{- if eq .Values.global.security.payloadAppNetworkRestrictionsEnabled true }}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-traffic-to-coresvc-switchboard
+  namespace: payload-app
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: coresvc
+      podSelector:
+        matchLabels:
+          app: coresvc-switchboard
+{{- end }}
 {{- end }}

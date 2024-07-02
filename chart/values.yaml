@@ -92,7 +92,9 @@ global:
       - registry: docker.io
       - registry: registry.k8s.io
       - registry: gcr.io
-      - registry: spacefx.azurecr.io
+  security:
+    payloadAppNetworkRestrictionsEnabled: true
+    topicRestrictionEnabled: true
 subcharts:
   dapr:
     enabled: false
