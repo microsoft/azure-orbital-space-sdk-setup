@@ -1,6 +1,7 @@
 {{- if .Values.services.core.switchboard.enabled }}
 {{- $serviceValues := .Values.services.core.switchboard }}
 {{- $globalValues := .Values.global }}
+{{- $allServices := .Values.services }}
 {{- $imgName := printf "%s/%s:%s" (include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues)) $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
 ---
 apiVersion: v1
@@ -43,6 +44,22 @@ spec:
           - name: switchboard
             containerPort: 5672
 {{- $mainContext := .Values }}
+{{- $protectedTopics := list -}}
+{{- $publishingScopes := list -}}
+{{- range $key, $value := $mainContext.services.host }}
+  {{- $appTopic := printf "DIRECTTOAPP-%s" $value.appName }}
+  {{- $appTopicPublishing := printf "app=%s=%s" $value.appName $appTopic }}
+  {{- $protectedTopics = append $protectedTopics $appTopic -}}
+  {{- $publishingScopes = append $publishingScopes $appTopicPublishing -}}
+{{- end }}
+{{- range $key, $value := $mainContext.services.platform }}
+  {{- $appTopic := printf "DIRECTTOAPP-%s" $value.appName }}
+  {{- $appTopicPublishing := printf "%s=%s" $value.appName $appTopic }}
+  {{- $protectedTopics = append $protectedTopics $appTopic -}}
+  {{- $publishingScopes = append $publishingScopes $appTopicPublishing -}}
+{{- end }}
+{{- $protectedTopicsString := join "," $protectedTopics | upper -}}
+{{- $publishingScopesString := join ";" $publishingScopes | upper -}}
 {{- range .Values.global.namespaces.list }}
 ---
 apiVersion: dapr.io/v1alpha1
@@ -74,5 +91,13 @@ spec:
     value: 3000
   - name: maxLenBytes # Optional maximum length in bytes of a queue.
     value: 10485760
+{{- if eq $globalValues.security.topicRestrictionEnabled true }}
+  - name: protectedTopics
+    value: "{{ $protectedTopicsString }}"
+  - name: publishingScopes
+    value: "{{ $publishingScopesString }}"
+  - name: subscriptionScopes
+    value: "{{ $publishingScopesString }}"
+{{- end }}
 {{- end }}
 {{- end }}

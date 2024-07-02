@@ -132,8 +132,6 @@ function calculate_spacefx_registry(){
 }
 
 
-
-
 ############################################################
 # Enable FileServer components if user has requested it
 ############################################################
@@ -151,6 +149,27 @@ function enable_fileserver(){
         run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
         run_a_script "yq eval '.global.fileserverSMB = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
         info_log "...successfully disabled SMB."
+    fi
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Toggle network restrictions for dev versus prod
+############################################################
+function toggle_network_restrictions(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${DEV_ENVIRONMENT}" == true ]]; then
+        info_log "'DEV_ENVIRONMENT' = true.  Disabling Payload App Network Restrictions..."
+        run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Payload App Network Restrictions successfully disabled."
+    else
+        info_log "'DEV_ENVIRONMENT' = false.  Enabling Payload App Network Restrictions..."
+        run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Payload App Network Restrictions successfully enabled."
     fi
 
 
@@ -424,7 +443,7 @@ function main() {
     fi
 
     calculate_spacefx_registry
-
+    toggle_network_restrictions
     enable_vth
     enable_fileserver
     _generate_spacefx_config_json
