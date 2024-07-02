@@ -157,21 +157,22 @@ function enable_fileserver(){
 
 
 ############################################################
-# Toggle network restrictions for dev versus prod
+# Toggle the security restrictions between dev versus prod
 ############################################################
-function toggle_network_restrictions(){
+function toggle_security_restrictions(){
     info_log "START: ${FUNCNAME[0]}"
 
     if [[ "${DEV_ENVIRONMENT}" == true ]]; then
-        info_log "'DEV_ENVIRONMENT' = true.  Disabling Payload App Network Restrictions..."
+        info_log "'DEV_ENVIRONMENT' = true.  Disabling Network and Topic Restrictions..."
         run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
-        info_log "...Payload App Network Restrictions successfully disabled."
+        run_a_script "yq eval '.global.security.topicRestrictionEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Network and Topic restrictions successfully disabled."
     else
-        info_log "'DEV_ENVIRONMENT' = false.  Enabling Payload App Network Restrictions..."
+        info_log "'DEV_ENVIRONMENT' = false.  Enabling Network and Topic Restrictions..."
         run_a_script "yq eval '.global.security.payloadAppNetworkRestrictionsEnabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
-        info_log "...Payload App Network Restrictions successfully enabled."
+        run_a_script "yq eval '.global.security.topicRestrictionEnabled = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        info_log "...Network and Topic restrictions successfully enabled."
     fi
-
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -443,7 +444,7 @@ function main() {
     fi
 
     calculate_spacefx_registry
-    toggle_network_restrictions
+    toggle_security_restrictions
     enable_vth
     enable_fileserver
     _generate_spacefx_config_json
