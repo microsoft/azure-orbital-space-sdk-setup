@@ -423,40 +423,6 @@ function main() {
     build_app
     copy_to_output_dir --subfolder "dist"
 
-    # if [[ "${CONTAINER_BUILD}" == "true" ]]; then
-    #     info_log "Building container image..."
-
-    #     run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-    #                     --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
-    #                     --image-tag ${APP_VERSION}_base \
-    #                     --no-spacefx-dev \
-    #                     --architecture ${ARCHITECTURE} \
-    #                     --repo-dir ${OUTPUT_DIR}/app \
-    #                     --build-arg APP_NAME=${APP_NAME} \
-    #                     --build-arg APP_VERSION=${APP_VERSION} \
-    #                     --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
-    #                     --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
-    #                     --build-arg ARCHITECTURE=${ARCHITECTURE} \
-    #                     --app-name ${APP_NAME} ${_annotation_config}"
-
-    #     run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-    #                     --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app \
-    #                     --image-tag ${APP_VERSION} \
-    #                     --no-spacefx-dev \
-    #                     --architecture ${ARCHITECTURE} \
-    #                     --repo-dir ${OUTPUT_DIR}/app \
-    #                     --build-arg APP_NAME=${APP_NAME} \
-    #                     --build-arg APP_VERSION=${APP_VERSION} \
-    #                     --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
-    #                     --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
-    #                     --build-arg ARCHITECTURE=${ARCHITECTURE} \
-    #                     --app-name ${APP_NAME} ${_annotation_config}"
-
-    #     info_log "...successfully built container image"
-    # fi
-
-
-
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
 
