@@ -122,10 +122,6 @@ function stage_dependent_charts_images(){
     local stage_container_cmd=""
 
     for container_type in $chart_groups; do
-        if [[ "${container_type}" == "nvidia_gpu" ]] && [[ "${NVIDIA_GPU_PLUGIN}" == false ]]; then
-            continue
-        fi
-
         run_a_script "jq -r '.config.charts[] | select(.group == \"${container_type}\" and .enabled == true) | .containers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" chart_containers
 
         for container in $chart_containers; do
