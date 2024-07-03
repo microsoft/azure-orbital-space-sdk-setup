@@ -59,28 +59,28 @@ function deploy_nvidia_plugin(){
         return 0
     fi
 
-    info_log "nvidia plugin not found...Checking for nVidia GPU..."
+    # info_log "nvidia plugin not found...Checking for nVidia GPU..."
 
-    is_cmd_available "nvidia-smi" has_cmd
+    # is_cmd_available "nvidia-smi" has_cmd
 
-    # shellcheck disable=SC2154
-    if [[ "${has_cmd}" == false ]]; then
-        warn_log "nvidia-smi not found.  Unable to deploy GPU components"
-        info_log "------------------------------------------"
-        info_log "END: ${SCRIPT_NAME}"
-        return
-    fi
+    # # shellcheck disable=SC2154
+    # if [[ "${has_cmd}" == false ]]; then
+    #     warn_log "nvidia-smi not found.  Unable to deploy GPU components"
+    #     info_log "------------------------------------------"
+    #     info_log "END: ${SCRIPT_NAME}"
+    #     return
+    # fi
 
-    run_a_script "nvidia-smi --list-gpus | grep \"GPU\"" has_gpu --ignore_error
+    # run_a_script "nvidia-smi --list-gpus | grep \"GPU\"" has_gpu --ignore_error
 
-    if [[ -z "$has_gpu" ]]; then
-        warn_log "nvidia-smi is not able to find the GPU ('nvidia-smi --list-gpus').  Please check your driver and rerun"
-        info_log "------------------------------------------"
-        info_log "END: ${SCRIPT_NAME}"
-        return
-    fi
+    # if [[ -z "$has_gpu" ]]; then
+    #     warn_log "nvidia-smi is not able to find the GPU ('nvidia-smi --list-gpus').  Please check your driver and rerun"
+    #     info_log "------------------------------------------"
+    #     info_log "END: ${SCRIPT_NAME}"
+    #     return
+    # fi
 
-    info_log "...GPU found.  Checking if nVidia plugin is staged..."
+    # info_log "...GPU found.  Checking if nVidia plugin is staged..."
 
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .version' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_gpu_chart_version
 

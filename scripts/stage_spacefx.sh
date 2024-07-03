@@ -157,6 +157,25 @@ function enable_fileserver(){
 
 
 ############################################################
+# Toggle the nvidia GPU setting if requested
+############################################################
+function toggle_nvidia_gpu(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ "${NVIDIA_GPU_PLUGIN}" == true ]]; then
+        info_log "'NVIDIA_GPU_PLUGIN' = true.  Enabling nVidia GPU in config..."
+        run_a_script "yq eval '(.config.charts[] | select(.group == \"nvidia_gpu\") .enabled) = true' -i \"${SPACEFX_DIR}/config/0_spacesdk-base.yaml\""
+        info_log "...nVidia GPU successfully enabled."
+    else
+        info_log "'NVIDIA_GPU_PLUGIN' = false.  Disabling nVidia GPU in config..."
+        run_a_script "yq eval '(.config.charts[] | select(.group == \"nvidia_gpu\") .enabled) = false' -i \"${SPACEFX_DIR}/config/0_spacesdk-base.yaml\""
+        info_log "...nVidia GPU successfully disabled."
+    fi
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
 # Toggle the security restrictions between dev versus prod
 ############################################################
 function toggle_security_restrictions(){
@@ -445,6 +464,7 @@ function main() {
 
     calculate_spacefx_registry
     toggle_security_restrictions
+    toggle_nvidia_gpu
     enable_vth
     enable_fileserver
     _generate_spacefx_config_json
@@ -464,9 +484,7 @@ function main() {
     info_log "...successfully started coresvc-registry"
 
     info_log "Staging chart dependencies..."
-    extra_args=""
-    [[ "${NVIDIA_GPU_PLUGIN}" == true ]] && extra_args="${extra_args} --nvidia-gpu-plugin"
-    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_chart_dependencies.sh --architecture ${ARCHITECTURE} ${extra_args}"
+    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_chart_dependencies.sh --architecture ${ARCHITECTURE}"
     info_log "...successfully staged chart dependencies"
 
     info_log "Staging extra container images..."
