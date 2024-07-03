@@ -67,6 +67,7 @@ fi
 function stage_nvidia_plugin() {
     info_log "START: ${FUNCNAME[0]}"
 
+    info_log "Checking if nVidia GPU plugin is requested..."
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_enabled --disable_log
 
     if [[ "${nvidia_enabled}" == "false" ]]; then
