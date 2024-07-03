@@ -92,6 +92,11 @@ function deploy_nvidia_plugin(){
 
     # info_log "...GPU found.  Checking if nVidia plugin is staged..."
 
+    if [[ ! -e "/dev/nvhost-gpu" ]]; then
+        exit_with_error "nVidia GPU Plugin requested, but no gpu detected in drivers (missing '/dev/nvhost-gpu').  Please check drivers and retry deployment."
+    fi
+
+
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .version' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_gpu_chart_version
 
     debug_log "...nVidia version calculated as '${nvidia_gpu_chart_version}'"
