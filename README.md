@@ -168,6 +168,20 @@ oras push ${REGISTRY}/${FEATURE}:${VERSION} \
 
 ```
 
+## Build the base containers and samples for testing on an nVidia Jetson Nano
+```bash
+source /var/spacedev/env/spacefx.env
+
+# Build the nvidia
+/var/spacedev/build/build_containerImage.sh \
+    --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
+    --image-tag ${SPACEFX_VERSION} \
+    --repo-dir ${PWD}/build/gpu/jetson/Dockerfile.deviceQuery \
+    --app-name spacesdk-jetson-devicequery \
+    --annotation-config azure-orbital-space-sdk-core.yaml
+
+```
+
 ## Contributing
 
 This project welcomes contributions and suggestions.  Most contributions require you to agree to a
