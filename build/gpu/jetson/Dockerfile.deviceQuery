@@ -17,22 +17,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN cd /tmp && \
     wget https://github.com/NVIDIA/cuda-samples/archive/refs/tags/v${CUDA_VERSION}.tar.gz && \
     tar xvzf v${CUDA_VERSION}.tar.gz && \
-    case "${CUDA_VERSION:0:2}" in \
-    "12") \
-        cd cuda-samples-${CUDA_VERSION}/Samples/1_Utilities/deviceQuery  ; \
-        ;; \
-    "11") \
-        cd cuda-samples-${CUDA_VERSION}/Samples/deviceQuery ; \
-        ;; \
-    *) \
-        echo "Unknown version.  Must be v11 or v12 of Cuda."; exit 1 ; \
-        ;; \
-    esac && \
+    cd cuda-samples-${CUDA_VERSION}/Samples/deviceQuery && \
     make && \
     cp deviceQuery /bin && \
     rm -rf /tmp/*
 
-#FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as final
-FROM ${CONTAINER_REGISTRY}/spacesdk-base:${SDK_VERSION} as core
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as final
 COPY --from=builder /bin/deviceQuery /bin/deviceQuery
 CMD ["deviceQuery"]
