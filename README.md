@@ -127,7 +127,8 @@ done
 # SpaceSDK-Jetson-DeviceQuery Build
 /var/spacedev/build/build_containerImage.sh \
     --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
-    --image-tag ${SPACEFX_VERSION} \
+    --build-arg CUDA_VERSION="11.4" \
+    --image-tag "cuda-11.4" \
     --repo-dir ${PWD} \
     --no-spacefx-dev \
     --app-name spacesdk-jetson-devicequery \

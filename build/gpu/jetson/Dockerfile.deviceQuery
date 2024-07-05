@@ -1,5 +1,8 @@
-FROM nvcr.io/nvidia/cuda:12.2.2-devel-ubuntu20.04
+ARG CUDA_VERSION="11.4"
 
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-devel-ubuntu20.04 as builder
+ARG CUDA_VERSION
+ENV CUDA_VERSION=${CUDA_VERSION}
 ENV DEBIAN_FRONTEND noninteractive
 
 # Install package dependencies
@@ -9,11 +12,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-get clean
 
 RUN cd /tmp && \
-    wget https://github.com/NVIDIA/cuda-samples/archive/refs/tags/v12.2.tar.gz && \
-    tar xvzf v12.2.tar.gz && \
-    cd cuda-samples-12.2/Samples/1_Utilities/deviceQuery && \
+    wget https://github.com/NVIDIA/cuda-samples/archive/refs/tags/v${CUDA_VERSION}.tar.gz && \
+    tar xvzf v${CUDA_VERSION}.tar.gz && \
+    cd cuda-samples-${CUDA_VERSION}/Samples/deviceQuery && \
     make && \
     cp deviceQuery /bin && \
     rm -rf /tmp/*
 
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as final
+COPY --from=builder /bin/deviceQuery /bin/deviceQuery
 CMD ["deviceQuery"]
