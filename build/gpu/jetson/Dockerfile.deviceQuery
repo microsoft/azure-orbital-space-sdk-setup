@@ -23,5 +23,10 @@ RUN cd /tmp && \
     rm -rf /tmp/*
 
 FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as final
-COPY --from=builder /bin/deviceQuery /bin/deviceQuery
-CMD ["deviceQuery"]
+ARG CUDA_VERSION
+ENV CUDA_VERSION=${CUDA_VERSION}
+ENV PATH=/usr/local/cuda-${CUDA_VERSION}/bin:${PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VERSION}/lib64:${LD_LIBRARY_PATH}
+
+COPY --from=builder /bin/deviceQuery /usr/local/bin/deviceQuery
+ENTRYPOINT ["/usr/local/bin/deviceQuery"]
