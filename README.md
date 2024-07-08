@@ -124,15 +124,31 @@ for i in "${!PYTHON_VERSIONS[@]}"; do
 done
 
 
-# SpaceSDK-Jetson-DeviceQuery Build
-/var/spacedev/build/build_containerImage.sh \
-    --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
-    --build-arg CUDA_VERSION="11.4" \
-    --image-tag "cuda-11.4" \
-    --repo-dir ${PWD} \
-    --no-spacefx-dev \
-    --app-name spacesdk-jetson-devicequery \
-    --annotation-config azure-orbital-space-sdk-core.yaml
+# Build the SpaceSDK-Jetson-DeviceQuery Versions
+CUDA_VERSIONS=("11.4" "12.2")
+for i in "${!CUDA_VERSIONS[@]}"; do
+    CUDA_VERSION=${CUDA_VERSIONS[i]}
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
+        --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+        --image-tag "cuda-${CUDA_VERSION}" \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name spacesdk-jetson-devicequery \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery.dev \
+        --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+        --image-tag "cuda-${CUDA_VERSION}-dev" \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name spacesdk-jetson-devicequery \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+done
+
+
 
 ```
 

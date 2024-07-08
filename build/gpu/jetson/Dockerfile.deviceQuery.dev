@@ -26,25 +26,11 @@ RUN cd /tmp && \
     cp deviceQuery /bin && \
     rm -rf /tmp/*
 
-FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as interim
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as final
 ARG CUDA_VERSION
 ENV CUDA_VERSION=${CUDA_VERSION}
 ENV PATH=/usr/local/cuda-${CUDA_VERSION}/bin:${PATH} \
     LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VERSION}/lib64:${LD_LIBRARY_PATH}
-
-RUN rm -rf /usr/local/cuda-${CUDA_VERSION}
-RUN find / -type f -name "libnccl.so*" -exec rm -f {} + \
-    && echo "Files starting with 'libnccl.so' have been removed."
 
 COPY --from=builder /bin/deviceQuery /usr/local/bin/deviceQuery
-
-
-FROM scratch as final
-ARG CUDA_VERSION
-ENV CUDA_VERSION=${CUDA_VERSION}
-ENV PATH=/usr/local/cuda-${CUDA_VERSION}/bin:${PATH} \
-    LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VERSION}/lib64:${LD_LIBRARY_PATH}
-
-COPY --from=interim / /
-
 ENTRYPOINT ["/usr/local/bin/deviceQuery"]
