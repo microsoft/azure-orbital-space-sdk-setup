@@ -254,7 +254,7 @@ function python_check_pyproject_toml(){
 
     local PYPROJECT_TOML_PATH="${CONTAINER_WORKING_DIR}/pyproject.toml"
     local PYPROJECT_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/pyproject.json"
-    local REQUIRED_DEPENDENCIES_TOML_PATH="/spacefx-dev/spacefx.toml"
+    local REQUIRED_DEPENDENCIES_TOML_PATH="/spacefx-dev/payload-app-python-min.toml"
     local REQUIRED_DEPENDENCIES_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/spacefx.json"
 
     pyproject_toml_out_of_date=false

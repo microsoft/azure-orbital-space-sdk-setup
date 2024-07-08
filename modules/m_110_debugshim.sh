@@ -208,6 +208,18 @@ function _auto_add_downloads() {
             PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
             PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
             ;;
+        "payloadapp")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Client.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("microsoftazurespacefx-${SPACEFX_VERSION}-py3-none-any.whl")
+            PULL_CONTAINERS+=("vth:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("platform-deployment:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("platform-mts:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-link:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-sensor:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
+            ;;
     esac
 
     debug_log "Artifacts queued to download:"
