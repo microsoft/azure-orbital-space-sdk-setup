@@ -520,6 +520,14 @@ SPACEFX_UPDATE_END" --disable_log
     run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
 
 
+    info_log "Generating xfer directories..."
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/inbox"
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/outbox"
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/tmp"
+
+    info_log "...successfully generated xfer directories"
+
+
     info_log "END: ${FUNCNAME[0]}"
 }
 
