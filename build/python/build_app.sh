@@ -324,7 +324,7 @@ function build_app(){
 
     info_log "...project ${project} successfully built.  Copying output to '${BUILD_OUTPUT_DIR}/dist'"
 
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp ${CONTAINER_WORKSPACE_FOLDER}/dist ${BUILD_OUTPUT_DIR}/"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp -r ${CONTAINER_WORKSPACE_FOLDER}/dist ${BUILD_OUTPUT_DIR}/"
 
     info_log "...successfully copied to '${BUILD_OUTPUT_DIR}/dist'"
 }
