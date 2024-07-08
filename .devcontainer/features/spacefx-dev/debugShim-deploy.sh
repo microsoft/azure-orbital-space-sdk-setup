@@ -316,7 +316,7 @@ function recompile_python_protos() {
 
     for proto in $protos_found; do
         info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR}'..."
-        run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR}/.protos --python_out=${CONTAINER_WORKING_DIR}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR}/.protos"
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR}/.protos --python_out=${CONTAINER_WORKING_DIR}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR}/.protos" --disable_log
         info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR}/.protos'..."
     done
     info_log "...successfully compiled protos from '${CONTAINER_WORKING_DIR}/.protos'"

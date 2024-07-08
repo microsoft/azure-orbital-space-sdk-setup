@@ -288,8 +288,8 @@ function python_check_pyproject_toml(){
     run_a_script "jq -r 'paths(scalars) | join(\".\")' ${REQUIRED_DEPENDENCIES_JSON_PATH}" required_dependencies
 
     # Store the JSON contents in memory so we can access it faster
-    run_a_script "cat ${PYPROJECT_JSON_PATH}" pyproject_json
-    run_a_script "cat ${REQUIRED_DEPENDENCIES_JSON_PATH}" reqd_json
+    run_a_script "cat ${PYPROJECT_JSON_PATH}" pyproject_json --disable_log
+    run_a_script "cat ${REQUIRED_DEPENDENCIES_JSON_PATH}" reqd_json --disable_log
 
     # Loop through all paths in the reference JSON and add them to the project JSON if they don't already exist
     for path in $required_dependencies; do
@@ -301,8 +301,8 @@ function python_check_pyproject_toml(){
         path="[\"${path}\"]"
 
         # Query the value in both the project and reference JSON files
-        run_a_script "jq -r '.$path'  <<< \$reqd_json" reqd_value
-        run_a_script "jq -r '.$path'  <<< \${pyproject_json}" proj_value
+        run_a_script "jq -r '.$path'  <<< \$reqd_json" reqd_value --disable_log
+        run_a_script "jq -r '.$path'  <<< \${pyproject_json}" proj_value  --disable_log
 
         # The values differ between the project and reference JSON files
         if [[ "${proj_value}" != "${reqd_value}" ]]; then
@@ -311,7 +311,7 @@ function python_check_pyproject_toml(){
 
             # Let the dev know they need to update something
             if [[ "${AUTO_INJECT_PYTHON_DEV_DEPENDENCIES}" == false ]]; then
-                run_a_script "cat ${REQUIRED_DEPENDENCIES_TOML_PATH}" required_dependencies_toml
+                run_a_script "cat ${REQUIRED_DEPENDENCIES_TOML_PATH}" required_dependencies_toml --disable_log
                 warn_log "Detected missing dependencies and auto_inject_python_dev_dependencies = 'false'.   To auto-inject, set auto_inject_python_dev_dependencies = 'true' in your devcontainer.json file."
                 exit_with_error "Detected missing dependencies. Please add the following dependencies to your pyproject.toml file:\n\n${required_dependencies_toml}\n\nThen rebuild your devcontainer."
             fi
@@ -323,7 +323,7 @@ function python_check_pyproject_toml(){
             key="${orig_path##*.}"
 
             info_log "AUTO_INJECT_PYTHON_DEV_DEPENDENCIES = 'true'.  Updating '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
-            run_a_script "jq '.$parent_path += {\"$key\": \"$reqd_value\"}' <<< \${pyproject_json}" pyproject_json
+            run_a_script "jq '.$parent_path += {\"$key\": \"$reqd_value\"}' <<< \${pyproject_json}" pyproject_json --disable_log
             info_log "...successfully updated '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
         fi
     done
@@ -341,10 +341,10 @@ function python_check_pyproject_toml(){
     # write the updated JSON back to the json file
     run_a_script "tee ${PYPROJECT_JSON_PATH} > /dev/null << SPACEFX_UPDATE_END
 ${pyproject_json}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     # Convert the updated JSON back to TOML
-    run_a_script "remarshal --input ${PYPROJECT_JSON_PATH} --input-format json --output ${PYPROJECT_TOML_PATH} --output-format toml"
+    run_a_script "remarshal --input ${PYPROJECT_JSON_PATH} --input-format json --output ${PYPROJECT_TOML_PATH} --output-format toml" --disable_log
 
     info_log "...successfully updated '${PYPROJECT_TOML_PATH}' with required dependencies"
 
