@@ -18,7 +18,7 @@ RUN cd /tmp && \
     wget https://github.com/NVIDIA/cuda-samples/archive/refs/tags/v${CUDA_VERSION}.tar.gz && \
     tar xvzf v${CUDA_VERSION}.tar.gz && \
     if [ "$(echo $CUDA_VERSION | cut -c1-2)" = "12" ]; then \
-        cd cuda-samples-${CUDA_VERSION}/samples/1_Utilities/deviceQuery; \
+        cd cuda-samples-${CUDA_VERSION}/Samples/1_Utilities/deviceQuery; \
     else \
         cd cuda-samples-${CUDA_VERSION}/Samples/deviceQuery; \
     fi && \
