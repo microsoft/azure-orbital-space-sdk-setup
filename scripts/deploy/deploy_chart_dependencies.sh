@@ -50,6 +50,16 @@ done
 function deploy_nvidia_plugin(){
     info_log "START: ${FUNCNAME[0]}"
 
+    info_log "Checking if nVidia GPU plugin is requested..."
+    run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_enabled --disable_log
+
+    if [[ "${nvidia_enabled}" == "false" ]]; then
+        info_log "nVidia GPU is disabled (from config).  Nothing to do"
+        info_log "FINISHED: ${FUNCNAME[0]}"
+        return
+    fi
+
+
     info_log "Checking for nvidia plugin..."
     run_a_script "helm --kubeconfig ${KUBECONFIG} list --all-namespaces | grep 'nvdp'" has_plugin --ignore_error
 
@@ -59,49 +69,32 @@ function deploy_nvidia_plugin(){
         return 0
     fi
 
-    info_log "nvidia plugin not found...Checking for nVidia GPU..."
-
-    is_cmd_available "nvidia-smi" has_cmd
-
-    # shellcheck disable=SC2154
-    if [[ "${has_cmd}" == false ]]; then
-        warn_log "nvidia-smi not found.  Unable to deploy GPU components"
-        info_log "------------------------------------------"
-        info_log "END: ${SCRIPT_NAME}"
-        return
-    fi
-
-    run_a_script "nvidia-smi --list-gpus | grep \"GPU\"" has_gpu --ignore_error
+    run_a_script "lspci | grep -i \"nvidia\"" has_gpu --ignore_error
 
     if [[ -z "$has_gpu" ]]; then
-        warn_log "nvidia-smi is not able to find the GPU ('nvidia-smi --list-gpus').  Please check your driver and rerun"
+        warn_log "lspci is not able to find the GPU ('lspci | grep -i \"nvidia\"').  Please check your driver and rerun"
         info_log "------------------------------------------"
         info_log "END: ${SCRIPT_NAME}"
         return
     fi
-
-    info_log "...GPU found.  Checking if nVidia plugin is staged..."
 
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .version' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_gpu_chart_version
 
     debug_log "...nVidia version calculated as '${nvidia_gpu_chart_version}'"
 
-    info_log "Looking for '${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia_plugin-${nvidia_gpu_chart_version}.tgz'..."
+    info_log "Looking for '${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia-device-plugin-${nvidia_gpu_chart_version}.tgz'..."
 
-    if [[ ! -f "${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia_plugin-${nvidia_gpu_chart_version}.tgz" ]]; then
-        warn_log "'${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia_plugin-${nvidia_gpu_chart_version}.tgz' not found.  Please restage spacefx with the --nvidia-gpu-plugin switch and redeploy"
-        info_log "------------------------------------------"
-        info_log "END: ${SCRIPT_NAME}"
-        return
+    if [[ ! -f "${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia-device-plugin-${nvidia_gpu_chart_version}.tgz" ]]; then
+        exit_with_error "'${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia-device-plugin-${nvidia_gpu_chart_version}.tgz' not found.  Please restage spacefx with the --nvidia-gpu-plugin switch and redeploy, or disable the gpu via config (/var/spacedev/config/*.yaml -> config.charts.nvidia_gpu.enabled)"
     fi
 
-    info_log "...found '${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz'.  Installing plugin..."
+    info_log "...found '${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia-device-plugin-${nvidia_gpu_chart_version}.tgz'.  Installing plugin..."
 
     run_a_script "helm --kubeconfig ${KUBECONFIG} show values ${SPACEFX_DIR}/chart | yq '.global.containerRegistry'" _containerRegistry
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .containers[0].repository' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" _repository
 
     run_a_script "helm --kubeconfig ${KUBECONFIG} install nvdp \
-                    ${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz \
+                    ${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}/nvidia-device-plugin-${nvidia_gpu_chart_version}.tgz \
                     --wait --wait-for-jobs \
                     --create-namespace \
                     --set allowDefaultNamespace=true \

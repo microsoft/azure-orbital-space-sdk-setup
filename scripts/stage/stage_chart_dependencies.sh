@@ -26,7 +26,6 @@ function show_help() {
    echo "Syntax: bash ./scripts/stage/stage_chart_dependencies.sh [--architecture arm64 | amd64]"
    echo "options:"
    echo "--architecture | -a                [OPTIONAL] Change the target architecture for download (defaults to current architecture)"
-   echo "--nvidia-gpu-plugin | -n           [OPTIONAL] Include the nvidia gpu plugin (+325 MB)"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -48,9 +47,6 @@ while [[ "$#" -gt 0 ]]; do
                 exit 1
             fi
             ;;
-        --nvidia-gpu-plugin)
-            NVIDIA_GPU_PLUGIN=true
-            ;;
         -h|--help) show_help ;;
         *) echo "Unknown parameter '$1'"; show_help ;;
     esac
@@ -66,35 +62,27 @@ fi
 
 
 ############################################################
-# Enable nvivia gpu plugin in spacefx-base
+# Download the GPU components for nVidia
 ############################################################
-function enable_nvidia_gpu_in_config() {
+function stage_nvidia_plugin() {
     info_log "START: ${FUNCNAME[0]}"
 
-    info_log "Activating nvidia gpu plugin in 0_spacefx-base.yaml..."
+    info_log "Checking if nVidia GPU plugin is requested..."
+    run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_enabled --disable_log
 
-    run_a_script "yq eval '(.config.charts[] | select(.group == \"nvidia_gpu\") | .enabled) = true' -i ${SPACEFX_DIR}/config/0_spacefx-base.yaml"
-    _generate_spacefx_config_json
-    info_log "...successfully activated nvidia gpu plugin in spacefx-config.json"
-
-
-    info_log "FINISHED: ${FUNCNAME[0]}"
-}
-
-############################################################
-# Download the chart used by the nvidia plugin
-############################################################
-stage_nvidia_plugin_helm_chart() {
-    info_log "START: ${FUNCNAME[0]}"
+    if [[ "${nvidia_enabled}" == "false" ]]; then
+        info_log "nVidia GPU is disabled (from config).  Skipping nVidia plugin staging"
+        info_log "FINISHED: ${FUNCNAME[0]}"
+        return
+    fi
 
     info_log "Calculating nvidia plugin version..."
 
     run_a_script "jq -r '.config.charts[] | select(.group == \"nvidia_gpu\") | .version' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" nvidia_gpu_chart_version
 
-    local dest_dir="${SPACEFX_DIR}/chart/charts/nvidia_plugin/${nvidia_gpu_chart_version}"
+    local dest_dir="${SPACEFX_DIR}/bin/${ARCHITECTURE}/nvidia_plugin/${nvidia_gpu_chart_version}"
 
     info_log "Looking for '${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz'..."
-
 
     if [[ ! -f "${dest_dir}/nvidia_plugin-${INSTALL_NVIDIA_PLUGIN}.tgz" ]]; then
         info_log "...not found.  Downloading..."
@@ -134,10 +122,6 @@ function stage_dependent_charts_images(){
     local stage_container_cmd=""
 
     for container_type in $chart_groups; do
-        if [[ "${container_type}" == "nvidia_gpu" ]] && [[ "${NVIDIA_GPU_PLUGIN}" == false ]]; then
-            continue
-        fi
-
         run_a_script "jq -r '.config.charts[] | select(.group == \"${container_type}\" and .enabled == true) | .containers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" chart_containers
 
         for container in $chart_containers; do
@@ -166,18 +150,10 @@ function stage_dependent_charts_images(){
 
 function main() {
     write_parameter_to_log ARCHITECTURE
-    write_parameter_to_log NVIDIA_GPU_PLUGIN
 
-    if [[ "${NVIDIA_GPU_PLUGIN}" == true ]]; then
-        enable_nvidia_gpu_in_config
-        stage_nvidia_plugin_helm_chart
-    fi
-
+    stage_nvidia_plugin
     stage_dependent_charts
     stage_dependent_charts_images
-
-
-
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"

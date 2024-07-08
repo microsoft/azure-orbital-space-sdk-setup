@@ -1,0 +1,50 @@
+# TODO: Update the github pull for 12.x+ - the deviceQuery app is in a different folder starting in 12.x+
+ARG CUDA_VERSION="11.4"
+ARG SDK_VERSION="0.11.0"
+ARG CONTAINER_REGISTRY="ghcr.io/microsoft"
+
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-devel-ubuntu20.04 as builder
+ARG CUDA_VERSION
+ENV CUDA_VERSION=${CUDA_VERSION}
+ENV DEBIAN_FRONTEND noninteractive
+
+# Install package dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        wget && \
+    apt-get clean
+
+RUN cd /tmp && \
+    wget https://github.com/NVIDIA/cuda-samples/archive/refs/tags/v${CUDA_VERSION}.tar.gz && \
+    tar xvzf v${CUDA_VERSION}.tar.gz && \
+    if [ "$(echo $CUDA_VERSION | cut -c1-2)" = "12" ]; then \
+        cd cuda-samples-${CUDA_VERSION}/Samples/1_Utilities/deviceQuery; \
+    else \
+        cd cuda-samples-${CUDA_VERSION}/Samples/deviceQuery; \
+    fi && \
+    make && \
+    cp deviceQuery /bin && \
+    rm -rf /tmp/*
+
+FROM nvcr.io/nvidia/cuda:${CUDA_VERSION}.2-runtime-ubuntu20.04 as interim
+ARG CUDA_VERSION
+ENV CUDA_VERSION=${CUDA_VERSION}
+ENV PATH=/usr/local/cuda-${CUDA_VERSION}/bin:${PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VERSION}/lib64:${LD_LIBRARY_PATH}
+
+RUN rm -rf /usr/local/cuda-${CUDA_VERSION}
+RUN find / -type f -name "libnccl.so*" -exec rm -f {} + \
+    && echo "Files starting with 'libnccl.so' have been removed."
+
+COPY --from=builder /bin/deviceQuery /usr/local/bin/deviceQuery
+
+
+FROM scratch as final
+ARG CUDA_VERSION
+ENV CUDA_VERSION=${CUDA_VERSION}
+ENV PATH=/usr/local/cuda-${CUDA_VERSION}/bin:${PATH} \
+    LD_LIBRARY_PATH=/usr/local/cuda-${CUDA_VERSION}/lib64:${LD_LIBRARY_PATH}
+
+COPY --from=interim / /
+
+ENTRYPOINT ["/usr/local/bin/deviceQuery"]

@@ -76,16 +76,15 @@ spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
 0
 ```
 
-## Building Base Container Images
-Several base container images are used to reduce the filesize of the Microsoft Azure Orbital Space SDK when deployed to a satellite. Follow the below steps to manually build these containers:
+## Building prerequisite container images
+Several container images are used as components within the Azure Orbital Space SDK.  This container images are used as utilies for gpu tests, intermediate layers to reduce the filesize of apps to deploy, etc.  These prerequisite container images are prebuilt and available in this repo and will be downloaded during stage_spacefx.sh depending on the options provided.  There is no need to manually build these container images, but their build process is documented for reference.
 ```bash
-
 # Load the configuration and get the channel for the tag
 source /var/spacedev/env/spacefx.env
 SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
 [[ "${SPACEFX_CHANNEL}" != "stable" ]] && SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}-${SPACEFX_CHANNEL}"
 
-# Build and push SpaceSDK-Base
+# SpaceSDK-Base Container image build
 /var/spacedev/build/build_containerImage.sh \
     --dockerfile /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base \
     --image-tag ${SPACEFX_VERSION} \
@@ -94,7 +93,7 @@ SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
     --annotation-config azure-orbital-space-sdk-core.yaml
 
 
-# Python container base images
+# Python-Base and SpaceSDK-Base-Python Container image build
 PYTHON_VERSIONS=("3.10" "3.9")
 for i in "${!PYTHON_VERSIONS[@]}"; do
     PYTHON_VERSION=${PYTHON_VERSIONS[i]}
@@ -124,6 +123,30 @@ for i in "${!PYTHON_VERSIONS[@]}"; do
 
 done
 
+
+# Build the SpaceSDK-Jetson-DeviceQuery Versions
+CUDA_VERSIONS=("11.4" "12.2")
+for i in "${!CUDA_VERSIONS[@]}"; do
+    CUDA_VERSION=${CUDA_VERSIONS[i]}
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
+        --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+        --image-tag "cuda-${CUDA_VERSION}" \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name spacesdk-jetson-devicequery \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+    /var/spacedev/build/build_containerImage.sh \
+        --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery.dev \
+        --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+        --image-tag "cuda-${CUDA_VERSION}-dev" \
+        --repo-dir ${PWD} \
+        --no-spacefx-dev \
+        --app-name spacesdk-jetson-devicequery \
+        --annotation-config azure-orbital-space-sdk-core.yaml
+
+done
 
 
 
