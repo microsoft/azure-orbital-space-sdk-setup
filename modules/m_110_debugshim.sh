@@ -123,7 +123,13 @@ function _check_for_python() {
     fi
 
     if [[ "${APP_TYPE}" != "payloadapp" ]] && [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
-        info_log "Python found, but APP_TYPE of '${APP_TYPE-client}' is not 'payloadapp' nor 'spacesdk-client'.  Nothing to do."
+        info_log "Python found, but APP_TYPE of '${APP_TYPE}' is not 'payloadapp' nor 'spacesdk-client'.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    if [[ "${DEV_LANGUAGE}" != "python" ]]; then
+        info_log "Python found, but DEV_LANGUAGE of '${DEV_LANGUAGE}' is not 'python'.  Nothing to do."
         info_log "END: ${FUNCNAME[0]}"
         return
     fi

@@ -412,14 +412,15 @@ function main() {
     verify_debugshim
     verify_config_secret_exists
 
-    if [[ "${DEV_LANGUAGE}" == "python" ]]; then
+
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
         stop_old_port_forward
     fi
 
     wait_for_debugshim_to_come_online
     update_configuration_for_plugins
 
-    if [[ "${DEV_LANGUAGE}" == "python" ]]; then
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
         recompile_python_protos
         install_app_via_poetry
         start_python_debugger
