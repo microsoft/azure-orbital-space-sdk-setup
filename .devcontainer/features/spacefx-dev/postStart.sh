@@ -670,8 +670,8 @@ function main() {
         # Python Client SDK needs the protos in the right spot
         if [[ "${APP_TYPE}" == "spacesdk-client" ]]; then
             info_log "SpaceSDK-Client detected.  Moving compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'..."
-            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx"
-            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/ ${CONTAINER_WORKING_DIR:?}/spacefx/"
+            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx/protos"
+            run_a_script "cp -rf ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/* ${CONTAINER_WORKING_DIR:?}/spacefx/protos/"
             info_log "...successfully moved compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'"
         fi
     fi

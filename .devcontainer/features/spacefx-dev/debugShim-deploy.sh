@@ -421,7 +421,7 @@ function main() {
     update_configuration_for_plugins
 
     if [[ "${DEV_PYTHON}" == "true" ]]; then
-        recompile_python_protos
+        python_compile_protos
         install_app_via_poetry
         start_python_debugger
         start_port_forward

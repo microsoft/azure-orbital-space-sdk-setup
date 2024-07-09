@@ -252,20 +252,29 @@ function python_compile_protos() {
     info_log "START: ${FUNCNAME[0]}"
 
     # Building the .protos directory
-    create_directory "${CONTAINER_WORKING_DIR:?}/.protos"
+    if [[ -d "${CONTAINER_WORKING_DIR:?}/.protos/spacefx" ]]; then
+        debug_log "Removing old spacefx protos..."
+        run_a_script "rm -rf ${CONTAINER_WORKING_DIR:?}/.protos/spacefx"
+        debug_log "...successfully removed old spacefx protos"
+    fi
+    create_directory "${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos"
 
-    info_log "Compiling protos from '${SPACEFX_DIR}/protos/spacefx'..."
-    run_a_script "find ${SPACEFX_DIR}/protos/spacefx -iname '*.proto' -type f" protos_found
+    info_log "Copying SpaceFX protos to '${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/'..."
+    run_a_script "cp -rf ${SPACEFX_DIR}/protos/spacefx/* ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/"
+    info_log "...copied SpaceFX protos to '${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/'"
+
+    info_log "Compiling protos from '${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/'..."
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos -iname '*.proto' -type f" protos_found
 
     for proto in $protos_found; do
         info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
-        run_a_script "python -m grpc_tools.protoc ${proto} -I=${SPACEFX_DIR}/protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos"
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos"
         info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos'..."
     done
-    info_log "...successfully compiled protos from '${SPACEFX_DIR}/protos/spacefx'"
+    info_log "...successfully compiled protos from '${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos'"
 
     info_log "Compiling protos from '${CONTAINER_WORKING_DIR:?}/.protos'..."
-    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -iname '*.proto' -type f" protos_found
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -iname '*.proto' -type f ! -path \"${CONTAINER_WORKING_DIR:?}/.protos/spacefx/*\"" protos_found
 
     for proto in $protos_found; do
         info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
