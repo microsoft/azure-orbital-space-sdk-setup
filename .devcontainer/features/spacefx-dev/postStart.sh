@@ -254,7 +254,7 @@ function python_check_pyproject_toml(){
 
     local PYPROJECT_TOML_PATH="${CONTAINER_WORKING_DIR}/pyproject.toml"
     local PYPROJECT_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/pyproject.json"
-    local REQUIRED_DEPENDENCIES_TOML_PATH="/spacefx-dev/spacefx.toml"
+    local REQUIRED_DEPENDENCIES_TOML_PATH="/spacefx-dev/payload-app-python-min.toml"
     local REQUIRED_DEPENDENCIES_JSON_PATH="${SPACEFX_DIR}/tmp/${APP_NAME}/spacefx.json"
 
     pyproject_toml_out_of_date=false
@@ -288,8 +288,8 @@ function python_check_pyproject_toml(){
     run_a_script "jq -r 'paths(scalars) | join(\".\")' ${REQUIRED_DEPENDENCIES_JSON_PATH}" required_dependencies
 
     # Store the JSON contents in memory so we can access it faster
-    run_a_script "cat ${PYPROJECT_JSON_PATH}" pyproject_json
-    run_a_script "cat ${REQUIRED_DEPENDENCIES_JSON_PATH}" reqd_json
+    run_a_script "cat ${PYPROJECT_JSON_PATH}" pyproject_json --disable_log
+    run_a_script "cat ${REQUIRED_DEPENDENCIES_JSON_PATH}" reqd_json --disable_log
 
     # Loop through all paths in the reference JSON and add them to the project JSON if they don't already exist
     for path in $required_dependencies; do
@@ -301,8 +301,8 @@ function python_check_pyproject_toml(){
         path="[\"${path}\"]"
 
         # Query the value in both the project and reference JSON files
-        run_a_script "jq -r '.$path'  <<< \$reqd_json" reqd_value
-        run_a_script "jq -r '.$path'  <<< \${pyproject_json}" proj_value
+        run_a_script "jq -r '.$path'  <<< \$reqd_json" reqd_value --disable_log
+        run_a_script "jq -r '.$path'  <<< \${pyproject_json}" proj_value  --disable_log
 
         # The values differ between the project and reference JSON files
         if [[ "${proj_value}" != "${reqd_value}" ]]; then
@@ -311,7 +311,7 @@ function python_check_pyproject_toml(){
 
             # Let the dev know they need to update something
             if [[ "${AUTO_INJECT_PYTHON_DEV_DEPENDENCIES}" == false ]]; then
-                run_a_script "cat ${REQUIRED_DEPENDENCIES_TOML_PATH}" required_dependencies_toml
+                run_a_script "cat ${REQUIRED_DEPENDENCIES_TOML_PATH}" required_dependencies_toml --disable_log
                 warn_log "Detected missing dependencies and auto_inject_python_dev_dependencies = 'false'.   To auto-inject, set auto_inject_python_dev_dependencies = 'true' in your devcontainer.json file."
                 exit_with_error "Detected missing dependencies. Please add the following dependencies to your pyproject.toml file:\n\n${required_dependencies_toml}\n\nThen rebuild your devcontainer."
             fi
@@ -323,7 +323,7 @@ function python_check_pyproject_toml(){
             key="${orig_path##*.}"
 
             info_log "AUTO_INJECT_PYTHON_DEV_DEPENDENCIES = 'true'.  Updating '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
-            run_a_script "jq '.$parent_path += {\"$key\": \"$reqd_value\"}' <<< \${pyproject_json}" pyproject_json
+            run_a_script "jq '.$parent_path += {\"$key\": \"$reqd_value\"}' <<< \${pyproject_json}" pyproject_json --disable_log
             info_log "...successfully updated '${PYPROJECT_TOML_PATH}': '${orig_path}' to '${reqd_value}'."
         fi
     done
@@ -341,10 +341,10 @@ function python_check_pyproject_toml(){
     # write the updated JSON back to the json file
     run_a_script "tee ${PYPROJECT_JSON_PATH} > /dev/null << SPACEFX_UPDATE_END
 ${pyproject_json}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     # Convert the updated JSON back to TOML
-    run_a_script "remarshal --input ${PYPROJECT_JSON_PATH} --input-format json --output ${PYPROJECT_TOML_PATH} --output-format toml"
+    run_a_script "remarshal --input ${PYPROJECT_JSON_PATH} --input-format json --output ${PYPROJECT_TOML_PATH} --output-format toml" --disable_log
 
     info_log "...successfully updated '${PYPROJECT_TOML_PATH}' with required dependencies"
 
@@ -520,6 +520,14 @@ SPACEFX_UPDATE_END" --disable_log
     run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
 
 
+    info_log "Generating xfer directories..."
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/inbox"
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/outbox"
+    create_directory "${SPACEFX_DIR}/xfer/${debug_shim}/tmp"
+
+    info_log "...successfully generated xfer directories"
+
+
     info_log "END: ${FUNCNAME[0]}"
 }
 
@@ -634,7 +642,6 @@ function main() {
     add_spacedev_nuget_source
     wipe_bin_and_obj_directories
 
-
     if [[ "${DEV_PYTHON}" == "true" ]]; then
         info_log "Python detected.  Setting up environment for python development and debug..."
         python_copy_spacesdk_wheel
@@ -663,56 +670,19 @@ function main() {
         # Python Client SDK needs the protos in the right spot
         if [[ "${APP_TYPE}" == "spacesdk-client" ]]; then
             info_log "SpaceSDK-Client detected.  Moving compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'..."
-            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx"
-            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/ ${CONTAINER_WORKING_DIR:?}/spacefx/"
+            if [[ -d "${CONTAINER_WORKING_DIR:?}/spacefx/protos" ]]; then
+                run_a_script "rm -rf ${CONTAINER_WORKING_DIR:?}/spacefx/protos"
+            fi
+            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx/protos"
+            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos/ ${CONTAINER_WORKING_DIR:?}/spacefx/protos/"
             info_log "...successfully moved compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'"
         fi
     fi
 
 
-    if [[ "${DEV_PYTHON}" == "true" ]]; then
-        info_log "Python detected.  Setting up environment for python development and debug..."
-        python_copy_spacesdk_wheel
-        python_check_dev_app_dependencies
 
-        debug_log "Triggering poetry to install app dependencies..."
-        if [[ "${CLUSTER_ENABLED}" == true ]]; then
-            python_poetry_install --no-root --all-extras
-        else
-            python_poetry_install --no-root --no-spacefx-dev
-        fi
-
-        debug_log "...poetry successfully installed app dependencies."
-
-        python_compile_protos
-
-        debug_log "Triggering poetry to install app..."
-        if [[ "${CLUSTER_ENABLED}" == true ]]; then
-            python_poetry_install --all-extras
-        else
-            python_poetry_install --no-spacefx-dev
-        fi
-
-        debug_log "...poetry successfully installed app."
-
-        # Python Client SDK needs the protos in the right spot
-        if [[ "${APP_TYPE}" == "spacesdk-client" ]]; then
-            info_log "SpaceSDK-Client detected.  Moving compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'..."
-            create_directory "${CONTAINER_WORKING_DIR:?}/spacefx"
-            run_a_script "rsync -avzh --remove-source-files ${CONTAINER_WORKING_DIR:?}/.protos/spacefx/ ${CONTAINER_WORKING_DIR:?}/spacefx/"
-            info_log "...successfully moved compiled protos to '${CONTAINER_WORKING_DIR:?}/spacefx'"
-        fi
-    fi
 
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
-
-        # Python needs the debugshim image updated with the changes from the python installs above
-        if [[ "${DEV_PYTHON}" == "true" ]]; then
-            info_log "Committing changes to container for debugshim..."
-            run_a_script "docker commit ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
-            info_log "...image updated"
-        fi
-
 
         # Python needs the debugshim image updated with the changes from the python installs above
         if [[ "${DEV_PYTHON}" == "true" ]]; then

@@ -2,7 +2,7 @@ syntax = "proto3";
 package Microsoft.Azure.SpaceFx.MessageFormats.PlatformServices.Deployment;
 option csharp_namespace = "Microsoft.Azure.SpaceFx.MessageFormats.PlatformServices.Deployment";
 
-import "spacefx/common/Common.proto";
+import "spacefx/protos/common/Common.proto";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 

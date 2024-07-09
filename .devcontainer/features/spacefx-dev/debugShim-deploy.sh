@@ -95,17 +95,6 @@ if [[ -z "$DEBUG_SHIM" ]]; then
     show_help
 fi
 
-if [[ "${DEV_LANGUAGE}" == "python" ]]; then
-    if [[ -z "$PYTHON_PORT" ]]; then
-        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Missing --port parameter"
-        show_help
-    fi
-    if [[ -z "$PYTHON_FILE" ]]; then
-        echo "[${SCRIPT_NAME}] [ERROR] ${TIMESTAMP}: Missing --python_file parameter"
-        show_help
-    fi
-fi
-
 
 source "${SPACEFX_DIR:?}/modules/load_modules.sh" $@ --log_dir "${SPACEFX_DIR:?}/logs/${APP_NAME:?}/${DEBUG_SHIM:?}"
 
@@ -284,7 +273,135 @@ function update_configuration_for_plugins() {
 
     debug_log "...debug shim successfully updated for plugin debugging"
 
+    info_log "END: ${FUNCNAME[0]}"
+}
 
+
+############################################################
+# Stop any previous port forwards used by python debugshims
+############################################################
+function stop_old_port_forward() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Scanning for current port-forwards..."
+
+    run_a_script "pgrep '^kubectl'" pids --ignore_error
+
+    if [[ -z "${pids}" ]]; then
+        info_log "No previous port forwards found.  Nothing to do"
+        return
+    fi
+
+    for kubectl_pid in $pids; do
+        run_a_script "ps -p ${kubectl_pid} -o args --no-headers" kubectl_cmd_args
+        if [[ "${kubectl_cmd_args}" == *"kubectl port-forward"* ]] && [[ "${kubectl_cmd_args}" == *"${PYTHON_PORT}:${PYTHON_PORT}"* ]]; then
+            info_log "...found port forwarding process at PID ${kubectl_pid}.  Stopping..."
+            run_a_script "kill -9 ${kubectl_pid}"
+            info_log "...stopped"
+        fi
+    done
+
+    info_log "...done.  Port-forwards for ${PYTHON_PORT} are stopped"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Rebuild any protos in the .protos folder for python apps
+############################################################
+function recompile_python_protos() {
+    info_log "START: ${FUNCNAME[0]}"
+    info_log "Compiling protos from '${CONTAINER_WORKING_DIR}/.protos'..."
+    run_a_script "find ${CONTAINER_WORKING_DIR}/.protos -iname '*.proto' -type f" protos_found
+
+    for proto in $protos_found; do
+        info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR}'..."
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR}/.protos --python_out=${CONTAINER_WORKING_DIR}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR}/.protos" --disable_log
+        info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR}/.protos'..."
+    done
+    info_log "...successfully compiled protos from '${CONTAINER_WORKING_DIR}/.protos'"
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Build poetry package
+############################################################
+function install_app_via_poetry() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Calculating directory from '${PYTHON_FILE}'..."
+    run_a_script "dirname ${PYTHON_FILE}" app_directory
+
+    info_log "...installing app..."
+    # shellcheck disable=SC2154
+    run_a_script "/root/.local/bin/poetry --directory ${app_directory}  install"
+    info_log "...done."
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Start the python debugger
+############################################################
+function start_python_debugger() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Starting debugger in debugshim '${DEBUG_SHIM_POD}'..."
+
+    run_a_script "kubectl exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'python3 -m debugpy --listen ${PYTHON_PORT} --wait-for-client ${PYTHON_FILE} > /dev/null 2> /dev/null &'"
+
+    info_log "...done."
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Start a new port forward
+############################################################
+function start_port_forward() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Forwarding port ${PYTHON_PORT} to ${DEBUG_SHIM_POD}..."
+
+    run_a_script "kubectl port-forward 'pod/${DEBUG_SHIM_POD}' '${PYTHON_PORT}:${PYTHON_PORT}' -n 'payload-app' --pod-running-timeout=1h" --background
+
+
+    # Wait until our port-forward takes affect
+    sleep 1
+
+    local current_secs_epoc
+    local deadline_sec_epoc
+    current_secs_epoc=$(date +%s)
+    deadline_sec_epoc="$((current_secs_epoc + 30))"
+    pids=""
+
+    info_log "...waiting for port forward to start (max 30 secs)..."
+
+    while :; do
+        debug_log "Checking for kubectl port forward..."
+        run_a_script "pgrep '^kubectl'" pids --ignore_error
+
+        # No terminating pods found.  We're done
+        if [[ -n $pids ]]; then
+            debug_log "...found"
+            break
+        fi
+
+        debug_log "...not found.  Rechecking in 0.5 seconds"
+
+        # We exceeded our timeout
+        if [[ "$(date +%s)" -gt $deadline_sec_epoc ]]; then
+            exit_with_error "Timed out waiting for pods to terminate.  See previous errors"
+            break
+        fi
+        sleep 0.5s
+    done
+
+
+    info_log "...port forward found."
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -292,11 +409,21 @@ function update_configuration_for_plugins() {
 function main() {
     wait_for_poststart
 
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
+        stop_old_port_forward
+    fi
+
     verify_debugshim
     verify_config_secret_exists
     wait_for_debugshim_to_come_online
     update_configuration_for_plugins
 
+    if [[ "${DEV_PYTHON}" == "true" ]]; then
+        python_compile_protos
+        install_app_via_poetry
+        start_python_debugger
+        start_port_forward
+    fi
 
 
     info_log "------------------------------------------"

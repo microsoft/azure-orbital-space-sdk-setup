@@ -123,7 +123,13 @@ function _check_for_python() {
     fi
 
     if [[ "${APP_TYPE}" != "payloadapp" ]] && [[ "${APP_TYPE}" != "spacesdk-client" ]]; then
-        info_log "Python found, but APP_TYPE of '${APP_TYPE-client}' is not 'payloadapp' nor 'spacesdk-client'.  Nothing to do."
+        info_log "Python found, but APP_TYPE of '${APP_TYPE}' is not 'payloadapp' nor 'spacesdk-client'.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    if [[ "${DEV_LANGUAGE}" != "python" ]]; then
+        info_log "Python found, but DEV_LANGUAGE of '${DEV_LANGUAGE}' is not 'python'.  Nothing to do."
         info_log "END: ${FUNCNAME[0]}"
         return
     fi
@@ -208,6 +214,18 @@ function _auto_add_downloads() {
             PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
             PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
             ;;
+        "payloadapp")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Core.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("Microsoft.Azure.SpaceSDK.Client.${SPACEFX_VERSION}.nupkg")
+            DOWNLOAD_ARTIFACTS+=("microsoftazurespacefx-${SPACEFX_VERSION}-py3-none-any.whl")
+            PULL_CONTAINERS+=("vth:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("platform-deployment:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("platform-mts:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-link:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-sensor:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-position:${_auto_add_tag_spacefx_tag}")
+            PULL_CONTAINERS+=("hostsvc-logging:${_auto_add_tag_spacefx_tag}")
+            ;;
     esac
 
     debug_log "Artifacts queued to download:"
@@ -234,20 +252,25 @@ function python_compile_protos() {
     info_log "START: ${FUNCNAME[0]}"
 
     # Building the .protos directory
-    create_directory "${CONTAINER_WORKING_DIR:?}/.protos"
+    if [[ -d "${CONTAINER_WORKING_DIR:?}/.protos/spacefx" ]]; then
+        debug_log "Removing old spacefx protos..."
+        run_a_script "rm -rf ${CONTAINER_WORKING_DIR:?}/.protos/spacefx"
+        debug_log "...successfully removed old spacefx protos"
+    fi
+    create_directory "${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos"
 
-    info_log "Compiling protos from '${SPACEFX_DIR}/protos/spacefx'..."
-    run_a_script "find ${SPACEFX_DIR}/protos/spacefx -iname '*.proto' -type f" protos_found
+    info_log "Compiling protos from '${SPACEFX_DIR:?}/protos/spacefx' to '${CONTAINER_WORKING_DIR:?}/.protos/spacefx'..."
+    run_a_script "find ${SPACEFX_DIR:?}/protos/spacefx -iname '*.proto' -type f" protos_found
 
     for proto in $protos_found; do
-        info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
-        run_a_script "python -m grpc_tools.protoc ${proto} -I=${SPACEFX_DIR}/protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos"
-        info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos'..."
+        info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos/spacefx'..."
+        run_a_script "python -m grpc_tools.protoc ${proto} -I=${SPACEFX_DIR:?}/protos --python_out=${CONTAINER_WORKING_DIR:?}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR:?}/.protos"
+        info_log "...successfully compiled proto '${proto}' to '${CONTAINER_WORKING_DIR:?}/.protos/spacefx'..."
     done
-    info_log "...successfully compiled protos from '${SPACEFX_DIR}/protos/spacefx'"
+    info_log "...successfully compiled protos from '${CONTAINER_WORKING_DIR:?}/.protos/spacefx/protos'"
 
     info_log "Compiling protos from '${CONTAINER_WORKING_DIR:?}/.protos'..."
-    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -iname '*.proto' -type f" protos_found
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.protos -iname '*.proto' -type f ! -path \"${CONTAINER_WORKING_DIR:?}/.protos/spacefx/*\"" protos_found
 
     for proto in $protos_found; do
         info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR:?}'..."
@@ -264,7 +287,7 @@ function python_compile_protos() {
         info_log "Checking for '${proto_dir}/__init__.py'..."
         if [[ ! -f "${proto_dir}/__init__.py" ]]; then
             info_log "...'${proto_dir}/__init__.py' not found.  Adding..."
-            run_a_script "touch ${proto_dir}/__init__.py"
+            run_a_script "touch ${proto_dir}/__init__.py" --disable_log
             info_log "...successfully added '${proto_dir}/__init__.py'"
         else
             info_log "...'${proto_dir}/__init__.py' found."
