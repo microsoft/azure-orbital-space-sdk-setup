@@ -688,14 +688,6 @@ function main() {
             info_log "...image updated"
         fi
 
-
-        # Python needs the debugshim image updated with the changes from the python installs above
-        if [[ "${DEV_PYTHON}" == "true" ]]; then
-            info_log "Committing changes to container for debugshim..."
-            run_a_script "docker commit ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
-            info_log "...image updated"
-        fi
-
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
         generate_debugshims
