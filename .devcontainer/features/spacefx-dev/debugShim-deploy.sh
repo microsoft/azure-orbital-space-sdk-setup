@@ -415,7 +415,6 @@ function main() {
 
     verify_debugshim
     verify_config_secret_exists
-\
     wait_for_debugshim_to_come_online
     update_configuration_for_plugins
 
