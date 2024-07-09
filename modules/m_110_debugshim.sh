@@ -287,7 +287,7 @@ function python_compile_protos() {
         info_log "Checking for '${proto_dir}/__init__.py'..."
         if [[ ! -f "${proto_dir}/__init__.py" ]]; then
             info_log "...'${proto_dir}/__init__.py' not found.  Adding..."
-            run_a_script "touch ${proto_dir}/__init__.py"
+            run_a_script "touch ${proto_dir}/__init__.py" --disable_log
             info_log "...successfully added '${proto_dir}/__init__.py'"
         else
             info_log "...'${proto_dir}/__init__.py' found."

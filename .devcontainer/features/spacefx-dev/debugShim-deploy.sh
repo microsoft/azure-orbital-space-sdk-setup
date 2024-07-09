@@ -292,11 +292,11 @@ function stop_old_port_forward() {
         return
     fi
 
-    for pid in $pids; do
-        run_a_script "ps -p ${pid} -o args --no-headers" kubectl_cmd_args
+    for kubectl_pid in $pids; do
+        run_a_script "ps -p ${kubectl_pid} -o args --no-headers" kubectl_cmd_args
         if [[ "${kubectl_cmd_args}" == *"kubectl port-forward"* ]] && [[ "${kubectl_cmd_args}" == *"${PYTHON_PORT}:${PYTHON_PORT}"* ]]; then
-            info_log "...found port forwarding process at PID ${pid}.  Stopping..."
-            kill -9 "${pid}"
+            info_log "...found port forwarding process at PID ${kubectl_pid}.  Stopping..."
+            run_a_script "kill -9 ${kubectl_pid}"
             info_log "...stopped"
         fi
     done
@@ -368,13 +368,14 @@ function start_port_forward() {
 
     run_a_script "kubectl port-forward 'pod/${DEBUG_SHIM_POD}' '${PYTHON_PORT}:${PYTHON_PORT}' -n 'payload-app' --pod-running-timeout=1h" --background
 
+
     # Wait until our port-forward takes affect
-    local foundPortForward
+    sleep 1
+
     local current_secs_epoc
     local deadline_sec_epoc
     current_secs_epoc=$(date +%s)
     deadline_sec_epoc="$((current_secs_epoc + 30))"
-    port_forward_found=false
     pids=""
 
     info_log "...waiting for port forward to start (max 30 secs)..."
@@ -386,7 +387,6 @@ function start_port_forward() {
         # No terminating pods found.  We're done
         if [[ -n $pids ]]; then
             debug_log "...found"
-            port_forward_found=true
             break
         fi
 
@@ -409,14 +409,13 @@ function start_port_forward() {
 function main() {
     wait_for_poststart
 
-    verify_debugshim
-    verify_config_secret_exists
-
-
     if [[ "${DEV_PYTHON}" == "true" ]]; then
         stop_old_port_forward
     fi
 
+    verify_debugshim
+    verify_config_secret_exists
+\
     wait_for_debugshim_to_come_online
     update_configuration_for_plugins
 
