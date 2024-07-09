@@ -61,7 +61,8 @@ ALLOWED_APP_TYPES=("none"
                     "platform-deployment-plugin"
                     "vth-plugin"
                     "spacesdk-core"
-                    "spacesdk-client")
+                    "spacesdk-client"
+                    "sdk-service")
 
 ALLOWED_LOG_LEVELS=("ERROR"
                     "WARN"
