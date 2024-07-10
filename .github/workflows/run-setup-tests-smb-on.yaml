@@ -52,7 +52,7 @@ jobs:
         source ./env/spacefx.env
 
         echo "Running  prod_cluster.sh test..."
-        bash ./tests/prod_cluster.sh
+        bash ./tests/prod_cluster_with_smb.sh
 
   test-dev:
     runs-on: ${{ inputs.WORKFLOW_AGENT }}
