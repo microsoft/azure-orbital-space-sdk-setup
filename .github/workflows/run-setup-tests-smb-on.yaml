@@ -1,0 +1,86 @@
+name: setup tests - smb on
+
+on:
+    workflow_call:
+      inputs:
+        WORKFLOW_AGENT:
+          description: 'The agent to run the job on'
+          required: true
+          type: string
+
+        VER_DOCKER_MAX:
+          description: 'Docker version to install'
+          required: false
+          type: string
+          default: "26.1.3"
+      secrets:
+        GIT_HUB_USER_NAME:
+            required: true
+        GIT_HUB_USER_TOKEN:
+            required: true
+        SETUP_REPO_URL:
+            required: true
+
+jobs:
+
+  test-prod:
+    runs-on: ${{ inputs.WORKFLOW_AGENT }}
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Display Ubuntu version
+      run: lsb_release -a
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/switch-smb@main
+      with:
+        REPO_DIR: "${PWD}"
+        VALUE: "true"
+
+    - name: Testing Prod Cluster
+      shell: bash
+      run: |
+
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        echo "Running  prod_cluster.sh test..."
+        bash ./tests/prod_cluster_with_smb.sh
+
+  test-dev:
+    runs-on: ${{ inputs.WORKFLOW_AGENT }}
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Display Ubuntu version
+      run: lsb_release -a
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        env_file: ./env/spacefx.env
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+        VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
+
+    - name: Testing dev cluster
+      shell: bash
+      run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        echo "Running  dev_cluster.sh test..."
+        bash ./tests/dev_cluster.sh
+
+
+
+
+
