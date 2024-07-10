@@ -55,6 +55,7 @@ message RequestHeader {
     string correlationId = 2;
     string appId = 3;
     map<string, string> metadata = 4;
+    string originAppId = 5;
 }
 
 message ResponseHeader {
@@ -64,6 +65,7 @@ message ResponseHeader {
     string message = 4;
     string appId = 5;
     map<string, string> metadata = 6;
+    string originAppId = 7;
 }
 
 message HeartBeatPulse {
