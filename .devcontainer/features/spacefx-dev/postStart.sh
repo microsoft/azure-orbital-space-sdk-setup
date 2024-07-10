@@ -687,7 +687,7 @@ function main() {
         # Python needs the debugshim image updated with the changes from the python installs above
         if [[ "${DEV_PYTHON}" == "true" ]]; then
             info_log "Committing changes to container for debugshim..."
-            run_a_script "docker commit ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
+            run_a_script "docker commit --pause=false ${CONTAINER_NAME:?} ${CONTAINER_IMAGE:?}:latest"
             info_log "...image updated"
         fi
 
