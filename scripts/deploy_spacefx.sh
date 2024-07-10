@@ -200,9 +200,9 @@ function deploy_regctl_to_deployment_service(){
 function deploy_prestaged_yamls(){
     info_log "START: ${FUNCNAME[0]}"
 
-    info_log "Deploying any pre-staged yaml files found in '${SPACEFX_DIR}/yamls/deploy'..."
-    if [[ ! -d "${SPACEFX_DIR}/yamls/deploy" ]]; then
-        info_log "'${SPACEFX_DIR}/yamls/deploy' doesn't exist.  Nothing to do."
+    info_log "Deploying any pre-staged yaml files found in '${SPACEFX_DIR}/yamls'..."
+    if [[ ! -d "${SPACEFX_DIR}/yamls" ]]; then
+        info_log "'${SPACEFX_DIR}/yamls' doesn't exist.  Nothing to do."
         info_log "FINISHED: ${FUNCNAME[0]}"
         return
     fi
@@ -214,7 +214,7 @@ function deploy_prestaged_yamls(){
         else
             error_log "...'${yamlFile}' failed to deploy.  See logs for more information."
         fi
-    done < <(find "${SPACEFX_DIR}/yamls/deploy" -iname "*.yaml")
+    done < <(find "${SPACEFX_DIR}/yamls" -iname "*.yaml")
 
     info_log "All pre-staged yaml files have been deployed."
 
