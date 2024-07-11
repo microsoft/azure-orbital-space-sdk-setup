@@ -26,7 +26,7 @@ DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 APP_NAME=""
 CONTAINER_ID=""
 DEVCONTAINER_JSON=""
-
+PUSH_ENABLED=true
 ############################################################
 # Help                                                     #
 ############################################################
@@ -45,6 +45,7 @@ function show_help() {
    echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable) from within the devcontainer.  Will generate a nuget package in the output directory.  Can be passed multiple times"
    echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build nuget packages"
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
+   echo "--no-push                          [OPTIONAL] Do not push the built container image to the container registry.  Useful to locally build and test a container image without pushing it to the registry."
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -67,6 +68,9 @@ while [[ "$#" -gt 0 ]]; do
                 echo "Annotation configuration file '${ANNOTATION_CONFIG}' not found in '${SPACEFX_DIR}/config/github/annotations'"
                 show_help
             fi
+        ;;
+        --no-push)
+            PUSH_ENABLED=false
         ;;
         --devcontainer-json)
             shift
@@ -400,6 +404,7 @@ function main() {
     write_parameter_to_log BUILDDATE_VALUE
     write_parameter_to_log CONTAINER_BUILD
     write_parameter_to_log ANNOTATION_CONFIG
+    write_parameter_to_log PUSH_ENABLED
 
     if [[ -n "${ANNOTATION_CONFIG}" ]]; then
         run_a_script "cp ${SPACEFX_DIR}/config/github/annotations/${ANNOTATION_CONFIG} ${SPACEFX_DIR}/config/${ANNOTATION_CONFIG}" --disable_log
@@ -479,6 +484,9 @@ function main() {
     if [[ "${CONTAINER_BUILD}" == "true" ]]; then
         info_log "Building container image..."
 
+        local extra_cmds=""
+        [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
+
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
                         --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
                         --image-tag ${APP_VERSION}_base \
@@ -490,7 +498,7 @@ function main() {
                         --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                         --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                         --build-arg ARCHITECTURE=${ARCHITECTURE} \
-                        --app-name ${APP_NAME} ${_annotation_config}"
+                        --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
                 --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app \
@@ -503,7 +511,7 @@ function main() {
                 --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                 --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                 --build-arg ARCHITECTURE=${ARCHITECTURE} \
-                --app-name ${APP_NAME} ${_annotation_config}"
+                --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         info_log "...successfully built container image"
     fi
