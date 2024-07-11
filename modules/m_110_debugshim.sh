@@ -38,7 +38,7 @@ function remove_deployment_by_app_id() {
     for pv in $pvs; do
         parse_json_line --json "${pv}" --property ".pv_name" --result pv_name
         parse_json_line --json "${pv}" --property ".volume_claim_name" --result volume_claim_name
-        parse_json_line --json "${pv}" --property ".volume_namespace" --result volume_claim_namespace
+        parse_json_line --json "${pv}" --property ".volume_claim_namespace" --result volume_claim_namespace
         parse_json_line --json "${pv}" --property ".volume_reclaim_policy" --result volume_reclaim_policy
 
         debug_log "Deleting pvc '${volume_claim_name}' from namespace '${volume_claim_namespace}'..."
