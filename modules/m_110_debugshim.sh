@@ -44,7 +44,7 @@ function remove_deployment_by_app_id() {
         debug_log "Deleting pvc '${volume_claim_name}' from namespace '${volume_claim_namespace}'..."
         run_a_script "kubectl delete persistentvolumeclaim/${volume_claim_name} -n ${volume_claim_namespace} --now=true"
 
-        if [ "${volume_reclaim_policy}" = "Retain" ]; then
+        if [[ "${volume_reclaim_policy}" == "Retain" ]]; then
             run_a_script "kubectl delete persistentvolume/${pv_name} --now=true"
         fi
 
