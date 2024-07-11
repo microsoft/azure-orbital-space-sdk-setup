@@ -34,16 +34,16 @@ function remove_deployment_by_app_id() {
 
     debug_log "Removing volume claims for '${appId}'..."
 
-    run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pvc_name: .metadata.name, pvc_namespace: .metadata.namespace, volume_name: .spec.volumeName, volume_reclaim_policy: .spec.persistentVolumeReClaimPolicy} | @base64'" pvcs
+    run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, pv_namespace: .metadata.namespace, volume_name: .spec.volumeName, volume_reclaim_policy: .spec.persistentVolumeReClaimPolicy} | @base64'" pvs
 
-    for pvc in $pvcs; do
-        parse_json_line --json "${pvc}" --property ".pvc_name" --result pvc_name
-        parse_json_line --json "${pvc}" --property ".volume_name" --result volume_name
-        parse_json_line --json "${pvc}" --property ".pvc_namespace" --result pvc_namespace
-        parse_json_line --json "${pvc}" --property ".volume_reclaim_policy" --result volume_reclaim_policy
+    for pv in $pvs; do
+        parse_json_line --json "${pv}" --property ".pv_name" --result pv_name
+        parse_json_line --json "${pv}" --property ".volume_name" --result volume_name
+        parse_json_line --json "${pv}" --property ".pv_namespace" --result pv_namespace
+        parse_json_line --json "${pv}" --property ".volume_reclaim_policy" --result volume_reclaim_policy
 
-        debug_log "Deleting PVC '${pvc_name}' from namespace '${pvc_namespace}'..."
-        run_a_script "kubectl delete persistentvolumeclaim/${pvc_name} -n ${pvc_namespace} --now=true"
+        debug_log "Deleting pv '${pv_name}' from namespace '${pv_namespace}'..."
+        run_a_script "kubectl delete persistentvolumeclaim/${pv_name} -n ${pv_namespace} --now=true"
 
         if [ "${volume_reclaim_policy}" = "Retain" ]; then
             run_a_script "kubectl delete persistentvolume/${volume_name} --now=true"
