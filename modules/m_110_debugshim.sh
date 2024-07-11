@@ -34,8 +34,6 @@ function remove_deployment_by_app_id() {
 
     debug_log "Removing volume claims for '${appId}'..."
 
-    run_a_script "kubectl get persistentvolumeclaim --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pvc_name: .metadata.name} | @base64'" pvcs
-
     run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, pv_namespace: .metadata.namespace, volume_name: .spec.volumeName, volume_reclaim_policy: .spec.persistentVolumeReClaimPolicy} | @base64'" pvs
 
     for pv in $pvs; do
