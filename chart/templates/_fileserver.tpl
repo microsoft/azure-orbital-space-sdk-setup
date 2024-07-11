@@ -48,7 +48,7 @@ spec:
     storage: {{ $globalValues.xferDirectoryQuota }}
   accessModes:
     - ReadWriteMany
-  persistentVolumeReclaimPolicy: Delete
+  persistentVolumeReclaimPolicy: Retain
 {{- if eq $globalValues.fileserverSMB true }}
   storageClassName: smb
   mountOptions:
