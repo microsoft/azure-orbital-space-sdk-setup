@@ -33,16 +33,21 @@ function remove_deployment_by_app_id() {
     debug_log "...all previous deployments removed for '${appId}'"
 
     debug_log "Removing volume claims for '${appId}'..."
+    run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, volume_claim_name: .spec.claimRef.name, volume_claim_namespace: .spec.claimRef.namespace, volume_reclaim_policy: .spec.persistentVolumeReclaimPolicy}| @base64'" pvs
+   
+    for pv in $pvs; do
+        parse_json_line --json "${pv}" --property ".pv_name" --result pv_name
+        parse_json_line --json "${pv}" --property ".volume_claim_name" --result volume_claim_name
+        parse_json_line --json "${pv}" --property ".volume_namespace" --result volume_claim_namespace
+        parse_json_line --json "${pv}" --property ".volume_reclaim_policy" --result volume_reclaim_policy
 
-    run_a_script "kubectl get persistentvolumeclaim --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pvc_name: .metadata.name, pvc_namespace: .metadata.namespace, volume_name: .spec.volumeName} | @base64'" pvcs
+        debug_log "Deleting pvc '${volume_claim_name}' from namespace '${volume_claim_namespace}'..."
+        run_a_script "kubectl delete persistentvolumeclaim/${volume_claim_name} -n ${volume_claim_namespace} --now=true"
 
-    for pvc in $pvcs; do
-        parse_json_line --json "${pvc}" --property ".pvc_name" --result pvc_name
-        parse_json_line --json "${pvc}" --property ".volume_name" --result volume_name
-        parse_json_line --json "${pvc}" --property ".pvc_namespace" --result pvc_namespace
-        debug_log "Deleting PVC '${pvc_name}' from namespace '${pvc_namespace}'..."
-        run_a_script "kubectl delete persistentvolumeclaim/${pvc_name} -n ${pvc_namespace} --now=true"
-        run_a_script "kubectl delete persistentvolume/${volume_name} --now=true"
+        if [ "${volume_reclaim_policy}" = "Retain" ]; then
+            run_a_script "kubectl delete persistentvolume/${pv_name} --now=true"
+        fi
+
     done
 
     debug_log "...all volume claims for '${appId}' have been removed"
