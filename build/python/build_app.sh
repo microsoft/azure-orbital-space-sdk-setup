@@ -25,6 +25,7 @@ DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 APP_NAME=""
 CONTAINER_ID=""
 DEVCONTAINER_JSON=""
+PUSH_ENABLED=true
 
 ############################################################
 # Help                                                     #
@@ -43,6 +44,7 @@ function show_help() {
    echo "--repo-dir | -r                    [REQUIRED] Local root directory of the repo (will have a subdirectory called '.devcontainer')"
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
    echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build the python app"
+   echo "--no-push                          [OPTIONAL] Do not push the built container image to the container registry.  Useful to locally build and test a container image without pushing it to the registry."
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -62,6 +64,9 @@ while [[ "$#" -gt 0 ]]; do
                 echo "Annotation configuration file '${ANNOTATION_CONFIG}' not found in '${SPACEFX_DIR}/config/github/annotations'"
                 show_help
             fi
+        ;;
+        --no-push)
+            PUSH_ENABLED=false
         ;;
         --no-container-build)
             CONTAINER_BUILD=false
@@ -422,6 +427,10 @@ function main() {
 
     build_app
     copy_to_output_dir --subfolder "dist"
+
+    # if [[ "${PUSH_ENABLED}" == true ]]; then
+    #     info_log "Pushing app will be enabled in a future PR"
+    # fi
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"

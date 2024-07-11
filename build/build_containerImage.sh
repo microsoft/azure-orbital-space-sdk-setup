@@ -31,6 +31,7 @@ ANNOTATION_CONFIG=""
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 SPACEFX_DEV_ENABLED=true
+PUSH_ENABLED=true
 
 ############################################################
 # Help                                                     #
@@ -49,6 +50,7 @@ function show_help() {
    echo "--annotation-config                [OPTIONAL] Filename of the annotation configuration to add to spacefx-config.json.  File must reside within ${SPACEFX_DIR}/config/github/annotations"
    echo "--build-arg | -b                   [OPTIONAL] Individual name/value pairs to pass as build arguments to the docker build command.  Once key-value-pair per build_arg like --build-arg key=value"
    echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
+   echo "--no-push                          [OPTIONAL] Do not push the built container image to the container registry.  Useful to locally build and test a container image without pushing it to the registry."
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
@@ -64,6 +66,9 @@ while [[ "$#" -gt 0 ]]; do
         -h|--help) show_help ;;
         --no-spacefx-dev)
             SPACEFX_DEV_ENABLED=false
+        ;;
+        --no-push)
+            PUSH_ENABLED=false
         ;;
         --devcontainer-json)
             shift
@@ -328,6 +333,7 @@ function main() {
     write_parameter_to_log APP_NAME
     write_parameter_to_log DOCKERFILE
     write_parameter_to_log REPO_DIR
+    write_parameter_to_log PUSH_ENABLED
 
     for i in "${!BUILD_ARGS[@]}"; do
         BUILD_ARG=${BUILD_ARGS[i]}
@@ -397,35 +403,17 @@ function main() {
 
 
     build_prod_image_container
-    push_to_repository --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}"
-    gen_and_push_manifest --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}"
 
-    set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
-                            --annotation "org.spacefx.item_type=containerimage" \
-                            --annotation "org.spacefx.app_name=${APP_NAME}" \
-                            --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
+    if [[ "${PUSH_ENABLED}" == true ]]; then
+        push_to_repository --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}"
+        gen_and_push_manifest --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}"
 
-    add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
-                            --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
-                            --annotation "org.spacefx.item_type=containerimage" \
-                            --annotation "org.spacefx.app_name=${APP_NAME}" \
-                            --annotation "org.spacefx.app_name=${APP_NAME}" \
-                            --annotation "org.spacefx.app_version=${APP_VERSION}" \
-                            --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
-                            --annotation "org.architecture=${ARCHITECTURE}" \
-                            --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
-
-    # Only push if we're using a different app_version that spacefx
-    if [[ "${IMAGE_TAG}" != "${DEST_SPACEFX_TAG}" ]]; then
-        gen_and_push_manifest --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}"
-
-        set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
+        set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
                                 --annotation "org.spacefx.item_type=containerimage" \
                                 --annotation "org.spacefx.app_name=${APP_NAME}" \
                                 --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
 
-
-        add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
+        add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
                                 --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
                                 --annotation "org.spacefx.item_type=containerimage" \
                                 --annotation "org.spacefx.app_name=${APP_NAME}" \
@@ -434,6 +422,27 @@ function main() {
                                 --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
                                 --annotation "org.architecture=${ARCHITECTURE}" \
                                 --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
+
+        # Only push if we're using a different app_version that spacefx
+        if [[ "${IMAGE_TAG}" != "${DEST_SPACEFX_TAG}" ]]; then
+            gen_and_push_manifest --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}"
+
+            set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
+                                    --annotation "org.spacefx.item_type=containerimage" \
+                                    --annotation "org.spacefx.app_name=${APP_NAME}" \
+                                    --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
+
+
+            add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
+                                    --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
+                                    --annotation "org.spacefx.item_type=containerimage" \
+                                    --annotation "org.spacefx.app_name=${APP_NAME}" \
+                                    --annotation "org.spacefx.app_name=${APP_NAME}" \
+                                    --annotation "org.spacefx.app_version=${APP_VERSION}" \
+                                    --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
+                                    --annotation "org.architecture=${ARCHITECTURE}" \
+                                    --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
+        fi
     fi
 
 
