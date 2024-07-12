@@ -148,12 +148,19 @@ function python_copy_spacesdk_wheel(){
 
     # Python SDK doesn't get the wheel because it's the wheel builder
     if [[ "${APP_TYPE}" == "payloadapp" ]]; then
-        info_log "Copying wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'..."
+        info_log "Copying wheel(s) from '${SPACEFX_DIR}/wheel' to '${CONTAINER_WORKING_DIR}/.wheel'..."
 
         create_directory "${CONTAINER_WORKING_DIR}/.wheel"
-        run_a_script "cp ${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl ${CONTAINER_WORKING_DIR}/.wheel"
 
-        info_log "...successfully copied wheel from '${SPACEFX_DIR}/wheel/microsoftazurespacefx/microsoftazurespacefx-*-py3-none-any.whl' to '${CONTAINER_WORKING_DIR}/.wheel'"
+        if [[ -d "${SPACEFX_DIR}/wheel/microsoftazurespacefx" ]]; then
+            # Copy the Microsoft Azure Space SDK wheel(s) to the root .wheel directory
+            run_a_script "rsync -av ${SPACEFX_DIR}/wheel/microsoftazurespacefx/ ${CONTAINER_WORKING_DIR}/.wheel/"
+        fi
+
+        # Copy everything else with their normal path, but skip the Microsoft Azure Space SDK wheel(s) since they're already copied
+        run_a_script "rsync -av --exclude='microsoftazurespacefx' ${SPACEFX_DIR}/wheel/ ${CONTAINER_WORKING_DIR}/.wheel/"
+
+        info_log "...successfully copied wheel(s) from '${SPACEFX_DIR}/wheel' to '${CONTAINER_WORKING_DIR}/.wheel'"
     fi
 
 
