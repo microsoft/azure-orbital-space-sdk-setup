@@ -151,9 +151,10 @@ for i in "${!CUDA_VERSIONS[@]}"; do
 done
 
 #--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
+--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r35.2.1-py3 \
 
 docker build \
---build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r35.2.1-py3 \
+--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
 --build-arg ONNXRUNTIME_REPO=https://github.com/microsoft/onnxruntime \
 --build-arg ONNXRUNTIME_COMMIT=v1.16.3 \
 --build-arg BUILD_CONFIG=Release \
