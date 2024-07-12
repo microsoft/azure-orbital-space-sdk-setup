@@ -11,8 +11,21 @@ ARG CUDA_ARCHITECTURES=70;75;80;86;87
 
 ENV PATH=${PATH}:/workspace/cmake/bin
 
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update \
+    && apt-get install -y python3.10 python3.10-venv python3.10-dev \
+    && apt-get clean
+
+# Create a symbolic link for python3.10
+RUN rm /usr/bin/python && \
+    rm /usr/bin/python3 && \
+    ln -s /usr/bin/python3.10 /usr/bin/python && \
+    ln -s /usr/bin/python3.10 /usr/bin/python3
+
 # set up cmake
-RUN apt-get update \
+RUN apt-get update  \
     && apt-get remove -y cmake \
     && rm -rf /usr/local/bin/cmake \
     && apt-get install -y wget\
