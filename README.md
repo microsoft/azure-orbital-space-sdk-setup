@@ -154,13 +154,14 @@ done
 --build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r35.2.1-py3 \
 
 docker build \
---build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r35.2.1-py3 \
+--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
 --build-arg ONNXRUNTIME_REPO=https://github.com/microsoft/onnxruntime \
---build-arg ONNXRUNTIME_COMMIT=v1.16.3 \
+--build-arg ONNXRUNTIME_COMMIT=v1.18.1 \
 --build-arg BUILD_CONFIG=Release \
 --build-arg CMAKE_VERSION=3.28.1 \
 --build-arg CPU_ARCHITECTURE=aarch64 \
 --build-arg CUDA_ARCHITECTURES='70;72;75;80;86;87' \
+--progress plain \
 -t onnx-builder \
 -f /home/ryan/azure-orbital-space-sdk-setup/build/gpu/jetson/Dockerfile.onnxruntime_gpu . > /home/ryan/azure-orbital-space-sdk-setup/docker-build.log
 
