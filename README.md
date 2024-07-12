@@ -83,6 +83,9 @@ Several container images are used as components within the Azure Orbital Space S
 source /var/spacedev/env/spacefx.env
 SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
 [[ "${SPACEFX_CHANNEL}" != "stable" ]] && SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}-${SPACEFX_CHANNEL}"
+CPU_ARCHITECTURE=$(uname -m)
+[[ "${CPU_ARCHITECTURE}" == "aarch64" ]] && CPU_ARCHITECTURE="arm64"
+[[ "${CPU_ARCHITECTURE}" == "x86_64" ]] && CPU_ARCHITECTURE="amd64"
 
 # SpaceSDK-Base Container image build
 /var/spacedev/build/build_containerImage.sh \
@@ -145,9 +148,27 @@ for i in "${!CUDA_VERSIONS[@]}"; do
         --no-spacefx-dev \
         --app-name spacesdk-jetson-devicequery \
         --annotation-config azure-orbital-space-sdk-core.yaml
-
 done
 
+
+docker build \
+--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
+--build-arg ONNXRUNTIME_REPO=https://github.com/microsoft/onnxruntime \
+--build-arg ONNXRUNTIME_COMMIT=v1.18.1 \
+--build-arg BUILD_CONFIG=Release \
+--build-arg CMAKE_VERSION=3.28.1 \
+--build-arg CPU_ARCHITECTURE=aarch64 \
+--build-arg CUDA_ARCHITECTURES="70;72;75;80;86;87" \
+-t onnx-builder \
+-f /home/ryan/azure-orbital-space-sdk-setup/build/gpu/jetson/Dockerfile.onnxruntime_gpu .
+
+docker run --name=onnx-builder --rm  -v /var/spacedev:/var/spacedev onnx-builder:latest busybox cp /output /var/spacedev/tmp/onnxruntime_gpu -r
+
+/var/spacedev/build/push_build_artifact.sh \
+        --artifact /var/spacedev/wheel/microsoftazurespacefx/onnxruntime_gpu-1.16.3-cp38-cp38-linux_aarch64.whl \
+        --annotation-config azure-orbital-space-sdk-core.yaml \
+        --architecture ${CPU_ARCHITECTURE} \
+        --artifact-version 0.11.0
 
 
 ```
