@@ -447,12 +447,13 @@ function main() {
                         --image-tag ${APP_VERSION}_base \
                         --no-spacefx-dev \
                         --architecture ${ARCHITECTURE} \
-                        --repo-dir ${OUTPUT_DIR}/app \
+                        --repo-dir ${OUTPUT_DIR}/dist \
                         --build-arg APP_NAME=${APP_NAME} \
                         --build-arg APP_VERSION=${APP_VERSION} \
                         --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                         --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                         --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                        --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
                         --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
@@ -460,7 +461,7 @@ function main() {
                 --image-tag ${APP_VERSION}_debug \
                 --no-spacefx-dev \
                 --architecture ${ARCHITECTURE} \
-                --repo-dir ${OUTPUT_DIR}/app \
+                --repo-dir ${OUTPUT_DIR}/dist \
                 --build-arg APP_NAME=${APP_NAME} \
                 --build-arg APP_VERSION=${APP_VERSION} \
                 --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
