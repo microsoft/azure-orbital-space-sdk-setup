@@ -289,6 +289,12 @@ function provision_devcontainer(){
                         --update-remote-user-uid-default on \
                         --mount-workspace-git-root true"
 
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json python3 --version" PYTHON_VERSION
+    PYTHON_VERSION="${PYTHON_VERSION#Python }"
+    PYTHON_VERSION="${PYTHON_VERSION%.*}"
+    info_log "Python version detected as '${PYTHON_VERSION}'"
+
+
     info_log "Devcontainer built"
 
     info_log "END: ${FUNCNAME[0]}"
@@ -330,6 +336,8 @@ function build_app(){
     info_log "...project ${project} successfully built.  Copying output to '${BUILD_OUTPUT_DIR}/dist'"
 
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp -r ${CONTAINER_WORKSPACE_FOLDER}/dist ${BUILD_OUTPUT_DIR}/"
+
+
 
     info_log "...successfully copied to '${BUILD_OUTPUT_DIR}/dist'"
 }
@@ -428,9 +436,43 @@ function main() {
     build_app
     copy_to_output_dir --subfolder "dist"
 
-    # if [[ "${PUSH_ENABLED}" == true ]]; then
-    #     info_log "Pushing app will be enabled in a future PR"
-    # fi
+    if [[ "${CONTAINER_BUILD}" == "true" ]]; then
+        info_log "Building container image..."
+
+        local extra_cmds=""
+        [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
+
+        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
+                        --dockerfile ${SPACEFX_DIR}/build/python/Dockerfile.python-base \
+                        --image-tag ${APP_VERSION}_base \
+                        --no-spacefx-dev \
+                        --architecture ${ARCHITECTURE} \
+                        --repo-dir ${OUTPUT_DIR}/app \
+                        --build-arg APP_NAME=${APP_NAME} \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
+                        --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
+                        --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                        --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
+
+        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
+                --dockerfile ${SPACEFX_DIR}/build/python/Dockerfile.python.app-debug \
+                --image-tag ${APP_VERSION}_debug \
+                --no-spacefx-dev \
+                --architecture ${ARCHITECTURE} \
+                --repo-dir ${OUTPUT_DIR}/app \
+                --build-arg APP_NAME=${APP_NAME} \
+                --build-arg APP_VERSION=${APP_VERSION} \
+                --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
+                --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
+                --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+                --build-arg EXTRA_PKGS=\"${EXTRA_PKGS}\" \
+                --build-arg DEV_CONTAINER_BASE_IMG=\"${DEV_CONTAINER_BASE_IMAGE}\" \
+                --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
+
+        info_log "...successfully built container image"
+    fi
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
