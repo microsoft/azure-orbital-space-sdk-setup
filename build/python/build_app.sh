@@ -443,7 +443,7 @@ function main() {
         [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
-                        --dockerfile ${SPACEFX_DIR}/build/python/Dockerfile.app-base \
+                        --dockerfile ${SPACEFX_DIR}/build/python/Dockerfile.python.app-base \
                         --image-tag ${APP_VERSION}_base \
                         --no-spacefx-dev \
                         --architecture ${ARCHITECTURE} \
