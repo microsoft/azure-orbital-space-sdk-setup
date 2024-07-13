@@ -79,5 +79,18 @@ RUN if [ "${EXTRA_PKGS}" != "null" ]; then \
 
 COPY . .
 
-RUN python3 -m pip install --upgrade pip \
-    && pip install ${WORKDIR}
+# Check to see if there's a virtual environment in the workspace and activate it
+RUN echo '#!/bin/bash\n\
+VENV_PATH=$(find ${WORKDIR}/.git/spacefx-dev/pypoetry/virtualenvs -type f -name pyvenv.cfg)\n\
+if [ -n "$VENV_PATH" ]; then\n\
+    VENV_PATH=$(dirname $VENV_PATH)\n\
+    echo "Virtual environment found at $VENV_PATH. Activating..."\n\
+    source "$VENV_PATH/bin/activate"\n\
+else\n\
+    echo "No virtual environment found in the workspace."\n\
+fi\n\
+python3 -m pip install --upgrade pip\n\
+pip install ${WORKDIR}\n' \
+> ${WORKDIR}/check_activate_venv.sh && chmod +x ${WORKDIR}/check_activate_venv.sh
+
+RUN ${WORKDIR}/check_activate_venv.sh
