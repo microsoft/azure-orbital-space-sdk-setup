@@ -84,7 +84,9 @@ while [[ "$#" -gt 0 ]]; do
         ;;
         -b|--build-arg)
             shift
-            BUILD_ARGS="${BUILD_ARGS} --build-arg ${1}"
+            build_arg_key="${1%%=*}"
+            build_arg_value="${1#*=}"
+            BUILD_ARGS+=" --build-arg ${build_arg_key}=\"${build_arg_value}\""
             ;;
         -n|--app-name)
             shift
@@ -258,10 +260,12 @@ function build_prod_image_container(){
     info_log "Building service container base for '${APP_NAME}'"
     local fullTagCmd=""
 
-    local buildArgs="${BUILD_ARGS} "
-    [[ -n "${DEV_CONTAINER_BASE_IMAGE}" ]] && buildArgs+="--build-arg DEV_CONTAINER_BASE_IMG=\"${DEV_CONTAINER_BASE_IMAGE}\" "
+    local buildArgs=""
+    [[ -n "${BUILD_ARGS}" ]] && buildArgs+=" ${BUILD_ARGS} "
 
-    [[ -n "${EXTRA_PKGS}" ]] && buildArgs+="--build-arg EXTRA_PKGS=\"${EXTRA_PKGS}\" "
+
+    [[ -n "${DEV_CONTAINER_BASE_IMAGE}" ]] && buildArgs+=" --build-arg DEV_CONTAINER_BASE_IMG=\"${DEV_CONTAINER_BASE_IMAGE}\" "
+    [[ -n "${EXTRA_PKGS}" ]] && buildArgs+=" --build-arg EXTRA_PKGS=\"${EXTRA_PKGS}\" "
 
     info_log "...adding tag '${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}'";
     fullTagCmd+=" --tag ${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}"
@@ -275,22 +279,22 @@ function build_prod_image_container(){
     info_log "...adding tag '${DEST_REPO}:${IMAGE_TAG}'";
     fullTagCmd+=" --tag ${DEST_REPO}:${IMAGE_TAG}"
 
-    buildArgs+="--build-arg APP_NAME=\"${APP_NAME}\" "
+    buildArgs+=" --build-arg APP_NAME=\"${APP_NAME}\" "
     labelArgs="--label \"org.app_name=${APP_NAME}\" "
 
-    buildArgs+="--build-arg CONTAINER_REGISTRY=\"${DEST_CONTAINER_REGISTRY}\" "
+    buildArgs+=" --build-arg CONTAINER_REGISTRY=\"${DEST_CONTAINER_REGISTRY}\" "
 
-    buildArgs+="--build-arg APP_VERSION=\"${IMAGE_TAG}\" "
-    labelArgs+="--label \"org.spacefx.app_version=${IMAGE_TAG}\" "
+    buildArgs+=" --build-arg APP_VERSION=\"${IMAGE_TAG}\" "
+    labelArgs+=" --label \"org.spacefx.app_version=${IMAGE_TAG}\" "
 
-    buildArgs+="--build-arg SPACEFX_VERSION=\"${DEST_SPACEFX_TAG}\" "
-    buildArgs+="--build-arg SDK_VERSION=\"${DEST_SPACEFX_TAG}\" "
-    labelArgs+="--label \"org.spacefx.spacefx_version=${DEST_SPACEFX_TAG}\" "
+    buildArgs+=" --build-arg SPACEFX_VERSION=\"${DEST_SPACEFX_TAG}\" "
+    buildArgs+=" --build-arg SDK_VERSION=\"${DEST_SPACEFX_TAG}\" "
+    labelArgs+=" --label \"org.spacefx.spacefx_version=${DEST_SPACEFX_TAG}\" "
 
-    labelArgs+="--label \"org.spacefx.app_builddate=${BUILDDATE_VALUE}\" "
+    labelArgs+=" --label \"org.spacefx.app_builddate=${BUILDDATE_VALUE}\" "
 
-    buildArgs+="--build-arg ARCHITECTURE=\"${ARCHITECTURE}\" "
-    labelArgs+="--label \"org.architecture=${ARCHITECTURE}\" "
+    buildArgs+=" --build-arg ARCHITECTURE=\"${ARCHITECTURE}\" "
+    labelArgs+=" --label \"org.architecture=${ARCHITECTURE}\" "
 
     dockerPath=""
     if [[ $DOCKERFILE = /* ]]; then

@@ -335,7 +335,7 @@ function build_app(){
 
     info_log "...project ${project} successfully built.  Copying full app to output directory '${BUILD_OUTPUT_DIR}'"
 
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp -r ${CONTAINER_WORKSPACE_FOLDER}/* ${BUILD_OUTPUT_DIR}/"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json rsync -av --exclude 'spacedev_cache' --copy-links ${CONTAINER_WORKSPACE_FOLDER}/ ${BUILD_OUTPUT_DIR}/"
 
 
 
