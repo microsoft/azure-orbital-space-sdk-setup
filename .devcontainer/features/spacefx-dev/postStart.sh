@@ -180,12 +180,12 @@ function python_check_dev_app_dependencies(){
         info_log "Poetry not found.  Installing..."
         run_a_script "curl -sSL https://install.python-poetry.org | POETRY_HOME=/root/.local python3 -"
         run_a_script "chmod +x /root/.local/bin/poetry"
-        run_a_script "/root/.local/bin/poetry config virtualenvs.create false"
     fi
 
     info_log "Poetry found...setting config to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry'..."
     create_directory "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry"
     run_a_script "/root/.local/bin/poetry config cache-dir ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry"
+    run_a_script "/root/.local/bin/poetry config virtualenvs.create false"
     info_log "...poetry successfully installed."
 
     info_log "Updating pip cache to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pip'..."
@@ -242,6 +242,20 @@ function python_poetry_install(){
 
     run_a_script "/root/.local/bin/poetry install ${extra_cmd}"
 
+    debug_log "Checking for venv..."
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1" poetry_venv
+    if [[ -n "${poetry_venv}" ]]; then
+        run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1 | head -n 1" poetry_venv
+        if [[ -f "${poetry_venv}/bin/activate" ]]; then
+            debug_log "Activating venv '${poetry_venv}'..."
+            source "${poetry_venv}/bin/activate"
+            debug_log "...successfully activated venv '${poetry_venv}'"
+        else
+            debug_log "No venv found.  Nothing to do."
+        fi
+    else
+        debug_log "No venv found.  Nothing to do."
+    fi
 
     info_log "END: ${FUNCNAME[0]}"
 }
