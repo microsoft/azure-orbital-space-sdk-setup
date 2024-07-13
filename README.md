@@ -150,9 +150,6 @@ for i in "${!CUDA_VERSIONS[@]}"; do
         --annotation-config azure-orbital-space-sdk-core.yaml
 done
 
-#--build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
---build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r35.2.1-py3 \
-
 docker build \
 --build-arg L4T_VERSION=nvcr.io/nvidia/l4t-ml:r36.2.0-py3 \
 --build-arg ONNXRUNTIME_REPO=https://github.com/microsoft/onnxruntime \
@@ -163,14 +160,17 @@ docker build \
 --build-arg CUDA_ARCHITECTURES='70;72;75;80;86;87' \
 --progress plain \
 -t onnx-builder \
--f /home/ryan/azure-orbital-space-sdk-setup/build/gpu/jetson/Dockerfile.onnxruntime_gpu . > /home/ryan/azure-orbital-space-sdk-setup/docker-build.log
+-f ${PWD}/build/gpu/jetson/Dockerfile.onnxruntime_gpu ${PWD}
 
-docker run --name=onnx-builder --rm  -v /var/spacedev:/var/spacedev onnx-builder:latest busybox cp /output /var/spacedev/tmp/onnxruntime_gpu -r
+mkdir -p /var/spacedev/wheel/microsoftazurespacefx
+docker run --name=onnx-builder --rm  -v /var/spacedev:/var/spacedev onnx-builder:latest busybox cp /output /var/spacedev/wheel/microsoftazurespacefx -r
+
+mv /var/spacedev/wheel/microsoftazurespacefx/output/* /var/spacedev/wheel/microsoftazurespacefx
 
 /var/spacedev/build/push_build_artifact.sh \
-        --artifact /var/spacedev/wheel/microsoftazurespacefx/onnxruntime_gpu-1.16.3-cp38-cp38-linux_aarch64.whl \
+        --artifact /var/spacedev/wheel/microsoftazurespacefx/onnxruntime_gpu-1.18.1-cp310-cp310-linux_aarch64.whl \
         --annotation-config azure-orbital-space-sdk-core.yaml \
-        --architecture ${CPU_ARCHITECTURE} \
+        --architecture ${CPU_ARCHITECTURE:?} \
         --artifact-version 0.11.0
 
 
