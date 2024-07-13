@@ -4,7 +4,7 @@ grpcio = "^1.26.0"
 protobuf = "^3.20.1"
 
 [tool.poetry.dependencies.microsoftazurespacefx]
-path = ".wheel/microsoftazurespacefx-$SPACEFX_VERSION-py3-none-any.whl"
+path = ".wheel/microsoftazurespacefx-0.11.0-py3-none-any.whl"
 develop = false
 
 [tool.poetry.group.spacefx-dev.dependencies]
