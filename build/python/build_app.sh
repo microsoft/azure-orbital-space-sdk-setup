@@ -335,37 +335,14 @@ function build_app(){
 
     info_log "...project ${project} successfully built.  Copying full app to output directory '${BUILD_OUTPUT_DIR}'"
 
+    # This gets the results to a local spot for the host to be able to pick up
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json rsync -av --exclude 'spacedev_cache' --copy-links ${CONTAINER_WORKSPACE_FOLDER}/ ${BUILD_OUTPUT_DIR}/"
 
-
+    info_log "...copying full app to '${OUTPUT_DIR}'"
+    # This is run on the host to get the results from the datestamp directory to the final output directory
+    run_a_script "rsync -av --exclude 'spacedev_cache' --copy-links ${BUILD_OUTPUT_DIR}/ ${OUTPUT_DIR}/"
 
     info_log "...successfully copied to '${BUILD_OUTPUT_DIR}/dist'"
-}
-
-############################################################
-# Copy generated nugets to output directory
-############################################################
-function copy_to_output_dir(){
-    info_log "START: ${FUNCNAME[0]}"
-
-    local subfolder=""
-
-    while [[ "$#" -gt 0 ]]; do
-        case $1 in
-            --subfolder)
-                shift
-                subfolder=$1
-                ;;
-        esac
-        shift
-    done
-
-    info_log "Copying contents of build output dir '${BUILD_OUTPUT_DIR}' to requested output directory '${OUTPUT_DIR}'..."
-    run_a_script "mkdir -p ${OUTPUT_DIR}"
-    run_a_script "cp -r ${BUILD_OUTPUT_DIR}/${subfolder} ${OUTPUT_DIR}/${subfolder}"
-    info_log "...successfully copied '${BUILD_OUTPUT_DIR}' to '${OUTPUT_DIR}'. "
-
-    info_log "END: ${FUNCNAME[0]}"
 }
 
 function main() {
@@ -434,7 +411,6 @@ function main() {
     gather_devcontainer_values
 
     build_app
-    copy_to_output_dir --subfolder "dist"
 
     if [[ "${CONTAINER_BUILD}" == "true" ]]; then
         info_log "Building container image..."
