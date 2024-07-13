@@ -239,6 +239,11 @@ function download_artifact() {
 
 
     run_a_script "regctl artifact get ${artifact_full_image_name}:${artifact_tag} --output ${SPACEFX_DIR}/${artifact_directory} --filter-artifact-type application/vnd.spacefx.${ARCHITECTURE}.buildartifact"
+
+    # There's a bug in regctl due to path lengths in the URL that'll cause regctl to download the file as the hash.  This checks and fixes that
+    if [[ -f "${SPACEFX_DIR}/${artifact_directory}/${artifact_hash}" ]]; then
+        run_a_script "mv ${SPACEFX_DIR}/${artifact_directory}/${artifact_hash} ${SPACEFX_DIR}/${artifact_directory}/${fileName}"
+    fi
     info_log "...successfully downloaded '${artifact_full_image_name}:${artifact_tag}' to '${SPACEFX_DIR}/${artifact_directory}/${fileName}'."
 
 }
