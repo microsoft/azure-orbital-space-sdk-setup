@@ -242,20 +242,7 @@ function python_poetry_install(){
 
     run_a_script "/root/.local/bin/poetry install ${extra_cmd}"
 
-    debug_log "Checking for venv..."
-    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1" poetry_venv
-    if [[ -n "${poetry_venv}" ]]; then
-        run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1 | head -n 1" poetry_venv
-        if [[ -f "${poetry_venv}/bin/activate" ]]; then
-            debug_log "Activating venv '${poetry_venv}'..."
-            source "${poetry_venv}/bin/activate"
-            debug_log "...successfully activated venv '${poetry_venv}'"
-        else
-            debug_log "No venv found.  Nothing to do."
-        fi
-    else
-        debug_log "No venv found.  Nothing to do."
-    fi
+    check_and_activate_venv
 
     info_log "END: ${FUNCNAME[0]}"
 }

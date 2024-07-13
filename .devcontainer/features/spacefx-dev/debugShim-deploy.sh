@@ -314,6 +314,10 @@ function recompile_python_protos() {
     info_log "Compiling protos from '${CONTAINER_WORKING_DIR}/.protos'..."
     run_a_script "find ${CONTAINER_WORKING_DIR}/.protos -iname '*.proto' -type f" protos_found
 
+    debug_log "Checking for venv..."
+
+
+
     for proto in $protos_found; do
         info_log "Compiling proto '${proto}' to '${CONTAINER_WORKING_DIR}'..."
         run_a_script "python -m grpc_tools.protoc ${proto} -I=${CONTAINER_WORKING_DIR}/.protos --python_out=${CONTAINER_WORKING_DIR}/.protos --grpc_python_out=${CONTAINER_WORKING_DIR}/.protos" --disable_log

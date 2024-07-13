@@ -34,7 +34,7 @@ function remove_deployment_by_app_id() {
 
     debug_log "Removing volume claims for '${appId}'..."
     run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, volume_claim_name: .spec.claimRef.name, volume_claim_namespace: .spec.claimRef.namespace, volume_reclaim_policy: .spec.persistentVolumeReclaimPolicy}| @base64'" pvs
-   
+
     for pv in $pvs; do
         parse_json_line --json "${pv}" --property ".pv_name" --result pv_name
         parse_json_line --json "${pv}" --property ".volume_claim_name" --result volume_claim_name
@@ -300,4 +300,28 @@ function python_compile_protos() {
     done
 
     info_log "...successfully added __init__.py to directories."
+}
+
+############################################################
+# Scan to see if poetry created a virtual environment and if so, activate it
+############################################################
+function check_and_activate_venv(){
+
+    if [[ "${DEV_LANGUAGE}" != "python" ]]; then
+        return
+    fi
+
+    run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1" poetry_venv
+    if [[ -n "${poetry_venv}" ]]; then
+        run_a_script "find ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/pypoetry/virtualenvs -maxdepth 1 -mindepth 1 | head -n 1" poetry_venv
+        if [[ -f "${poetry_venv}/bin/activate" ]]; then
+            debug_log "Activating venv '${poetry_venv}'..."
+            source "${poetry_venv}/bin/activate"
+            debug_log "...successfully activated venv '${poetry_venv}'"
+        else
+            debug_log "No venv found.  Nothing to do."
+        fi
+    else
+        debug_log "No venv found.  Nothing to do."
+    fi
 }
