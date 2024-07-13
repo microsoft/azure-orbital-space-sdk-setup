@@ -333,9 +333,9 @@ function build_app(){
 
     run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json /root/.local/bin/poetry build"
 
-    info_log "...project ${project} successfully built.  Copying output to '${BUILD_OUTPUT_DIR}/dist'"
+    info_log "...project ${project} successfully built.  Copying full app to output directory '${BUILD_OUTPUT_DIR}'"
 
-    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp -r ${CONTAINER_WORKSPACE_FOLDER}/dist ${BUILD_OUTPUT_DIR}/"
+    run_a_script "devcontainer exec --workspace-folder ${REPO_DIR} --config ${SPACEFX_DIR}/tmp/${APP_NAME}/devcontainer.json cp -r ${CONTAINER_WORKSPACE_FOLDER}/* ${BUILD_OUTPUT_DIR}/"
 
 
 
@@ -461,13 +461,14 @@ function main() {
                         --image-tag ${APP_VERSION}_debug \
                         --no-spacefx-dev \
                         --architecture ${ARCHITECTURE} \
-                        --repo-dir ${OUTPUT_DIR}/dist \
+                        --repo-dir ${OUTPUT_DIR} \
                         --build-arg APP_NAME=${APP_NAME} \
                         --build-arg APP_VERSION=${APP_VERSION} \
                         --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                         --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                         --build-arg ARCHITECTURE=${ARCHITECTURE} \
                         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
+                        --build-arg WORKDIR=${CONTAINER_WORKSPACE_FOLDER} \
                         --build-arg EXTRA_PKGS='${EXTRA_PKGS}' \
                         --build-arg DEV_CONTAINER_BASE_IMG=\"${DEV_CONTAINER_BASE_IMAGE}\" \
                         --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
