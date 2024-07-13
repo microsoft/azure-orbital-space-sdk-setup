@@ -469,7 +469,7 @@ function main() {
                         --build-arg ARCHITECTURE=${ARCHITECTURE} \
                         --build-arg PYTHON_VERSION=${PYTHON_VERSION} \
                         --build-arg EXTRA_PKGS='${EXTRA_PKGS}' \
-                        --build-arg DEV_CONTAINER_BASE_IMG='${DEV_CONTAINER_BASE_IMAGE}' \
+                        --build-arg DEV_CONTAINER_BASE_IMG=\"${DEV_CONTAINER_BASE_IMAGE}\" \
                         --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         info_log "...successfully built container image"
