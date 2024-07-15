@@ -58,7 +58,6 @@ ENV WORKDIR=${WORKDIR}
 
 WORKDIR ${WORKDIR}
 
-
 # Add the dependencies needed to install dotnet
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -94,3 +93,4 @@ pip install ${WORKDIR}\n' \
 > ${WORKDIR}/check_activate_venv.sh && chmod +x ${WORKDIR}/check_activate_venv.sh
 
 RUN ${WORKDIR}/check_activate_venv.sh
+
