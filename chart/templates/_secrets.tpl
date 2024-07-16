@@ -16,6 +16,7 @@ metadata:
     microsoft.azureorbital/isDebugShim: {{ $serviceValues.debugShim | quote }}
     type: "Secret"
 data:
+  spacefx_version: {{ $globalValues.spacefxVersion | b64enc }}
   spacefx_cache: {{ $globalValues.spacefxDirectories.base | b64enc }}
   spacefx_dir_plugins: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.plugins $serviceValues.appName | b64enc }}
   spacefx_dir_xfer: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.xfer $serviceValues.appName | b64enc }}
