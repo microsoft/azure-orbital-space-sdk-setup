@@ -69,6 +69,7 @@ data:
   buildservicetag: {{ $buildServiceValues.tag | b64enc }}
   containerregistry: {{ $globalValues.containerRegistry | b64enc }}
   containerregistryinternal: {{ $globalValues.containerRegistryInternal | b64enc }}
+  fileserverenabled: {{ $globalValues.fileserverSMB | b64enc }}
   daprannotations: {{ $daprannotationsOutput | b64enc }}
   fileserverappcredname: {{ printf "fileserver-%s" $templatePayloadAppValues.appName | b64enc }}
   fileservercredname: {{ printf "%s-fileserver-config" $fileServerValues.serviceNamespace | b64enc }}

@@ -351,9 +351,28 @@ services:
       enabled: false
       workingDir: /workspaces/hostsvc-position
   payloadapp:
+    payloadappTemplate:
+      annotations:
+        enabled: false
+        daprEnabled: false
+      resources:
+        enabled: false
+        memory:
+          limit: 8G
+          request: 16M
+        cpu:
+          limit: 8000m
+          request: 15m
+      appName: payloadappTemplate
+      serviceNamespace: payload-app
+      repository: payloadappTemplate
+      enabled: false
+      workingDir: /workspace/payloadappTemplate
     payloadapp:
+      annotations:
+        enabled: false
       appName: payloadapp
       serviceNamespace: payload-app
       repository: payloadapp
       enabled: false
-      workingDir: /workspaces/payloadapp
+      workingDir: /workspace/payloadapp

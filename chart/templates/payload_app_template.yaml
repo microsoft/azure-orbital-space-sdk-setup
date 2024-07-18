@@ -1,0 +1,11 @@
+{{- if .Values.services.payloadapp.payloadappTemplate.enabled }}
+{{- $serviceValues := .Values.services.payloadapp.payloadappTemplate }}
+{{- $globalValues := .Values.global }}
+{{- $allServices := .Values.services }}
+{{- if $serviceValues.annotations.enabled }}
+{{- include "spacefx.payloadappTemplate.annotations" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- if $serviceValues.resources.enabled }}
+{{- include "spacefx.resourceLimits" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- end }}
