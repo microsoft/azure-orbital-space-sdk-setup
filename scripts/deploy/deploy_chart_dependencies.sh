@@ -182,12 +182,16 @@ function deploy_dapr_plugin(){
         info_log "...successfully created namespace '${dapr_namespace}'."
     fi
 
+    info_log "Retrieving container registry name..."
+    run_a_script "yq '.global.containerRegistry' ${SPACEFX_DIR}/chart/values.yaml" _registry_url
+    info_log "...container registry name: '${_registry_url}'"
 
     run_a_script "helm --kubeconfig ${KUBECONFIG} install dapr \
             ${SPACEFX_DIR}/chart/charts/dapr-${dapr_version}.tgz \
             --wait --wait-for-jobs \
             --namespace=${dapr_namespace} \
             --wait --timeout 1h --set global.ha.enabled=false \
+            --set global.registry=${_registry_url}/dapr \
             --set global.logAsJson=true \
             --set dapr_placement.logLevel=debug \
             --set dapr_sidecar_injector.sidecarImagePullPolicy=IfNotPresent \

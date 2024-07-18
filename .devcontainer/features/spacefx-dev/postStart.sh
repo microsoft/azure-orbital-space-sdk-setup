@@ -433,7 +433,7 @@ function generate_debugshims(){
         if [[ ! -f "${DEBUG_SHIM_PRE_YAML_FILE}" ]]; then
             exit_with_error "Unable to find DEBUG_SHIM_PRE_YAML_FILE '${DEBUG_SHIM_PRE_YAML_FILE}'.  Check path and try again"
         fi
-        run_a_script "kubectl apply -f ${DEBUG_SHIM_PRE_YAML_FILE}"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${DEBUG_SHIM_PRE_YAML_FILE}"
     fi
 
     for i in "${!DEBUG_SHIMS[@]}"; do
@@ -459,12 +459,30 @@ function generate_debugshims(){
         if [[ ! -f "${DEBUG_SHIM_POST_YAML_FILE}" ]]; then
             exit_with_error "Unable to find DEBUG_SHIM_POST_YAML_FILE '${DEBUG_SHIM_POST_YAML_FILE}'.  Check path and try again"
         fi
-        run_a_script "kubectl apply -f ${DEBUG_SHIM_POST_YAML_FILE}"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${DEBUG_SHIM_POST_YAML_FILE}"
     fi
 
     info_log "END: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Copy the k3s config file to a spot the debugshim can access it
+############################################################
+function copy_k3s_config(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ! -f "/devfeature/k3s-on-host/k3s.devcontainer.yaml" ]]; then
+        info_log "No k3s config found.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Copying '/devfeature/k3s-on-host/k3s.devcontainer.yaml' to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/k3s.devcontainer.yaml'..."
+    run_a_script "cp /devfeature/k3s-on-host/k3s.devcontainer.yaml ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/k3s.devcontainer.yaml"
+    info_log "...successfully copied '/devfeature/k3s-on-host/k3s.devcontainer.yaml' to '${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/k3s.devcontainer.yaml'"
+
+    info_log "END: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Generate a debum shim
@@ -517,7 +535,7 @@ SPACEFX_UPDATE_END" --disable_log
     fi
 
 
-    run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${debug_shim}.yaml"
 
 
     info_log "Generating xfer directories..."
@@ -541,13 +559,13 @@ function check_service_account(){
     local appName=$1
 
     debug_log "Validating service account '${appName}' exists in payload-app..."
-    run_a_script "kubectl get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get serviceaccount -A -o json | jq '.items[] | select(.metadata.name == \"${appName}\" and .metadata.namespace == \"payload-app\") | true'" service_account --disable_log
 
     debug_log "Service_account: ${service_account}"
 
     if [[ -z "${service_account}" ]]; then
         debug_log "...not found.  Creating service account '${appName}' in payload-app..."
-        run_a_script "kubectl create serviceaccount ${appName} -n payload-app" --disable_log
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} create serviceaccount ${appName} -n payload-app" --disable_log
         debug_log "...successfully creatied service account '${appName}'."
     else
         debug_log "...found service account '${appName}' in payload-app"
@@ -568,7 +586,7 @@ function check_fileserver_creds(){
 
     info_log "Validating FileServer credentials for '${appName}'..."
 
-    run_a_script "kubectl get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"payload-app\")) | true'" has_creds --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"payload-app\")) | true'" has_creds --disable_log
 
     if [[ "${has_creds}" == "true" ]]; then
         info_log "Found previous credentials.  Nothing to do."
@@ -578,13 +596,13 @@ function check_fileserver_creds(){
 
     info_log "No previous credentials found.  Generating..."
 
-    run_a_script "kubectl get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"hostsvc\" or .metadata.namespace == \"platformsvc\")) | @base64'" service_creds --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secrets -A -o json | jq -r '.items[] | select(.metadata.name == \"fileserver-${appName}\" and (.metadata.namespace == \"hostsvc\" or .metadata.namespace == \"platformsvc\")) | @base64'" service_creds --disable_log
 
     if [[ -n "${service_creds}" ]]; then
         parse_json_line --json "${service_creds}" --property ".metadata.namespace" --result creds_namespace
         info_log "...previous service credentials found for '${appName}' in namespace '${creds_namespace}'.  Copying to 'payload-app'..."
-        run_a_script "kubectl get secret/fileserver-${appName} -n ${creds_namespace} -o yaml | yq 'del(.metadata.annotations) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.uid) | .metadata.namespace = \"payload-app\"'" creds_yaml --disable_log
-        run_a_script "kubectl apply -f - <<SPACEFX_UPDATE_END
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/fileserver-${appName} -n ${creds_namespace} -o yaml | yq 'del(.metadata.annotations) | del(.metadata.creationTimestamp) | del(.metadata.resourceVersion) | del(.metadata.uid) | .metadata.namespace = \"payload-app\"'" creds_yaml --disable_log
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
 ${creds_yaml}
 SPACEFX_UPDATE_END" --disable_log
 
@@ -614,9 +632,9 @@ function add_fileserver_creds(){
     run_a_script "head /dev/urandom | tr -dc \"${CHARSET}\" | head -c 16 | base64" generated_password  --disable_log
     run_a_script "base64 <<< ${appName}" generated_username --disable_log
 
-    run_a_script "kubectl get secret/coresvc-fileserver-config -n coresvc -o json | jq '.data +={\"user-${appName}\": \"${generated_password}\"}'  | kubectl apply -f -" --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/coresvc-fileserver-config -n coresvc -o json | jq '.data +={\"user-${appName}\": \"${generated_password}\"}'  | kubectl --kubeconfig ${KUBECONFIG} apply -f -" --disable_log
 
-    run_a_script "kubectl apply -f - <<SPACEFX_UPDATE_END
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
 apiVersion: v1
 kind: Secret
 metadata:
@@ -635,7 +653,38 @@ SPACEFX_UPDATE_END" --disable_log
     info_log "END: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Run any user requested yamls
+############################################################
+function run_user_requested_yamls(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ${#RUN_YAMLS[@]} -eq 0 ]]; then
+        info_log "...no yamls specified in devcontainer.json.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    for run_yaml in "${RUN_YAMLS[@]}"; do
+        if [[ -z "${container}" ]]; then
+            continue
+        fi
+
+        info_log "Running user requested yaml '${run_yaml}'..."
+        if [[ ! -f "${run_yaml}" ]]; then
+            exit_with_error "Unable to find yaml '${run_yaml}'.  Please check your path and rebuild devcontainer.  Path must be from devcontainer's perspective"
+        fi
+
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${run_yaml}"
+
+        info_log "...succesfully ran user requested yaml '${run_yaml}'."
+    done
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
 function main() {
+    write_parameter_to_log KUBECONFIG
     check_and_install_dotnet
     check_and_install_vsdebugger
 
@@ -680,10 +729,7 @@ function main() {
     fi
 
 
-
-
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
-
         # Python needs the debugshim image updated with the changes from the python installs above
         if [[ "${DEV_PYTHON}" == "true" ]]; then
             info_log "Committing changes to container for debugshim..."
@@ -693,9 +739,13 @@ function main() {
 
         [[ ! -d "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" ]] && run_a_script "mkdir -p ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev" --disable_log
         [[ ! -f "${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" ]] && run_a_script "cp /spacefx-dev/debugShim_keepAlive.sh ${CONTAINER_WORKING_DIR:?}/.git/spacefx-dev/debugShim_keepAlive.sh" --disable_log
+
+        # Copy the k3s config file to a spot the debugshim can access it
+        copy_k3s_config
+
         generate_debugshims
         export_parent_service_binaries
-        # run_user_requested_yamls
+        run_user_requested_yamls
     fi
 
     info_log "------------------------------------------"

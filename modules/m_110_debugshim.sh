@@ -21,20 +21,20 @@ function remove_deployment_by_app_id() {
 
     debug_log "Removing previous deployments for '${appId}'..."
 
-    run_a_script "kubectl get deployments -A -o json | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {deployment: .metadata.name, namespace: .metadata.namespace} | @base64'" deployments
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o json | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {deployment: .metadata.name, namespace: .metadata.namespace} | @base64'" deployments
 
     for deployment in $deployments; do
         parse_json_line --json "${deployment}" --property ".deployment" --result deployment_name
         parse_json_line --json "${deployment}" --property ".namespace" --result deployment_namespace
         debug_log "Stopping deployment '${deployment_name}' in namespace '${deployment_namespace}'..."
-        run_a_script "kubectl delete deployment/${deployment_name} -n ${deployment_namespace} --now=true"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete deployment/${deployment_name} -n ${deployment_namespace} --now=true"
     done
 
     debug_log "...all previous deployments removed for '${appId}'"
 
     debug_log "Removing volume claims for '${appId}'..."
-    run_a_script "kubectl get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, volume_claim_name: .spec.claimRef.name, volume_claim_namespace: .spec.claimRef.namespace, volume_reclaim_policy: .spec.persistentVolumeReclaimPolicy}| @base64'" pvs
-   
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get persistentvolume --output json -A | jq -r '.items[] | select(.metadata.labels.\"microsoft.azureorbital/appName\" == \"${appId}\") | {pv_name: .metadata.name, volume_claim_name: .spec.claimRef.name, volume_claim_namespace: .spec.claimRef.namespace, volume_reclaim_policy: .spec.persistentVolumeReclaimPolicy}| @base64'" pvs
+
     for pv in $pvs; do
         parse_json_line --json "${pv}" --property ".pv_name" --result pv_name
         parse_json_line --json "${pv}" --property ".volume_claim_name" --result volume_claim_name
@@ -42,10 +42,10 @@ function remove_deployment_by_app_id() {
         parse_json_line --json "${pv}" --property ".volume_reclaim_policy" --result volume_reclaim_policy
 
         debug_log "Deleting pvc '${volume_claim_name}' from namespace '${volume_claim_namespace}'..."
-        run_a_script "kubectl delete persistentvolumeclaim/${volume_claim_name} -n ${volume_claim_namespace} --now=true"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete persistentvolumeclaim/${volume_claim_name} -n ${volume_claim_namespace} --now=true"
 
         if [[ "${volume_reclaim_policy}" == "Retain" ]]; then
-            run_a_script "kubectl delete persistentvolume/${pv_name} --now=true"
+            run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete persistentvolume/${pv_name} --now=true"
         fi
 
     done
@@ -81,14 +81,14 @@ function wait_for_deployment_deletion_by_app_id() {
     start_time=$(date +%s)
 
     # This returns any pods that are running
-    run_a_script "kubectl get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods --field-selector=status.phase=Running -A" k3s_deployments --ignore_error
 
     # This loops and waits for at least 1 pod to flip the running
     while [[ ${pods_cleaned} == false ]]; do
 
         # Letting the pods be terminating status is sufficent for this step
-        run_a_script "kubectl get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
-        run_a_script "kubectl get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A --output json -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length '" num_of_deployments
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get persistentvolumeclaim --output json -A -l \"microsoft.azureorbital/appName\"=\"${appId}\" | jq -r '.items | length'" num_of_volumes
 
         current_time=$(date +%s)
         elapsed_time=$((current_time - start_time))

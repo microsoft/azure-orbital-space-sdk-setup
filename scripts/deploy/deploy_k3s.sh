@@ -55,7 +55,7 @@ function deploy_k3s_cluster(){
     if [[ ! -f "/etc/rancher/k3s/registries.yaml" ]]; then
         info_log "Generating /etc/rancher/k3s/registries.yaml..."
         create_directory "/etc/rancher/k3s"
-        run_a_script "helm template ${SPACEFX_DIR}/chart --set global.registryRedirect.enabled=true" registries_yaml
+        run_a_script "helm --kubeconfig ${KUBECONFIG} template ${SPACEFX_DIR}/chart --set global.registryRedirect.enabled=true" registries_yaml
         run_a_script "tee /etc/rancher/k3s/registries.yaml > /dev/null << SPACEFX_UPDATE_END
 ${registries_yaml}
 SPACEFX_UPDATE_END"

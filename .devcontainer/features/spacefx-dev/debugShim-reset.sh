@@ -88,35 +88,35 @@ function reset_debugshim() {
     info_log "START: ${FUNCNAME[0]}"
 
     info_log "Determining previous debug shim name..."
-    run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" PREVIOUS_DEBUG_SHIM_POD --ignore_error
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" PREVIOUS_DEBUG_SHIM_POD --ignore_error
     info_log "Calculated as '${PREVIOUS_DEBUG_SHIM_POD}'"
 
     info_log "Resetting spacefx_dir_plugins"
     pluginPath_encoded=$(echo -n "${SPACEFX_DIR}/plugins/${DEBUG_SHIM}" | base64)
-    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl apply -f -"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl --kubeconfig ${KUBECONFIG} apply -f -"
 
     info_log "Deleting '${PREVIOUS_DEBUG_SHIM_POD}'..."
-    run_a_script "kubectl delete pod/${PREVIOUS_DEBUG_SHIM_POD} -n payload-app --wait=false"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete pod/${PREVIOUS_DEBUG_SHIM_POD} -n payload-app --wait=false"
 
     # if [[ ! -f "${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml" ]]; then
     #     exit_with_error "'${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml' NOT FOUND...unable to provision debug shim.  Please rebuild your devcontainer"
     # fi
 
     # info_log "Removing previous secret '${DEBUG_SHIM}-secret'..."
-    # run_a_script "kubectl delete secret/${DEBUG_SHIM}-secret -n payload-app" --ignore_error
+    # run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete secret/${DEBUG_SHIM}-secret -n payload-app" --ignore_error
     # info_log "...successfully removed previous secret '${DEBUG_SHIM}-secret'"
 
     # if [[ -n "${PREVIOUS_DEBUG_SHIM_POD}" ]]; then
     #     info_log "Removing previous deployment of '${DEBUG_SHIM}'..."
-    #     run_a_script "kubectl delete deployment/${DEBUG_SHIM} -n payload-app"
+    #     run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete deployment/${DEBUG_SHIM} -n payload-app"
     #     info_log "...successfully removed previous deployment of '${DEBUG_SHIM}'."
     # else
     #     info_log "Previous debug shim not found.  Nothing to remove"
     # fi
 
     # info_log "Deploying '${DEBUG_SHIM}'..."
-    # run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml --selector=app=${DEBUG_SHIM},type=Deployment"
-    # run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml --selector=app=${DEBUG_SHIM},type=Secret"
+    # run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml --selector=app=${DEBUG_SHIM},type=Deployment"
+    # run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml --selector=app=${DEBUG_SHIM},type=Secret"
     # info_log "...successfully deployed '${DEBUG_SHIM}'."
 
     info_log "END: ${FUNCNAME[0]}"
@@ -136,10 +136,10 @@ function wait_for_debugshim_to_come_online() {
 
     info_log "...waiting for new new debugshim pod to start provisioning..."
 
-    run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
     while [[ "${DEBUG_SHIM_POD}" == "${PREVIOUS_DEBUG_SHIM_POD}" ]]; do
 
-        run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
 
         if [[ "${DEBUG_SHIM_POD}" == "${PREVIOUS_DEBUG_SHIM_POD}" ]]; then
             # Only output on even seconds so we don't flood the terminal with messages
@@ -159,7 +159,7 @@ function wait_for_debugshim_to_come_online() {
     # This loops and waits for the debugshim_pod_ready to flip to true
     while [[ ${debugshim_pod_ready} == false ]]; do
 
-        run_a_script "kubectl exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'echo Container Ready'" echo_check --ignore_error
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'echo Container Ready'" echo_check --ignore_error
 
         if [[ "${echo_check}" == "Container Ready" ]]; then
             debugshim_pod_ready=true

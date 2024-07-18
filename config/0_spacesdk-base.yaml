@@ -8,11 +8,11 @@ config:
       version: 1.9.6
       namespace: dapr-system
       containers:
-        - registry: docker.io
-          repository: daprio/dapr
+        - registry: ghcr.io
+          repository: dapr/dapr
           tag: 1.9.6
-        - registry: docker.io
-          repository: daprio/daprd
+        - registry: ghcr.io
+          repository: dapr/daprd
           tag: 1.9.6
     - group: smb
       enabled: false
