@@ -93,8 +93,8 @@ spec:
               value: "false"
           {{- include "spacefx.resourceLimits" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 10  }}
           volumeMounts:
-{{- $secretsMount := printf "- %s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
-{{ $secretsMount | indent 12 }}
+{{- $secretsMount := printf "%s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $secretsMount | nindent 12 }}
 {{- range $volumeKey, $volumeName := $globalValues.xferVolumes }}
 {{- include "spacefx.fileserver.clientapp.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | indent 12 }}
 {{- end }}
@@ -114,9 +114,10 @@ spec:
 {{- end }}
 {{- end }}
       volumes:
+{{- $secretsVolume := printf "%s" (include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $secretsVolume | nindent 8 }}
 {{- include "spacefx.secrets.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 8 }}
-{{- $secretsMount := printf "- %s" (include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
-{{ $secretsMount | indent 8 }}
+{{- $secretsMount := (include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) | trim }}
 {{- range $volumeKey, $volumeName := $globalValues.xferVolumes }}
 {{- include "spacefx.fileserver.clientapp.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | indent 8 }}
 {{- end }}
