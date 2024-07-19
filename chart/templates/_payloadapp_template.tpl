@@ -27,7 +27,7 @@ microsoft.azureorbital/correlation-id: {{ default "" $serviceValues.correlationI
 {{- define "spacefx.payloadappTemplate.environmentVariables" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-{{- $platformDeployment := .platformDeployment }}
+{{- $platformDeployment := .platformDeploymentValues }}
 SPACEFX_APP: {{ default "" $serviceValues.appName | quote }}
 SPACEFX_APP_GROUP: {{ default "" $serviceValues.appGroup | quote }}
 SPACEFX_SCHEDULE_RECURRING: {{ default "" $serviceValues.schedule.recurringSchedule | quote }}

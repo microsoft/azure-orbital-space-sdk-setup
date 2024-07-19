@@ -215,13 +215,13 @@ services:
       payloadAppInjections:
         environmentVariables:
           - name: "SPACEFX_PLATFORM_DEPLOYMENT"
-            value: true
+            value: "true"
           - name: "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
-            value: 1
+            value: "1"
           - name: "DOTNET_USE_POLLING_FILE_WATCHER"
-            value: true
+            value: "true"
           - name: "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE"
-            value: false
+            value: "false"
       serviceNamespace: platformsvc
       prod:
         enabled: true
