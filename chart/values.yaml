@@ -330,12 +330,10 @@ services:
         daprEnabled: false
       appsettings:
         enabled: false
-        volumeEnabled: false
-        volumeMountEnabled: false
       environmentVariables:
         enabled: false
       fileServer:
-        volumeEnabled: false
+        volumesEnabled: false
         volumeMountsEnabled: false
       labels:
         enabled: false

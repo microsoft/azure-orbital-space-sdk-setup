@@ -5,7 +5,6 @@
 {{- if $serviceValues.logging }}
 {{- $serviceLogging := $serviceValues.logging }}
 {{- end }}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:

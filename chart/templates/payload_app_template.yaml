@@ -6,12 +6,6 @@
 {{- if $serviceValues.appsettings.enabled }}
 {{- include "spacefx.appsettings.json" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
 {{- end }}
-{{- if $serviceValues.appsettings.volumeEnabled }}
-{{- include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
-{{- end }}
-{{- if $serviceValues.appsettings.volumeMountEnabled }}
-{{- include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
-{{- end }}
 # Annotations
 {{- if $serviceValues.annotations.enabled }}
 {{- include "spacefx.payloadappTemplate.annotations" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
@@ -28,8 +22,6 @@
 {{- if $serviceValues.environmentVariables.enabled }}
 {{- include "spacefx.payloadappTemplate.environmentVariables" (dict "serviceValues" $serviceValues "globalValues" $globalValues "platformDeploymentValues" $allServices.platform.deployment) }}
 {{- end }}
-
-
 # VolumeMounts
 {{- if $serviceValues.fileServer.volumeMountsEnabled }}
 volumeMounts:
@@ -49,6 +41,26 @@ volumeMounts:
 {{- range $key, $hostDirectoryMount := $serviceValues.hostDirectoryMounts }}
   - name: {{ $hostDirectoryMount.name | lower }}
     mountPath: {{ $hostDirectoryMount.hostPath }}
+{{- end }}
+{{- end }}
+{{- $appSettingsMount := printf "%s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $appSettingsMount | nindent 2 }}
+{{- end }}
+# Volumes
+{{- if $serviceValues.fileServer.volumesEnabled }}
+volumes:
+{{- $appSettingsVolume := printf "%s" (include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $appSettingsVolume | nindent 2 }}
+{{- $secretsMount := (include "spacefx.secrets.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $secretsMount | nindent 2 }}
+{{- range $volumeKey, $volumeName := $globalValues.xferVolumes }}
+{{- $fileServerVolume := printf "%s" (include "spacefx.fileserver.clientapp.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | nindent 2 | trim) }}
+{{- printf "- %s" $fileServerVolume | nindent 2 }}
+{{- end }}
+{{- if $serviceValues.xferVolumes }}
+{{- range $volumeKey, $volumeName := $serviceValues.xferVolumes }}
+{{- $fileServerVolume := printf "%s" (include "spacefx.fileserver.clientapp.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | nindent 2 | trim) }}
+{{- printf "- %s" $fileServerVolume | nindent 2 }}
 {{- end }}
 {{- end }}
 {{- end }}
