@@ -730,6 +730,9 @@ function main() {
 
 
     if [[ "${CLUSTER_ENABLED}" == true ]] && [[ "${DEBUG_SHIM_ENABLED}" == true ]]; then
+
+        run_a_script "git config --add safe.directory ${CONTAINER_WORKING_DIR:?}"
+
         # Python needs the debugshim image updated with the changes from the python installs above
         if [[ "${DEV_PYTHON}" == "true" ]]; then
             info_log "Committing changes to container for debugshim..."
