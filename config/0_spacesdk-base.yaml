@@ -16,20 +16,20 @@ config:
           tag: 1.9.6
     - group: smb
       enabled: false
-      version: 1.14.0
+      version: 1.15.0
       containers:
         - registry: registry.k8s.io
           repository: sig-storage/livenessprobe
-          tag: v2.12.0
+          tag: v2.13.1
         - registry: registry.k8s.io
           repository: sig-storage/csi-node-driver-registrar
-          tag: v2.10.0
+          tag: v2.11.1
         - registry: registry.k8s.io
           repository: sig-storage/smbplugin
-          tag: v1.14.0
+          tag: v1.15.0
         - registry: registry.k8s.io
           repository: sig-storage/csi-provisioner
-          tag: v4.0.0
+          tag: v5.0.1
     - group: buildservice
       enabled: true
       version: 1.20.1
