@@ -1,6 +1,7 @@
 {{- if .Values.services.core.fileserver.enabled }}
 {{- $serviceValues := .Values.services.core.fileserver }}
 {{- $globalValues := .Values.global }}
+---
 {{- include "spacefx.service_account" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
 {{- $allServices := dict }}
 {{- range $key, $value := .Values.services.platform }}
@@ -14,6 +15,7 @@
 {{- $_ := set $allServices $value.appName $value }}
 {{- end }}
 {{- range $key, $val := $allServices }}
+---
 {{- include "spacefx.service_account" (dict "serviceValues" $val "globalValues" $globalValues) }}
 {{- end }}
 {{- if eq $globalValues.fileserverSMB true }}

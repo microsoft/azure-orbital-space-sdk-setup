@@ -353,6 +353,8 @@ services:
         maxDuration: 01:00:00
         startTime: 00:00:00
         endTime: 00:00:00
+      serviceAccount:
+        enabled: false
       appContext: null
       appName: payloadappTemplate
       appGroup: payloadappGroup
