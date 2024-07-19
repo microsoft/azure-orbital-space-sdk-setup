@@ -109,7 +109,9 @@ spec:
             secretName: {{ $serviceValues.appName }}-config
 {{- end }}
 {{ range $key, $val := $allServices }}
+---
 {{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}
+---
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $val "globalValues" $globalValues "fileServerValues" $serviceValues ) }}
 {{- end }}
 {{- end }}

@@ -27,10 +27,15 @@ data:
 {{- $volumesList = append $volumesList $serviceVolumeName }}
 {{- end }}
 {{- end }}
+{{- $first := true }}
 {{- range $volumeKey, $volumeDirName := $volumesList }}
 {{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeDirName }}
 {{- $volumeNameFQDN := printf "%s.%s.svc.cluster.local/%s" $fileServerValues.appName $fileServerValues.serviceNamespace $volumeName }}
+{{- if not $first }}
 ---
+{{- else }}
+{{- $first = false }}
+{{- end }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -86,10 +91,15 @@ spec:
 {{- $volumesList = append $volumesList $serviceVolumeName }}
 {{- end }}
 {{- end }}
+{{- $first := true }}
 {{- range $volumeKey, $volumeName := $volumesList }}
+{{- if not $first }}
+---
+{{- else }}
+{{- $first = false }}
+{{- end }}
 {{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeName }}
 {{- $volumeNameFQDN := printf "%s.%s.svc.cluster.local/%s" $fileServerValues.appName $fileServerValues.serviceNamespace $volumeName }}
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:

@@ -339,6 +339,7 @@ services:
         enabled: false
       persistentVolumes:
         claimsEnabled: false
+        volumesEnabled: false
       resources:
         enabled: false
         memory:

@@ -68,5 +68,8 @@ volumes:
 {{- if $serviceValues.persistentVolumes.claimsEnabled }}
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $allServices.core.fileserver) }}
 {{- end }}
-
+#PersistentVolumes
+{{- if $serviceValues.persistentVolumes.volumesEnabled }}
+{{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $allServices.core.fileserver) }}
+{{- end }}
 {{- end }}
