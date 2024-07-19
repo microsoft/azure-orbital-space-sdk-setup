@@ -337,6 +337,8 @@ services:
         volumeMountsEnabled: false
       labels:
         enabled: false
+      persistentVolumes:
+        claimsEnabled: false
       resources:
         enabled: false
         memory:
