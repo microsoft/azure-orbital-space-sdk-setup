@@ -274,6 +274,8 @@ services:
           value: false
         - name: allxferDirectory
           value: allxfer
+        - name: allowLinksToDeploymentSvc
+          value: false
       appName: hostsvc-link
       debugShim: false
       repository: hostsvc-link
