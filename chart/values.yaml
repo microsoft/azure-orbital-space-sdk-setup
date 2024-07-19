@@ -334,6 +334,9 @@ services:
         volumeMountEnabled: false
       environmentVariables:
         enabled: false
+      fileServer:
+        volumeEnabled: false
+        volumeMountsEnabled: false
       labels:
         enabled: false
       resources:

@@ -88,14 +88,14 @@ data:
 {{- define "spacefx.secrets.volume" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-secret-volume
-  secret:
-    secretName: {{ $serviceValues.appName }}-secret
+name: {{ $serviceValues.appName }}-secret-volume
+secret:
+  secretName: {{ $serviceValues.appName }}-secret
 {{- end }}
 
 {{- define "spacefx.secrets.volumemount" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-secret-volume
-  mountPath: {{ $globalValues.spacefxSecretDirectory | quote }}
+name: {{ $serviceValues.appName }}-secret-volume
+mountPath: {{ $globalValues.spacefxSecretDirectory | quote }}
 {{- end }}
