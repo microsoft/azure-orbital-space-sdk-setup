@@ -5,9 +5,11 @@
 {{- range $key, $serviceValues := .Values.services.platform }}
 {{- if $serviceValues.enabled }}
 {{- if $serviceValues.provisionVolumes }}
+---
 {{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- if $serviceValues.provisionVolumeClaims }}
+---
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- include "spacefx.service" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues "payloadAppValues" $payloadAppValues "buildServiceValues" $buildServiceValues) }}
@@ -16,9 +18,11 @@
 {{- range $key, $serviceValues := .Values.services.host }}
 {{- if $serviceValues.enabled }}
 {{- if $serviceValues.provisionVolumes }}
+---
 {{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- if $serviceValues.provisionVolumeClaims }}
+---
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- include "spacefx.service" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues "payloadAppValues" $payloadAppValues) }}
@@ -27,9 +31,11 @@
 {{- $serviceValues := .Values.services.payloadapp.payloadapp }}
 {{- if $serviceValues.enabled }}
 {{- if $serviceValues.provisionVolumes }}
+---
 {{- include "spacefx.fileserver.persistentvolume" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- if $serviceValues.provisionVolumeClaims }}
+---
 {{- include "spacefx.fileserver.persistentvolumeclaim" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues) }}
 {{- end }}
 {{- include "spacefx.service" (dict "serviceValues" $serviceValues "globalValues" $globalValues "fileServerValues" $fileServerValues "payloadAppValues" $payloadAppValues) }}

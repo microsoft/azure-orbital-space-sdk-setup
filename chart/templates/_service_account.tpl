@@ -1,7 +1,6 @@
 {{- define "spacefx.service_account" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
----
 apiVersion: v1
 kind: ServiceAccount
 metadata:

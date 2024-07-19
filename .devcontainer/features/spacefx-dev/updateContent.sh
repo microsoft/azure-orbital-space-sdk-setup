@@ -223,12 +223,13 @@ function main() {
             info_log "Starting stage_build_artifact.sh..."
             run_a_script_on_host "${SPACEFX_DIR}/scripts/stage/stage_build_artifact.sh ${STAGE_SPACE_FX_CMD_EXTRAS}"
             info_log "...stage_build_artifact.sh completed successfully"
-        fi
 
+            # Regenerating spacefx_config_json incase one of the build artifacts changed it
+            _generate_spacefx_config_json
+        fi
         # Drop out of the script if we're not deploying to a cluster
         return
     fi
-
 
     # Replace the SPACEFX_VERSION in the payload-app-python-min.toml file with
     # the actual SPACEFX_VERSION we're loading from here
@@ -251,6 +252,10 @@ SPACEFX_END" --disable_log
     info_log "Starting stage_spacefx.sh..."
     run_a_script_on_host "${SPACEFX_DIR}/scripts/stage_spacefx.sh --dev-environment ${STAGE_SPACE_FX_CMD_EXTRAS}"
     info_log "...stage_spacefx.sh completed successfully"
+
+    # Regenerating spacefx_config_json incase one of the build artifacts changed it
+    _generate_spacefx_config_json
+
     info_log "Starting deploy_spacefx.sh..."
     run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh --dev-environment"
     info_log "...deploy_spacefx.sh completed successfully"

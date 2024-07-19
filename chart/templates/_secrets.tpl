@@ -16,6 +16,7 @@ metadata:
     microsoft.azureorbital/isDebugShim: {{ $serviceValues.debugShim | quote }}
     type: "Secret"
 data:
+  spacefx_version: {{ $globalValues.spacefxVersion | b64enc }}
   spacefx_cache: {{ $globalValues.spacefxDirectories.base | b64enc }}
   spacefx_dir_plugins: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.plugins $serviceValues.appName | b64enc }}
   spacefx_dir_xfer: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.xfer $serviceValues.appName | b64enc }}
@@ -80,21 +81,21 @@ data:
   payloadappconfig: {{ $payloadappconfig | b64enc }}
   payloadapplabels: {{ toYaml $serviceValues.payloadAppInjections.labels | b64enc }}
   payloadappenvironmentvariables: {{ toYaml $serviceValues.payloadAppInjections.environmentVariables | b64enc }}
-  fileserversmb: {{ $globalValues.fileserverSMB | quote | b64enc }}
+  fileserversmb: {{ $globalValues.fileserverSMB | ternary "true" "false" | b64enc }}
   {{- end }}
 {{- end }}
 
 {{- define "spacefx.secrets.volume" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-secret-volume
-  secret:
-    secretName: {{ $serviceValues.appName }}-secret
+name: {{ $serviceValues.appName }}-secret-volume
+secret:
+  secretName: {{ $serviceValues.appName }}-secret
 {{- end }}
 
 {{- define "spacefx.secrets.volumemount" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-secret-volume
-  mountPath: {{ $globalValues.spacefxSecretDirectory | quote }}
+name: {{ $serviceValues.appName }}-secret-volume
+mountPath: {{ $globalValues.spacefxSecretDirectory | quote }}
 {{- end }}

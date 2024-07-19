@@ -177,18 +177,34 @@ SPACEFX_UPDATE_END" --disable_log
 }
 
 ############################################################
-# Copies the regctl binary to the deployment service
+# Copies the app binary to the deployment service
 ############################################################
-function deploy_regctl_to_deployment_service(){
+function deploy_apps_to_deployment_service(){
     info_log "START: ${FUNCNAME[0]}"
 
     if [[ ! -d "${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl" ]]; then
         run_a_script "mkdir -p ${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl"
     fi
 
+    if [[ ! -d "${SPACEFX_DIR}/xfer/platform-deployment/tmp/helm" ]]; then
+        run_a_script "mkdir -p ${SPACEFX_DIR}/xfer/platform-deployment/tmp/helm"
+    fi
+
+    if [[ ! -d "${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart" ]]; then
+        run_a_script "mkdir -p ${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart"
+    fi
+
     info_log "Copying '${SPACEFX_DIR}/bin/${ARCHITECTURE}/regctl/${VER_REGCTL}' to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl/regctl'..."
     run_a_script "cp ${SPACEFX_DIR}/bin/${ARCHITECTURE}/regctl/${VER_REGCTL}/regctl ${SPACEFX_DIR}/xfer/platform-deployment/tmp/regctl/regctl"
     info_log "...successfully copied regctl binary to '${SPACEFX_DIR}/tmp/platform-deployment/regctl/regctl'"
+
+    info_log "Copying '${SPACEFX_DIR}/bin/${ARCHITECTURE}/helm/${VER_HELM}' to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/helm/helm'..."
+    run_a_script "cp ${SPACEFX_DIR}/bin/${ARCHITECTURE}/helm/${VER_HELM}/helm ${SPACEFX_DIR}/xfer/platform-deployment/tmp/helm/helm"
+    info_log "...successfully copied helm binary to '${SPACEFX_DIR}/tmp/platform-deployment/helm/helm'"
+
+    info_log "Copying '${SPACEFX_DIR}/chart' to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart/${SPACEFX_VERSION}'..."
+    run_a_script "cp -r ${SPACEFX_DIR}/chart ${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart/${SPACEFX_VERSION}"
+    info_log "...successfully copied chart to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart/${SPACEFX_VERSION}'"
 
 
     info_log "FINISHED: ${FUNCNAME[0]}"
@@ -250,7 +266,7 @@ function main() {
     deploy_spacefx_service_group --service_group platform
     deploy_spacefx_service_group --service_group host
 
-    deploy_regctl_to_deployment_service
+    deploy_apps_to_deployment_service
     deploy_prestaged_yamls
 
 

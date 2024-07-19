@@ -27,10 +27,15 @@ data:
 {{- $volumesList = append $volumesList $serviceVolumeName }}
 {{- end }}
 {{- end }}
+{{- $first := true }}
 {{- range $volumeKey, $volumeDirName := $volumesList }}
 {{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeDirName }}
 {{- $volumeNameFQDN := printf "%s.%s.svc.cluster.local/%s" $fileServerValues.appName $fileServerValues.serviceNamespace $volumeName }}
+{{- if not $first }}
 ---
+{{- else }}
+{{- $first = false }}
+{{- end }}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -86,10 +91,15 @@ spec:
 {{- $volumesList = append $volumesList $serviceVolumeName }}
 {{- end }}
 {{- end }}
+{{- $first := true }}
 {{- range $volumeKey, $volumeName := $volumesList }}
+{{- if not $first }}
+---
+{{- else }}
+{{- $first = false }}
+{{- end }}
 {{- $volumeName := printf "%s-%s" $serviceValues.appName $volumeName }}
 {{- $volumeNameFQDN := printf "%s.%s.svc.cluster.local/%s" $fileServerValues.appName $fileServerValues.serviceNamespace $volumeName }}
----
 kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
@@ -122,19 +132,18 @@ spec:
 {{- $volumeName := .volumeName }}
 {{- $shareName := printf "%s-%s" $serviceValues.appName $volumeName }}
 {{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
-- name: {{ $shareName | quote}}
-  mountPath: {{ $mountPath }}
-  {{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeName "allxfer") }}
-  mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeName }}
-  {{- else }}
-  mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
-  {{- end }}
+name: {{ $shareName | quote}}
+{{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeName "allxfer") }}
+mountPath: {{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeName }}
+{{- else }}
+mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
+{{- end }}
 {{- end }}
 
 {{- define "spacefx.fileserver.clientapp.volume" }}
 {{- $serviceValues := .serviceValues }}
 {{- $volumeName := .volumeName }}
-- name: {{ $serviceValues.appName }}-{{ $volumeName }}
-  persistentVolumeClaim:
-    claimName: {{ $serviceValues.appName }}-{{ $volumeName }}-pvc
+name: {{ $serviceValues.appName }}-{{ $volumeName }}
+persistentVolumeClaim:
+  claimName: {{ $serviceValues.appName }}-{{ $volumeName }}-pvc
 {{- end }}

@@ -201,6 +201,9 @@
     }
   ],
   "privileged": true,
+  "remoteEnv":{
+    "KUBECONFIG": "${containerEnv:KUBECONFIG:/devfeature/k3s-on-host/k3s.devcontainer.yaml}"
+  },
   "containerEnv": {
     "KUBECONFIG": "/devfeature/k3s-on-host/k3s.devcontainer.yaml",
     "PATH": "/root/.dotnet/:/vsdbg/:${PATH}",

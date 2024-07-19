@@ -5,7 +5,6 @@
 {{- if $serviceValues.logging }}
 {{- $serviceLogging := $serviceValues.logging }}
 {{- end }}
----
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,6 +12,7 @@ metadata:
   namespace: {{ $serviceValues.serviceNamespace }}
   labels:
     app: {{ $serviceValues.appName | quote }}
+    microsoft.azureorbital/app-name: {{ default "" $serviceValues.appName | quote }}
     microsoft.azureorbital/serviceName: {{ $serviceValues.appName | quote }}
     microsoft.azureorbital/isDebugShim: {{ $serviceValues.debugShim | quote }}
     microsoft.azureorbital/appName: {{ $serviceValues.appName | quote }}
@@ -53,14 +53,14 @@ data:
 {{- define "spacefx.appsettings.json.volume" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-config-volume
-  configMap:
-    name: {{ $serviceValues.appName }}-config
+name: {{ $serviceValues.appName }}-config-volume
+configMap:
+  name: {{ $serviceValues.appName }}-config
 {{- end }}
 
 {{- define "spacefx.appsettings.json.volumemount" }}
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
-- name: {{ $serviceValues.appName }}-config-volume
-  mountPath: /workspaces/{{ $serviceValues.appName }}-config
+name: {{ $serviceValues.appName }}-config-volume
+mountPath: /workspaces/{{ $serviceValues.appName }}-config
 {{- end }}

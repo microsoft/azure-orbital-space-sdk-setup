@@ -95,8 +95,6 @@ fi
 _app_prereqs_validate
 _generate_spacefx_config_json
 
-
-
 # Load the modules and function used by devcontainers
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then
 

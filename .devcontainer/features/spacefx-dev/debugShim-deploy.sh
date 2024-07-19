@@ -105,7 +105,7 @@ function verify_debugshim() {
     info_log "START: ${FUNCNAME[0]}"
 
     info_log "Verifying '${DEBUG_SHIM}' debugshim pod..."
-    run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD --ignore_error
 
     if [[ -z "${DEBUG_SHIM_POD}" ]]; then
         debug_log "Debug shim '${DEBUG_SHIM}' not found.  Provisioning from '${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml'"
@@ -114,26 +114,26 @@ function verify_debugshim() {
             exit_with_error "'${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml' NOT FOUND...unable to provision debug shim.  Please rebuild your devcontainer"
         fi
 
-        run_a_script "kubectl apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f ${SPACEFX_DIR}/tmp/${APP_NAME}/debugShim_${DEBUG_SHIM}.yaml"
 
         trace_log "Waiting 2 seconds for deployment to take effect..."
         sleep 2
 
         info_log "Verifying '${DEBUG_SHIM}' debugshim pod..."
-        run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD
     fi
     info_log "Calculated as '${DEBUG_SHIM_POD}'.  Checking status..."
 
-    run_a_script "kubectl get pod/${DEBUG_SHIM_POD} -n payload-app -o jsonpath='{.status.phase}'" DEBUG_SHIM_STATUS --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pod/${DEBUG_SHIM_POD} -n payload-app -o jsonpath='{.status.phase}'" DEBUG_SHIM_STATUS --disable_log
 
     info_log "...'${DEBUG_SHIM_POD}' Status: '${DEBUG_SHIM_STATUS}'"
 
     if [[ "${DEBUG_SHIM_STATUS}" != "Running" ]]; then
         info_log "Restarting '${DEBUG_SHIM}' debugshim pod..."
-        run_a_script "kubectl delete pod/${DEBUG_SHIM_POD} -n payload-app"
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} delete pod/${DEBUG_SHIM_POD} -n payload-app"
         sleep 2
 
-        run_a_script "kubectl get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} get pods -n payload-app -l app=${DEBUG_SHIM} --sort-by=.metadata.creationTimestamp -o jsonpath='{.items[-1:].metadata.name}'" DEBUG_SHIM_POD
     fi
 
 
@@ -151,13 +151,13 @@ function verify_config_secret_exists() {
     # Check if a Kubernetes secret with the name `${targetService}-secret` exists in the `payload-app` namespace
     info_log "Verifying '${DEBUG_SHIM}' configuration secret '${DEBUG_SHIM}-secret'..."
 
-    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json" has_config --ignore_error --disable_log
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/${DEBUG_SHIM}-secret -n payload-app -o json" has_config --ignore_error --disable_log
 
     # If the secret does not exist, create an empty secret with that name and a placeholder item
     # Empty secrets don't get applied the same way and this forces the volume to update in kubernetes
     if [[ -z "${has_config}" ]]; then
         debug_log "Not found.  Creating empty..."
-        run_a_script "kubectl create secret generic ${DEBUG_SHIM}-secret \
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} create secret generic ${DEBUG_SHIM}-secret \
                         -n payload-app \
                         --from-literal=placeholder=na" --disable_log
     fi
@@ -182,7 +182,7 @@ function wait_for_debugshim_to_come_online() {
     # This loops and waits for the debugshim_pod_ready to flip to true
     while [[ ${debugshim_pod_ready} == false ]]; do
 
-        run_a_script "kubectl exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'echo Container Ready'" echo_check --ignore_error
+        run_a_script "kubectl --kubeconfig ${KUBECONFIG} exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'echo Container Ready'" echo_check --ignore_error
 
         if [[ "${echo_check}" == "Container Ready" ]]; then
             debugshim_pod_ready=true
@@ -263,11 +263,11 @@ function update_configuration_for_plugins() {
     info_log "...found '${plugin_file}'.  Updating plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'...."
 
     pluginPath_encoded=$(echo -n "$(dirname $plugin_file)" | base64)
-    run_a_script "kubectl get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl apply -f -"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} get secret/${DEBUG_SHIM}-secret -n payload-app -o json | jq '.data +={\"spacefx_dir_plugins\": \"${pluginPath_encoded}\"}' | kubectl --kubeconfig ${KUBECONFIG} apply -f -"
     debug_log "...successfully updated plugin directory to '${pluginPath}' for '${DEBUG_SHIM_POD}'"
 
     debug_log "...annotating '${DEBUG_SHIM_POD}' to trigger a faster secret update..."
-    run_a_script "kubectl annotate pod ${DEBUG_SHIM_POD} -n payload-app kubernetes.io/change-cause='$(date)'"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} annotate pod ${DEBUG_SHIM_POD} -n payload-app kubernetes.io/change-cause='$(date)'"
     debug_log "...successfully annotated '${DEBUG_SHIM_POD}'"
 
 
@@ -294,7 +294,7 @@ function stop_old_port_forward() {
 
     for kubectl_pid in $pids; do
         run_a_script "ps -p ${kubectl_pid} -o args --no-headers" kubectl_cmd_args
-        if [[ "${kubectl_cmd_args}" == *"kubectl port-forward"* ]] && [[ "${kubectl_cmd_args}" == *"${PYTHON_PORT}:${PYTHON_PORT}"* ]]; then
+        if [[ "${kubectl_cmd_args}" == *"kubectl --kubeconfig ${KUBECONFIG} port-forward"* ]] && [[ "${kubectl_cmd_args}" == *"${PYTHON_PORT}:${PYTHON_PORT}"* ]]; then
             info_log "...found port forwarding process at PID ${kubectl_pid}.  Stopping..."
             run_a_script "kill -9 ${kubectl_pid}"
             info_log "...stopped"
@@ -350,7 +350,7 @@ function start_python_debugger() {
 
     info_log "Starting debugger in debugshim '${DEBUG_SHIM_POD}'..."
 
-    run_a_script "kubectl exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'python3 -m debugpy --listen ${PYTHON_PORT} --wait-for-client ${PYTHON_FILE} > /dev/null 2> /dev/null &'"
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} exec ${DEBUG_SHIM_POD} -n payload-app -- bash -c 'python3 -m debugpy --listen ${PYTHON_PORT} --wait-for-client ${PYTHON_FILE} > /dev/null 2> /dev/null &'"
 
     info_log "...done."
 
@@ -366,7 +366,7 @@ function start_port_forward() {
 
     info_log "Forwarding port ${PYTHON_PORT} to ${DEBUG_SHIM_POD}..."
 
-    run_a_script "kubectl port-forward 'pod/${DEBUG_SHIM_POD}' '${PYTHON_PORT}:${PYTHON_PORT}' -n 'payload-app' --pod-running-timeout=1h" --background
+    run_a_script "kubectl --kubeconfig ${KUBECONFIG} port-forward 'pod/${DEBUG_SHIM_POD}' '${PYTHON_PORT}:${PYTHON_PORT}' -n 'payload-app' --pod-running-timeout=1h" --background
 
 
     # Wait until our port-forward takes affect
@@ -381,7 +381,7 @@ function start_port_forward() {
     info_log "...waiting for port forward to start (max 30 secs)..."
 
     while :; do
-        debug_log "Checking for kubectl port forward..."
+        debug_log "Checking for kubectl --kubeconfig ${KUBECONFIG} port forward..."
         run_a_script "pgrep '^kubectl'" pids --ignore_error
 
         # No terminating pods found.  We're done

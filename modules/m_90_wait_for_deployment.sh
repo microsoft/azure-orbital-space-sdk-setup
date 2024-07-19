@@ -33,7 +33,7 @@ function wait_for_deployment() {
 
     run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployment -n ${namespace} ${deployment} -o=json | jq 'any(.status.conditions[]; .type==\"Available\" and .status==\"True\")'" deployment_status --ignore_error
 
-    # kubectl may error, especially if the cluster is booting up.  Setting it to false lets us continue the loop and let the cluster finish coming online
+    # kubectlconfig ${KUBECONFIG} may error, especially if the cluster is booting up.  Setting it to false lets us continue the loop and let the cluster finish coming online
     [[ -z "${deployment_status}" ]] && deployment_status=false
 
     start_time=$(date +%s)
@@ -42,7 +42,7 @@ function wait_for_deployment() {
     while [[ "${deployment_status}" != true ]]; do
         run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployment -n ${namespace} ${deployment} -o=json | jq 'any(.status.conditions[]; .type==\"Available\" and .status==\"True\")'" deployment_status --ignore_error
 
-        # kubectl may error, especially if the cluster is booting up.  Setting it to false lets us continue the loop and let the cluster finish coming online
+        # kubectlconfig ${KUBECONFIG} may error, especially if the cluster is booting up.  Setting it to false lets us continue the loop and let the cluster finish coming online
         [[ -z "${deployment_status}" ]] && deployment_status=false
 
         current_time=$(date +%s)
