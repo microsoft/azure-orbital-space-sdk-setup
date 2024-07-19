@@ -213,44 +213,15 @@ services:
         - name: buildServiceEnabled
           value: true
       payloadAppInjections:
-        annotations:
-          "azure.spacefx/start-time": "SPACEFX-TEMPLATE_APP_START_TIME"
-          "azure.spacefx/max-duration": "SPACEFX-TEMPLATE_APP_MAX_DURATION"
-          "azure.spacefx/app-schedule": "SPACEFX-TEMPLATE_APP_SCHEDULE"
-          "azure.spacefx/payload-app-context": "SPACEFX-TEMPLATE_APP_CONTEXT"
-        labels:
-          "app": "SPACEFX-TEMPLATE_APP_NAME"
-          "azure.spacefx/platform-deployment": "true"
-          "azure.spacefx/recurring": "false"
-          "azure.spacefx/app-name": "SPACEFX-TEMPLATE_APP_NAME"
-          "azure.spacefx/app-group": "SPACEFX-TEMPLATE_APP_GROUP"
-          "azure.spacefx/app-namespace": "SPACEFX-TEMPLATE_APP_NAMESPACE"
-          "azure.spacefx/tracking-id": "SPACEFX-TEMPLATE_TRACKING_ID"
-          "azure.spacefx/customer-tracking-id": "SPACEFX-TEMPLATE_CUSTOMER_TRACKING_ID"
-          "azure.spacefx/correlation-id": "SPACEFX-TEMPLATE_CORRELATION_ID"
         environmentVariables:
-          - name: "SPACEFX_APP"
-            value: "SPACEFX-TEMPLATE_APP_NAME"
           - name: "SPACEFX_PLATFORM_DEPLOYMENT"
-            value: "true"
-          - name: "SPACEFX_RECURRING_DEPLOYMENT"
-            value: "false"
-          - name: "SPACEFX_APP_GROUP"
-            value: "SPACEFX-TEMPLATE_APP_GROUP"
-          - name: "SPACEFX_APP_NAMESPACE"
-            value: "SPACEFX-TEMPLATE_APP_NAMESPACE"
-          - name: "SPACEFX_TRACKING_ID"
-            value: "SPACEFX-TEMPLATE_TRACKING_ID"
-          - name: "SPACEFX_CUSTOMER_TRACKING_ID"
-            value: "SPACEFX-TEMPLATE_CUSTOMER_TRACKING_ID"
-          - name: "SPACEFX_CORRELATION_ID"
-            value: "SPACEFX-TEMPLATE_CORRELATION_ID"
+            value: true
           - name: "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
-            value: "1"
+            value: 1
           - name: "DOTNET_USE_POLLING_FILE_WATCHER"
-            value: "true"
+            value: true
           - name: "DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE"
-            value: "false"
+            value: false
       serviceNamespace: platformsvc
       prod:
         enabled: true
@@ -355,6 +326,14 @@ services:
       annotations:
         enabled: false
         daprEnabled: false
+      appsettings:
+        enabled: false
+        volumeEnabled: false
+        volumeMountEnabled: false
+      environmentVariables:
+        enabled: false
+      labels:
+        enabled: false
       resources:
         enabled: false
         memory:
@@ -363,11 +342,20 @@ services:
         cpu:
           limit: 8000m
           request: 15m
+      schedule:
+        recurringSchedule: null
+        maxDuration: 01:00:00
+        startTime: 00:00:00
+        endTime: 00:00:00
+      appContext: null
       appName: payloadappTemplate
+      appGroup: payloadappGroup
+      correlationId: null
+      customerTrackingId: null
+      enabled: false
       serviceNamespace: payload-app
       repository: payloadappTemplate
-      enabled: false
-      workingDir: /workspace/payloadappTemplate
+      trackingId: null
     payloadapp:
       annotations:
         enabled: false

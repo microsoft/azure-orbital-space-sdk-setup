@@ -2,10 +2,28 @@
 {{- $serviceValues := .Values.services.payloadapp.payloadappTemplate }}
 {{- $globalValues := .Values.global }}
 {{- $allServices := .Values.services }}
+{{- if $serviceValues.appsettings.enabled }}
+{{- include "spacefx.appsettings.json" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
+{{- end }}
+{{- if $serviceValues.appsettings.volumeEnabled }}
+{{- include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
+{{- end }}
+{{- if $serviceValues.appsettings.volumeMountEnabled }}
+{{- include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
+{{- end }}
 {{- if $serviceValues.annotations.enabled }}
 {{- include "spacefx.payloadappTemplate.annotations" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
 {{- end }}
 {{- if $serviceValues.resources.enabled }}
 {{- include "spacefx.resourceLimits" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- if $serviceValues.labels.enabled }}
+{{- include "spacefx.payloadappTemplate.labels" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- if $serviceValues.labels.enabled }}
+{{- include "spacefx.payloadappTemplate.labels" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+{{- end }}
+{{- if $serviceValues.environmentVariables.enabled }}
+{{- include "spacefx.payloadappTemplate.environmentVariables" (dict "serviceValues" $serviceValues "globalValues" $globalValues "platformDeploymentValues" $allServices.platform.deployment) }}
 {{- end }}
 {{- end }}
