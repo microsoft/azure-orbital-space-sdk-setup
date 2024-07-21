@@ -46,9 +46,7 @@ Production deploments are intended to run on a satellite with an emphasis on red
 ### Developmnt
 Development deploments are intended to experiment and develop a payload application / plugin with an emphasis on accelerated deployment and more logging.  Follow the below steps to deploy the development configuration
 
-TODO: Add steps to include the feature
-
-
+TODO: Add feature deployment
 ## Testing
 Test scripts for the Microsoft Azure Orbital Space SDK are available at [./tests](https://github.com/microsoft/azure-orbital-space-sdk-setup/tree/main/tests).  The scripts are atomic and idempotent; they are intended to be run on a host from within this repository.  Successful test will have a zero (0) exit code; failed tests will return a non-zero exit code.  Example a successful test:
 
