@@ -257,7 +257,7 @@ SPACEFX_END" --disable_log
     _generate_spacefx_config_json
 
     info_log "Starting deploy_spacefx.sh..."
-    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh --dev-environment"
+    run_a_script_on_host "${SPACEFX_DIR}/scripts/deploy_spacefx.sh"
     info_log "...deploy_spacefx.sh completed successfully"
 
 

@@ -498,6 +498,7 @@ function main() {
                         --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                         --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                         --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                        --build-arg WORKING_DIRECTORY=${CONTAINER_WORKSPACE_FOLDER} \
                         --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
@@ -511,6 +512,7 @@ function main() {
                 --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
                 --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
                 --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                --build-arg WORKING_DIRECTORY=${CONTAINER_WORKSPACE_FOLDER} \
                 --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
 
         info_log "...successfully built container image"

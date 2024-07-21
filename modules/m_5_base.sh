@@ -394,3 +394,10 @@ function parse_json_line() {
 
     eval "$result_variable='$result_value'"
 }
+
+############################################################
+# Set DEV_ENVIRONMENT based on the chart values
+############################################################
+function _read_environment(){
+    run_a_script "yq '.global.devEnvironment' ${SPACEFX_DIR}/chart/values.yaml" DEV_ENVIRONMENT
+}
