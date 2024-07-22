@@ -43,10 +43,18 @@ Production deploments are intended to run on a satellite with an emphasis on red
     /var/spacedev/scripts/deploy_spacefx.sh
     ```
 
-### Developmnt
-Development deploments are intended to experiment and develop a payload application / plugin with an emphasis on accelerated deployment and more logging.  Follow the below steps to deploy the development configuration
+### Development
+Development deployments are intended to enable developers to create new payload applications and/or plugins using the Microsoft Azure Orbital Space SDK.  Development deployments emphasize initiation speed, enhanced logging, and leverage devcontainers.  The Microsoft Azure Orbital Space SDK can be integrated in your devcontainer via a devcontainer feature:
+```json
+	"features": {
+		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0": {
+            "app_name": "MyAwesomeApp"
+		}
+	},
+```
 
-TODO: Add feature deployment
+See [Getting Started](https://github.com/microsoft/azure-orbital-space-sdk/blob/main/docs/getting-started.md) for details and available options for the devcontainer feature.
+
 ## Testing
 Test scripts for the Microsoft Azure Orbital Space SDK are available at [./tests](https://github.com/microsoft/azure-orbital-space-sdk-setup/tree/main/tests).  The scripts are atomic and idempotent; they are intended to be run on a host from within this repository.  Successful test will have a zero (0) exit code; failed tests will return a non-zero exit code.  Example a successful test:
 
@@ -73,9 +81,13 @@ dev_cluster.sh - Test successful
 spacecowboy@spacedev-vm:~/azure-orbital-space-sdk-setup$ echo $?
 0
 ```
+## Build the Microsoft Azure Orbital Space SDK from source
+Several container images and artifacts are used as components within the Azure Orbital Space SDK.  These container images are used as utilies for gpu tests, intermediate layers to reduce the filesize of apps to deploy, development, etc.  Not all of these artifacts are used in staging and will be dynamically enabled based on the parameters passed to `stage_spacefx.sh`.
 
-## Building prerequisite container images
-Several container images are used as components within the Azure Orbital Space SDK.  This container images are used as utilies for gpu tests, intermediate layers to reduce the filesize of apps to deploy, etc.  These prerequisite container images are prebuilt and available in this repo and will be downloaded during stage_spacefx.sh depending on the options provided.  There is no need to manually build these container images, but their build process is documented for reference.
+>:speech_balloon: The images and artifacts are already built and pushed to the github container registry via our CI/CD process.  These steps are a reference and **not** needed deploy the Microsoft Azure Orbital Space SDK.  If you would like to just run the Microsoft Azure Orbital Space SDK, please refer to [Production Deployment](https://github.com/microsoft/azure-orbital-space-sdk-setup?tab=readme-ov-file#production-deployment)
+
+### Base and intermediate container image(s)
+
 ```bash
 # Load the configuration and get the channel for the tag
 source /var/spacedev/env/spacefx.env
@@ -118,7 +130,6 @@ for i in "${!PYTHON_VERSIONS[@]}"; do
         --build-arg PYTHON_VERSION="${PYTHON_VERSION_TAG_CHANNEL}" \
         --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
         --annotation-config azure-orbital-space-sdk-core.yaml
-
 done
 
 
@@ -143,51 +154,44 @@ for i in "${!CUDA_VERSIONS[@]}"; do
         --no-spacefx-dev \
         --app-name spacesdk-jetson-devicequery \
         --annotation-config azure-orbital-space-sdk-core.yaml
-
 done
 
-
-
 ```
 
-## Building the Microsoft Azure Orbital DevContainer Feature
-Microsoft Azure Orbital Space SDK is centrally deployed by a custom devcontainer feature.
+### Building the Microsoft Azure Orbital DevContainer Feature
 
-### Install devcontainer CLI
-```bash
-sudo apt install npm
-sudo npm cache clean -f
-sudo npm install -g n
-sudo n stable
-sudo npm install -g @devcontainers/cli
-```
+- Install the devcontainer cli
+    ```bash
+    sudo apt install npm
+    sudo npm cache clean -f
+    sudo npm install -g n
+    sudo n stable
+    sudo npm install -g @devcontainers/cli
+    ```
+- Build the Microsoft Azure Orbital Space SDK DevContainer Feature
+    ```bash
+    REGISTRY=ghcr.io/microsoft
+    VERSION=0.11.0
 
-### Build devcontainer feature
-```bash
-REGISTRY=ghcr.io/microsoft
-VERSION=0.11.0
+    # No other changes needed below this line
+    FEATURE=azure-orbital-space-sdk/spacefx-dev
+    ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
 
-# No other changes needed below this line
-FEATURE=azure-orbital-space-sdk/spacefx-dev
-ARTIFACT_PATH=./output/spacefx-dev/devcontainer-feature-spacefx-dev.tgz
+    # Validate the output directory exists and clean it out if there is content already present
+    [[ -d ./output/spacefx-dev ]]; sudo rm ./output/spacefx-dev/* -rf
 
-# Validate the output directory exists and clean it out if there is content already present
-[[ -d ./output/spacefx-dev ]]; sudo rm ./output/spacefx-dev/* -rf
+    # Copy the scripts ino the entry point for the devcontainer feature
+    ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
-# Copy the scripts ino the entry point for the devcontainer feature
-./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+    # Build the devcontainer feature
+    devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
 
-# Build the devcontainer feature
-devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
-
-# Push the devcontainer feature tarball to the registry
-oras push ${REGISTRY}/${FEATURE}:${VERSION} \
-    --config /dev/null:application/vnd.devcontainers \
-    --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
-            ${ARTIFACT_PATH}:application/vnd.devcontainers.layer.v1+tar
-
-
-```
+    # Push the devcontainer feature tarball to the registry
+    oras push ${REGISTRY}/${FEATURE}:${VERSION} \
+        --config /dev/null:application/vnd.devcontainers \
+        --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
+                ${ARTIFACT_PATH}:application/vnd.devcontainers.layer.v1+tar
+    ```
 
 ## Contributing
 
