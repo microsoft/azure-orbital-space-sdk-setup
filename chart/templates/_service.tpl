@@ -9,6 +9,8 @@
 {{- include "spacefx.secrets" (dict "globalValues" $globalValues "serviceValues" $serviceValues "fileServerValues" $fileServerValues "payloadAppValues" .payloadAppValues "buildServiceValues" $buildServiceValues) }}
 {{- $imgName := printf "%s/%s:%s" (include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues)) $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
 ---
+{{- include "spacefx.service_account" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:

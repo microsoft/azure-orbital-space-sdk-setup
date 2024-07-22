@@ -44,6 +44,7 @@ ROOT_TTY="/dev/null"
 CURRENT_TTY="$(tty)"
 INTERNET_CONNECTED=true
 APP_INSTALLS=true
+DEV_ENVIRONMENT=false
 
 ############################################################
 # Arguments
@@ -94,6 +95,7 @@ fi
 
 _app_prereqs_validate
 _generate_spacefx_config_json
+_read_environment
 
 # Load the modules and function used by devcontainers
 if [[ "${SPACESDK_CONTAINER}" == "true" ]]; then

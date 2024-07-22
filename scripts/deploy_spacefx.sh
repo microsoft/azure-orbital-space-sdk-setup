@@ -11,12 +11,6 @@
 # shellcheck disable=SC2068
 source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@
 
-
-############################################################
-# Script variables
-############################################################
-DEV_ENVIRONMENT=false
-
 ############################################################
 # Help                                                     #
 ############################################################
@@ -26,7 +20,6 @@ function show_help() {
    echo
    echo "Syntax: bash ./scripts/deploy_spacefx.sh"
    echo "options:"
-   echo "--dev-environment                  [OPTIONAL] Configure the cluster for development pods"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -39,7 +32,7 @@ function show_help() {
 while [[ "$#" -gt 0 ]]; do
     case $1 in
         -h|--help) show_help ;;
-        --dev-environment) DEV_ENVIRONMENT=true ;;
+        --dev-environment) echo "--dev-environment is DEPRECATED.  Dev-Environment is calculated during staging" ;;
         *) echo "Unknown parameter '$1'"; show_help ;;
     esac
     shift
@@ -107,7 +100,9 @@ function deploy_spacefx_service_group(){
         fi
 
         info_log "...adding '${service}'..."
-        deploy_group_cmd="${deploy_group_cmd} --set services.${service_group}.${service}.enabled=true"
+        deploy_group_cmd="${deploy_group_cmd} --set services.${service_group}.${service}.enabled=true \
+                                                --set services.${service_group}.${service}.provisionVolumeClaims=true \
+                                                --set services.${service_group}.${service}.provisionVolumes=true"
 
         debug_log "Checking for hostDirectoryMounts for '${service_group}.${service}'..."
         run_a_script "jq '.config.hostDirectoryMounts.${service_group}.${service}' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" has_mounts --ignore_error
@@ -127,7 +122,8 @@ function deploy_spacefx_service_group(){
 
                 info_log "...adding hostDirectoryMounts '${mount_path}' for '${service_group}.${service}'..."
 
-                deploy_group_cmd="${deploy_group_cmd} --set services.${service_group}.${service}.hostDirectoryMounts[${host_directory_mount_count}].name=${mount_name}  --set services.${service_group}.${service}.hostDirectoryMounts[${host_directory_mount_count}].hostPath=${mount_path}"
+                deploy_group_cmd="${deploy_group_cmd} --set services.${service_group}.${service}.hostDirectoryMounts[${host_directory_mount_count}].name=${mount_name}  \
+                                                        --set services.${service_group}.${service}.hostDirectoryMounts[${host_directory_mount_count}].hostPath=${mount_path}"
 
                 ((host_directory_mount_count = host_directory_mount_count + 1))
             done
@@ -240,6 +236,7 @@ function deploy_prestaged_yamls(){
 
 function main() {
     write_parameter_to_log ARCHITECTURE
+    write_parameter_to_log DEV_ENVIRONMENT
 
     info_log "Deploying k3s..."
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_k3s.sh"
@@ -251,6 +248,7 @@ function main() {
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --start"
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_chart_dependencies.sh"
 
+    [[ "${DEV_ENVIRONMENT}" == false  ]] && run_a_script "${SPACEFX_DIR}/scripts/deploy/build_service_images.sh"
 
     run_a_script "jq -r '.config.charts[] | select(.group == \"smb\") | .enabled' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" smb_enabled --disable_log
 

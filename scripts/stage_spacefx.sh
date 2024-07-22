@@ -19,7 +19,7 @@ NVIDIA_GPU_PLUGIN=false
 SMB_ENABLED=false
 CONTAINERS=()
 BUILD_ARTIFACTS=()
-DEV_ENVIRONMENT=true # Temporarily setting this to true to unblock work while implementing the build service in parallel
+DEV_ENVIRONMENT=false
 SPACEFX_REGISTRY=""
 SPACEFX_REPO_PREFIX=""
 SPACEFX_VERSION_TAG=""
@@ -113,6 +113,9 @@ function calculate_spacefx_registry(){
     find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
 
+    # Add SpaceSDK Base to staging list
+    # CONTAINERS+=("spacesdk-base:${SPACEFX_VERSION_TAG}")
+
     if [[ -z "${SPACEFX_REGISTRY}" ]]; then
         exit_with_error "Unable to find a registry for 'spacesdk-base:${SPACEFX_VERSION_TAG}'.  Please check that you have the right channel, that you have access to all the container registries in ${SPACEFX_DIR}/config/*.yaml, login to all container registries in ${SPACEFX_DIR}/config/*.yaml (if applicable), and/or update your ${SPACEFX_DIR}/config/*.yaml to include a container registry with spacesdk-base:${SPACEFX_VERSION_TAG}."
     fi
@@ -138,23 +141,40 @@ function calculate_spacefx_registry(){
 function enable_fileserver(){
     info_log "START: ${FUNCNAME[0]}"
 
-    if [[ "${SMB_ENABLED}" == true ]]; then
-        info_log "'SMB_ENABLED' = true.  Enabling SMB components..."
-        run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = true' -i \"${SPACEFX_DIR}/config/0_spacesdk-base.yaml\""
-        run_a_script "yq eval '.global.fileserverSMB = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+    info_log "Setting SMB to ${SMB_ENABLED}..."
 
-        info_log "...successfully enabled SMB."
-    else
-        info_log "'SMB_ENABLED' = false.  Disabling SMB components"
-        run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
-        run_a_script "yq eval '.global.fileserverSMB = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
-        info_log "...successfully disabled SMB."
-    fi
+    local _environments=("prod" "dev")
+
+    for i in "${!_environments[@]}"; do
+        _environment=${_environments[i]}
+        run_a_script "yq eval '.services.core.fileserver.${_environment}.enabled = ${SMB_ENABLED}' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+        run_a_script "yq eval '.services.core.fileserver.${_environment}.pull = ${SMB_ENABLED}' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+    done
+
+    run_a_script "yq eval '(.config.charts[] | select(.group == \"smb\") .enabled) = ${SMB_ENABLED}' -i \"${SPACEFX_DIR}/config/0_spacesdk-base.yaml\""
+    run_a_script "yq eval '.global.fileserverSMB = ${SMB_ENABLED}' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+
+
+    info_log "...successfully set SMB to ${SMB_ENABLED}."
 
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Toggle devEnvironment setting if requested
+############################################################
+function toggle_dev_environment(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Setting DevEnvironment to ${DEV_ENVIRONMENT}..."
+
+    run_a_script "yq eval '.global.devEnvironment = ${DEV_ENVIRONMENT}' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+
+    info_log "...successfully set DevEnvironment to ${DEV_ENVIRONMENT}..."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Toggle the nvidia GPU setting if requested
@@ -289,11 +309,11 @@ function stage_spacefx_service_images(){
     local service_group=""
     local stage_container_img_cmd=""
 
-    local enabled_filter="prod.enabled"
+    local enabled_filter="prod.pull"
     local hasBase_selection="prod.hasBase"
 
     if [[ "${DEV_ENVIRONMENT}" == true ]]; then
-        enabled_filter="dev.enabled"
+        enabled_filter="dev.pull"
         hasBase_selection="dev.hasBase"
     fi
 
@@ -341,10 +361,11 @@ function stage_spacefx_service_images(){
 
             if [[ "${service_hasBase}" == true ]]; then
                 source_repo_name="registry.spacefx.local/${SPACEFX_REPO_PREFIX}/${service_repository}:${SPACEFX_VERSION_BASE_TAG}"
-                dest_repo_name="registry.spacefx.local/${service_repository}:${SPACEFX_VERSION_BASE_TAG}"
+                dest_repo_name="registry.spacefx.local/${service_repository}:${SPACEFX_VERSION}_base"
             fi
 
-            info_log "...updating ${source_repo_name} to ${dest_repo_name}..."
+            debug_log "Removing prefix and channel suffix from service repository '${service_repository}' by retagging '${source_repo_name}' to '${dest_repo_name}'..."
+
             run_a_script "regctl image copy ${source_repo_name} ${dest_repo_name}"
             info_log "...successfully updated ${source_repo_name} to ${dest_repo_name}"
         done
@@ -357,7 +378,7 @@ function stage_spacefx_service_images(){
 }
 
 ############################################################
-# Stage spacefx-base
+# Stage container images requested by the user
 ############################################################
 function stage_container_images(){
     info_log "START: ${FUNCNAME[0]}"
@@ -472,6 +493,7 @@ function main() {
         exit_with_error "Docker cli is not available and is required for stage_spacefx.sh.  Please install docker and try again."
     fi
 
+    toggle_dev_environment
     calculate_spacefx_registry
     toggle_security_restrictions
     toggle_nvidia_gpu

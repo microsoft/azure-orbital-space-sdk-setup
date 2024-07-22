@@ -24,12 +24,13 @@ spec:
         - name: "buildservice"
           image: {{ $imgName | quote }}
           volumeMounts:
-           - name: spacedev-host-dir
-             mountPath: {{ $globalValues.spacefxDirectories.base }}
-          args: ["--dockerfile={{ $serviceValues.dockerFile }}",
-            "--context=dir://{{ $globalValues.spacefxDirectories.base }}/{{ $serviceValues.contextDir }}",
+            - name: spacedev-host-dir
+              mountPath: {{ $globalValues.spacefxDirectories.base }}
+          args: ["--dockerfile={{ $serviceValues.targetService.dockerFile }}",
+            "--context=dir://{{ $globalValues.spacefxDirectories.base }}/{{ $serviceValues.targetService.contextDir }}",
             "--destination={{ include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues "containerRegistry" $globalValues.containerRegistryInternal) }}/{{ $serviceValues.targetService.repository }}:{{ $serviceValues.targetService.tag }}",
-            "--build-arg=SERVICE_NAME={{ $serviceValues.targetService.appName }}",
+            "--build-arg=APP_NAME={{ $serviceValues.targetService.appName }}",
+            "--build-arg=WORKING_DIRECTORY={{ $serviceValues.targetService.workingDirectory }}",
             "--build-arg=CONTAINER_REGISTRY={{ include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues "containerRegistry" $globalValues.containerRegistryInternal) }}",
             "--build-arg=SERVICE_VERSION={{ $globalValues.spacefxVersion }}",
             "--build-arg=SPACEFX_VERSION={{ $globalValues.spacefxVersion }}",
@@ -48,9 +49,9 @@ spec:
             "--verbosity=trace"]
       restartPolicy: Never
       volumes:
-          - name: spacedev-host-dir
-            hostPath:
-              path: {{ $globalValues.spacefxDirectories.base }}
-              type: Directory
+        - name: spacedev-host-dir
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}
+            type: Directory
 # build-service generation end
 {{- end }}

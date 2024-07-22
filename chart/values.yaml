@@ -111,10 +111,11 @@ services:
         appName: exampleapp
         repository: example
         tag: v1.0.0
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
+        workingDirectory: /workspaces/exampleapp
       repository: kaniko-project/executor
       tag: v1.20.1-slim
-      dockerFile: Dockerfile.svc
-      contextDir: build/dotnet
     registry:
       appName: coresvc-registry
       containerCommand:
@@ -124,9 +125,11 @@ services:
         - /etc/docker/registry/config.yml
       serviceNamespace: coresvc
       prod:
+        pull: false
         enabled: false
         hasBase: false
       dev:
+        pull: false
         enabled: false
         hasBase: false
       enabled: false
@@ -141,13 +144,28 @@ services:
         cpu:
           limit: 1000m
           request: 10m
+    spacesdkBase:
+      appName: spacesdk-base
+      serviceNamespace: coresvc
+      prod:
+        pull: true
+        enabled: false
+        hasBase: false
+      dev:
+        pull: true
+        enabled: false
+        hasBase: false
+      enabled: false
+      repository: spacesdk-base
     switchboard:
       appName: coresvc-switchboard
       serviceNamespace: coresvc
       prod:
+        pull: true
         enabled: true
         hasBase: false
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -160,9 +178,11 @@ services:
       repository: coresvc-fileserver
       serviceNamespace: coresvc
       prod:
+        pull: true
         enabled: true
         hasBase: false
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -172,19 +192,27 @@ services:
         - name: messageResponseTimeoutMS
           value: 15000
       appName: platform-mts
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: platform-mts
       serviceNamespace: platformsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
       workingDir: /workspaces/platform-mts
     deployment:
       appName: platform-deployment
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: platform-deployment
       appConfig:
@@ -224,9 +252,11 @@ services:
             value: "false"
       serviceNamespace: platformsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -236,13 +266,18 @@ services:
         - name: enableRoutingToMTS
           value: true
       appName: vth
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: vth
       serviceNamespace: platformsvc
       prod:
+        pull: true
         enabled: false
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -255,13 +290,18 @@ services:
         - name: messageResponseTimeoutMS
           value: 15000
       appName: hostsvc-sensor
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: hostsvc-sensor
       serviceNamespace: hostsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -277,13 +317,18 @@ services:
         - name: allowLinksToDeploymentSvc
           value: false
       appName: hostsvc-link
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: hostsvc-link
       serviceNamespace: hostsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
@@ -299,26 +344,36 @@ services:
         - name: writeTelemetryToLog
           value: true
       appName: hostsvc-logging
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: hostsvc-logging
       serviceNamespace: hostsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
       workingDir: /workspaces/hostsvc-logging
     position:
       appName: hostsvc-position
+      buildService:
+        dockerFile: Dockerfile.buildsvc.app
+        contextDir: build/dotnet
       debugShim: false
       repository: hostsvc-position
       serviceNamespace: hostsvc
       prod:
+        pull: true
         enabled: true
         hasBase: true
       dev:
+        pull: true
         enabled: true
         hasBase: false
       enabled: false
