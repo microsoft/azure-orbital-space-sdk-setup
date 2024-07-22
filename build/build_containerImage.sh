@@ -32,6 +32,7 @@ BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 SPACEFX_DEV_ENABLED=true
 PUSH_ENABLED=true
+GH_REPO_LINK=""
 
 ############################################################
 # Help                                                     #
@@ -278,6 +279,8 @@ function build_prod_image_container(){
     buildArgs+="--build-arg APP_NAME=\"${APP_NAME}\" "
     labelArgs="--label \"org.app_name=${APP_NAME}\" "
 
+    labelArgs="--label \"org.opencontainers.image.source=${ANNOTATION_IMAGE_SOURCE}\" "
+
     buildArgs+="--build-arg CONTAINER_REGISTRY=\"${DEST_CONTAINER_REGISTRY}\" "
 
     buildArgs+="--build-arg APP_VERSION=\"${IMAGE_TAG}\" "
@@ -313,6 +316,28 @@ function build_prod_image_container(){
     info_log "END: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Calculate the GH repo link from the annotation config file
+############################################################
+calculate_gh_repo_link(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ -z "${ANNOTATION_CONFIG}" ]]; then
+        info_log "No annotation config provided.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    run_a_script "yq '.config.annotations[0].annotation' ${SPACEFX_DIR}/config/github/annotations/${ANNOTATION_CONFIG}" ANNOTATION_IMAGE_SOURCE
+
+    # Extract the URL using parameter expansion
+    ANNOTATION_IMAGE_SOURCE="${ANNOTATION_IMAGE_SOURCE#"org.opencontainers.image.source="}"
+
+    info_log "Annotation Image Source: ${ANNOTATION_IMAGE_SOURCE}"
+    write_parameter_to_log ANNOTATION_IMAGE_SOURCE
+
+    info_log "END: ${FUNCNAME[0]}"
+}
 
 ############################################################
 # Be a good script-citizen and clean up after ourselves
@@ -386,6 +411,9 @@ function main() {
     fi
 
     write_parameter_to_log DEST_REPO
+
+    calculate_gh_repo_link
+
     provision_emulator
 
     if [[ -f "${REPO_DIR}/${DEVCONTAINER_JSON_FILE}" ]] && [[ "${SPACEFX_DEV_ENABLED}" == true ]]; then
@@ -411,7 +439,8 @@ function main() {
         set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
                                 --annotation "org.spacefx.item_type=containerimage" \
                                 --annotation "org.spacefx.app_name=${APP_NAME}" \
-                                --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
+                                --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
+                                --annotation "org.opencontainers.image.source=${ANNOTATION_IMAGE_SOURCE}"
 
         add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${DEST_SPACEFX_TAG}" \
                                 --destination_image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}" \
@@ -421,7 +450,8 @@ function main() {
                                 --annotation "org.spacefx.app_version=${APP_VERSION}" \
                                 --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
                                 --annotation "org.architecture=${ARCHITECTURE}" \
-                                --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
+                                --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}" \
+                                --annotation "org.opencontainers.image.source=${ANNOTATION_IMAGE_SOURCE}"
 
         # Only push if we're using a different app_version that spacefx
         if [[ "${IMAGE_TAG}" != "${DEST_SPACEFX_TAG}" ]]; then
@@ -430,7 +460,8 @@ function main() {
             set_annotation_to_image --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
                                     --annotation "org.spacefx.item_type=containerimage" \
                                     --annotation "org.spacefx.app_name=${APP_NAME}" \
-                                    --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}"
+                                    --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
+                                    --annotation "org.opencontainers.image.source=${ANNOTATION_IMAGE_SOURCE}"
 
 
             add_redirect_to_image   --image "${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}" \
@@ -441,7 +472,8 @@ function main() {
                                     --annotation "org.spacefx.app_version=${APP_VERSION}" \
                                     --annotation "org.spacefx.spacefx_version=${SPACEFX_VERSION}" \
                                     --annotation "org.architecture=${ARCHITECTURE}" \
-                                    --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}"
+                                    --annotation "org.spacefx.app_builddate=${BUILDDATE_VALUE}" \
+                                    --annotation "org.opencontainers.image.source=${ANNOTATION_IMAGE_SOURCE}"
         fi
     fi
 
