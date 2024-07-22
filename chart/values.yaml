@@ -260,7 +260,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
-      workingDir: /workspaces/platform-deployment
+      workingDir: /workspace/platform-deployment
     vth:
       appConfig:
         - name: enableRoutingToMTS
