@@ -171,6 +171,12 @@ function toggle_dev_environment(){
 
     run_a_script "yq eval '.global.devEnvironment = ${DEV_ENVIRONMENT}' -i \"${SPACEFX_DIR}/chart/values.yaml\""
 
+    if [[ "${DEV_ENVIRONMENT}" == true ]]; then
+        run_a_script "yq eval '.global.dapr.logLevel = \"debug\"' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+    else
+        run_a_script "yq eval '.global.dapr.logLevel = \"warn\"' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+    fi
+
     info_log "...successfully set DevEnvironment to ${DEV_ENVIRONMENT}..."
 
     info_log "FINISHED: ${FUNCNAME[0]}"

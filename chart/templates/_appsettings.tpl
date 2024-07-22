@@ -62,5 +62,5 @@ configMap:
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
 name: {{ $serviceValues.appName }}-config-volume
-mountPath: /workspaces/{{ $serviceValues.appName }}-config
+mountPath: {{ $serviceValues.workingDir }}-config
 {{- end }}

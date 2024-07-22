@@ -69,7 +69,7 @@ spec:
             ]
             {{- end }}
           {{- else }}
-          {{- $containerArgs := printf "/workspaces/%s/%s.dll" $serviceValues.appName $serviceValues.appName }}
+          {{- $containerArgs := printf "%s/%s.dll" $serviceValues.workingDir $serviceValues.appName }}
           args: [{{ $containerArgs | quote }}]
           {{- end }}
           image: {{ $imgName | quote }}
