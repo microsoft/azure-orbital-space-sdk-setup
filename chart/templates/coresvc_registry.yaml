@@ -40,8 +40,8 @@ spec:
       containers:
       - name: {{ $serviceValues.appName | quote }}
         ports:
-        - containerPort: {{ $serviceValues.repositoryTargetPort }}
-        - containerPort: {{ $serviceValues.pypiServerTargetPort }}
+          - containerPort: {{ $serviceValues.repositoryTargetPort }}
+          - containerPort: {{ $serviceValues.pypiServerTargetPort }}
         image: {{ $imgName | quote }}
         imagePullPolicy: Never
         {{- include "spacefx.resourceLimits" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 8  }}
@@ -54,34 +54,34 @@ spec:
           - {{ . }}
         {{- end }}
         env:
-        - name: REGISTRY_HTTP_TLS_CERTIFICATE
-          value: {{ $serviceValues.tlsCertificate }}
-        - name: REGISTRY_HTTP_TLS_KEY
-          value: {{ $serviceValues.tlsKey }}
-        - name: REGISTRY_ENABLED
-          value: {{ $serviceValues.services.registryEnabled }}
-        - name: PYPISERVER_ENABLED
-          value: {{ $serviceValues.services.pypiServerEnabled }}
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: {{ $serviceValues.tlsCertificate }}
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: {{ $serviceValues.tlsKey }}
+          - name: REGISTRY_ENABLED
+            value: {{ $serviceValues.services.registryEnabled | ternary "true" "false" | quote }}
+          - name: PYPISERVER_ENABLED
+            value: {{ $serviceValues.services.pypiServerEnabled | ternary "true" "false" | quote }}
         volumeMounts:
-        - name: registry-data-mount
-          mountPath: /var/lib/registry
-        - name: registry-cert-mount
-          mountPath: /certs
-        - name: pypiserver-data-mount
-          mountPath: /data/packages
+          - name: registry-data-mount
+            mountPath: /var/lib/registry
+          - name: registry-cert-mount
+            mountPath: /certs
+          - name: pypiserver-data-mount
+            mountPath: /data/packages
       volumes:
-      - name: pypiserver-data-mount
-        hostPath:
-          path: {{ $globalValues.spacefxDirectories.base }}/registry/pypiserver
-          type: DirectoryOrCreate
-      - name: registry-data-mount
-        hostPath:
-          path: {{ $globalValues.spacefxDirectories.base }}/registry/data
-          type: DirectoryOrCreate
-      - name: registry-cert-mount
-        hostPath:
-          path: {{ $globalValues.spacefxDirectories.base }}/certs/registry
-          type: DirectoryOrCreate
+        - name: pypiserver-data-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/registry/pypiserver
+            type: DirectoryOrCreate
+        - name: registry-data-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/registry/data
+            type: DirectoryOrCreate
+        - name: registry-cert-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/certs/registry
+            type: DirectoryOrCreate
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
 # core-registry generation end
