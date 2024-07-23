@@ -6,14 +6,28 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ $serviceValues.appName | quote }}
+  name: {{printf "%s-registry" $serviceValues.appName | quote }}
   namespace: {{ $serviceValues.serviceNamespace }}
 spec:
   type: NodePort
   ports:
-    - name: {{ $serviceValues.repository }}
-      port: {{ $serviceValues.targetPort }}
-      targetPort: {{ $serviceValues.targetPort }}
+    - name: {{printf "%s-registry" $serviceValues.repository }}
+      port: {{ $serviceValues.repositoryTargetPort }}
+      targetPort: {{ $serviceValues.repositoryTargetPort }}
+  selector:
+    app: {{ $serviceValues.appName | quote }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{printf "%s-pypiserver" $serviceValues.appName | quote }}
+  namespace: {{ $serviceValues.serviceNamespace }}
+spec:
+  type: NodePort
+  ports:
+    - name: {{printf "%s-pypiserver" $serviceValues.repository }}
+      port: {{ $serviceValues.pypiServerTargetPort }}
+      targetPort: {{ $serviceValues.pypiServerTargetPort }}
   selector:
     app: {{ $serviceValues.appName | quote }}
 ---
@@ -37,7 +51,8 @@ spec:
       containers:
       - name: {{ $serviceValues.appName | quote }}
         ports:
-        - containerPort: {{ $serviceValues.targetPort }}
+        - containerPort: {{ $serviceValues.repositoryTargetPort }}
+        - containerPort: {{ $serviceValues.pypiServerTargetPort }}
         image: {{ $imgName | quote }}
         imagePullPolicy: Never
         {{- include "spacefx.resourceLimits" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 8  }}
@@ -59,7 +74,13 @@ spec:
           mountPath: /var/lib/registry
         - name: registry-cert-mount
           mountPath: /certs
+        - name: pypiserver-data-mount
+          mountPath: /data
       volumes:
+      - name: pypiserver-data-mount
+        hostPath:
+          path: {{ $globalValues.spacefxDirectories.base }}/pypiserver
+          type: DirectoryOrCreate
       - name: registry-data-mount
         hostPath:
           path: {{ $globalValues.spacefxDirectories.base }}/registry/data

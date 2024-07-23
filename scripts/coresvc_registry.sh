@@ -299,8 +299,10 @@ function start_registry_docker(){
     info_log "Starting '${REGISTRY_REPO}'..."
     run_a_script "docker run -d \
             -p 5000:5000 \
+            -p 8080:8080 \
             -v ${SPACEFX_DIR}/registry/data:/var/lib/registry \
             -v ${SPACEFX_DIR}/certs/registry:/certs \
+            -v ${SPACEFX_DIR}/pypiserver:/data \
             -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.spacefx.local.crt \
             -e REGISTRY_HTTP_TLS_KEY=/certs/registry.spacefx.local.key -e \
             --restart=always \
