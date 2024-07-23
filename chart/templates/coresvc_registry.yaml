@@ -49,10 +49,6 @@ spec:
         {{- range $serviceValues.containerCommand }}
           - {{ . }}
         {{- end }}
-        args:
-        {{- range $serviceValues.containerArgs }}
-          - {{ . }}
-        {{- end }}
         env:
           - name: REGISTRY_HTTP_TLS_CERTIFICATE
             value: {{ $serviceValues.tlsCertificate }}

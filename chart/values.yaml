@@ -119,10 +119,7 @@ services:
     registry:
       appName: coresvc-registry
       containerCommand:
-        - /usr/bin/registry
-      containerArgs:
-        - serve
-        - /etc/docker/registry/config.yml
+        - /entrypoint.sh
       serviceNamespace: coresvc
       prod:
         pull: false
