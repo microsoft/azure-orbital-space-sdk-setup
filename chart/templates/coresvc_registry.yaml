@@ -11,9 +11,12 @@ metadata:
 spec:
   type: NodePort
   ports:
-    - name: {{ $serviceValues.repository }}
-      port: {{ $serviceValues.targetPort }}
-      targetPort: {{ $serviceValues.targetPort }}
+    - name: {{printf "%s-registry" $serviceValues.repository }}
+      port: {{ $serviceValues.repositoryTargetPort }}
+      targetPort: {{ $serviceValues.repositoryTargetPort }}
+    - name: {{printf "%s-pypiserver" $serviceValues.repository }}
+      port: {{ $serviceValues.pypiServerTargetPort }}
+      targetPort: {{ $serviceValues.pypiServerTargetPort }}
   selector:
     app: {{ $serviceValues.appName | quote }}
 ---
@@ -37,7 +40,8 @@ spec:
       containers:
       - name: {{ $serviceValues.appName | quote }}
         ports:
-        - containerPort: {{ $serviceValues.targetPort }}
+          - containerPort: {{ $serviceValues.repositoryTargetPort }}
+          - containerPort: {{ $serviceValues.pypiServerTargetPort }}
         image: {{ $imgName | quote }}
         imagePullPolicy: Never
         {{- include "spacefx.resourceLimits" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 8  }}
@@ -45,29 +49,35 @@ spec:
         {{- range $serviceValues.containerCommand }}
           - {{ . }}
         {{- end }}
-        args:
-        {{- range $serviceValues.containerArgs }}
-          - {{ . }}
-        {{- end }}
         env:
-        - name: REGISTRY_HTTP_TLS_CERTIFICATE
-          value: {{ $serviceValues.tlsCertificate }}
-        - name: REGISTRY_HTTP_TLS_KEY
-          value: {{ $serviceValues.tlsKey }}
+          - name: REGISTRY_HTTP_TLS_CERTIFICATE
+            value: {{ $serviceValues.tlsCertificate }}
+          - name: REGISTRY_HTTP_TLS_KEY
+            value: {{ $serviceValues.tlsKey }}
+          - name: REGISTRY_ENABLED
+            value: {{ $serviceValues.services.registryEnabled | ternary "true" "false" | quote }}
+          - name: PYPISERVER_ENABLED
+            value: {{ $serviceValues.services.pypiServerEnabled | ternary "true" "false" | quote }}
         volumeMounts:
-        - name: registry-data-mount
-          mountPath: /var/lib/registry
-        - name: registry-cert-mount
-          mountPath: /certs
+          - name: registry-data-mount
+            mountPath: /var/lib/registry
+          - name: registry-cert-mount
+            mountPath: /certs
+          - name: pypiserver-data-mount
+            mountPath: /data/packages
       volumes:
-      - name: registry-data-mount
-        hostPath:
-          path: {{ $globalValues.spacefxDirectories.base }}/registry/data
-          type: DirectoryOrCreate
-      - name: registry-cert-mount
-        hostPath:
-          path: {{ $globalValues.spacefxDirectories.base }}/certs/registry
-          type: DirectoryOrCreate
+        - name: pypiserver-data-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/registry/pypiserver
+            type: DirectoryOrCreate
+        - name: registry-data-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/registry/data
+            type: DirectoryOrCreate
+        - name: registry-cert-mount
+          hostPath:
+            path: {{ $globalValues.spacefxDirectories.base }}/certs/registry
+            type: DirectoryOrCreate
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
 # core-registry generation end

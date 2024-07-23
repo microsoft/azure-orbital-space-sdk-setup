@@ -119,10 +119,7 @@ services:
     registry:
       appName: coresvc-registry
       containerCommand:
-        - /usr/bin/registry
-      containerArgs:
-        - serve
-        - /etc/docker/registry/config.yml
+        - /entrypoint.sh
       serviceNamespace: coresvc
       prod:
         pull: false
@@ -134,7 +131,11 @@ services:
         hasBase: false
       enabled: false
       repository: coresvc-registry
-      targetPort: 5000
+      repositoryTargetPort: 5000
+      pypiServerTargetPort: 8080
+      services:
+        pypiServerEnabled: true
+        registryEnabled: true
       tlsCertificate: /certs/registry.spacefx.local.crt
       tlsKey: /certs/registry.spacefx.local.key
       resources:

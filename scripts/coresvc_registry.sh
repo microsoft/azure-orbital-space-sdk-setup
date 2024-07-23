@@ -93,7 +93,9 @@ function check_prerequisites(){
     fi
 
     [[ ! -d "${SPACEFX_DIR}/registry/data" ]] && create_directory "${SPACEFX_DIR}/registry/data"
+    [[ ! -d "${SPACEFX_DIR}/registry/pypiserver" ]] && create_directory "${SPACEFX_DIR}/registry/pypiserver"
     [[ ! -d "${SPACEFX_DIR}/certs/registry" ]] && create_directory "${SPACEFX_DIR}/certs/registry"
+
 
     debug_log "Querying for registry values..."
     run_a_script "yq '.services.core.registry.repository' ${SPACEFX_DIR}/chart/values.yaml" REGISTRY_REPO
@@ -258,7 +260,7 @@ function start_registry_k3s(){
     debug_log "...deploying core-registry..."
     run_a_script "kubectl --kubeconfig ${KUBECONFIG} apply -f - <<SPACEFX_UPDATE_END
 ${registry_yaml}
-SPACEFX_UPDATE_END"
+SPACEFX_UPDATE_END" --disable_log
 
     wait_for_deployment --namespace "${NAMESPACE}" --deployment "${REGISTRY_REPO}"
 
@@ -299,8 +301,10 @@ function start_registry_docker(){
     info_log "Starting '${REGISTRY_REPO}'..."
     run_a_script "docker run -d \
             -p 5000:5000 \
+            -p 8080:8080 \
             -v ${SPACEFX_DIR}/registry/data:/var/lib/registry \
             -v ${SPACEFX_DIR}/certs/registry:/certs \
+            -v ${SPACEFX_DIR}/registry/pypiserver:/data/packages \
             -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.spacefx.local.crt \
             -e REGISTRY_HTTP_TLS_KEY=/certs/registry.spacefx.local.key -e \
             --restart=always \
