@@ -136,6 +136,9 @@ services:
       repository: coresvc-registry
       repositoryTargetPort: 5000
       pypiServerTargetPort: 8080
+      services:
+        pypiServerEnabled: true
+        registryEnabled: true
       tlsCertificate: /certs/registry.spacefx.local.crt
       tlsKey: /certs/registry.spacefx.local.key
       resources:

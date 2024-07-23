@@ -85,7 +85,6 @@ function main() {
   copy_directory_to_dest --directory "config"
   copy_directory_to_dest --directory "env"
   copy_directory_to_dest --directory "modules"
-  copy_directory_to_dest --directory "pypiserver"
   copy_directory_to_dest --directory "protos"
   copy_directory_to_dest --directory "scripts"
 
