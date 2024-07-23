@@ -64,7 +64,7 @@ spec:
           - name: registry-cert-mount
             mountPath: /certs
           - name: pypiserver-data-mount
-            mountPath: /data/packages
+            mountPath: /data
       volumes:
         - name: pypiserver-data-mount
           hostPath:
