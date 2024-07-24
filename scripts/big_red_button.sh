@@ -166,6 +166,13 @@ function prune_registry() {
         run_a_script "kill -9 ${pid}"
     fi
 
+    pypiserver_pids=$(ps -e | grep 'pypiserver' | awk '{print $1}')
+
+    # Kill the Docker container processes
+    for pid in $pypiserver_pids; do
+        run_a_script "kill -9 $pid" --disable_log
+    done
+
     info_log "END: ${FUNCNAME[0]}"
 }
 

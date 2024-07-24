@@ -92,6 +92,12 @@ SPACEFX_UPDATE_END"
     export INSTALL_K3S_SYMLINK=force
     export INSTALL_K3S_VERSION=${VER_K3S}
 
+    run_a_script "jq -r '.config.clusterDataDir' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" cluster_data_dir
+    if [[ -n "${cluster_data_dir}" ]]; then
+        export INSTALL_K3S_EXEC="--data-dir ${cluster_data_dir}"
+    fi
+
+
     run_a_script "${SPACEFX_DIR}/bin/${ARCHITECTURE}/k3s/${VER_K3S}/k3s_install.sh ${extra_cmds}"
 
 
