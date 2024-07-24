@@ -2,6 +2,7 @@ config:
   channel: stable
   buildArtifacts:
   extraBuildArtifacts:
+  clusterDataDir: /var/lib/rancher
   charts:
     - group: dapr
       enabled: true

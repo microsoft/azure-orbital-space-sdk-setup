@@ -10,7 +10,7 @@
 #  "bash ./scripts/big_red_button.sh"
 # shellcheck disable=SC1091
 # shellcheck disable=SC2068
-source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log --no_app_installs
+source "$(dirname "$(realpath "$0")")/../modules/load_modules.sh" $@ --log_dir /var/log
 
 ############################################################
 # Help                                                     #
@@ -159,12 +159,53 @@ function prune_docker() {
 function prune_registry() {
     info_log "START: ${FUNCNAME[0]}"
 
-    run_a_script "lsof -i -P -n | grep LISTEN | grep registry" pid --disable_log --ignore_error
 
-    if [[ -n "${pid}" ]]; then
-        pid=$(echo $pid | cut -d ' ' -f 2)
-        run_a_script "kill -9 ${pid}"
+    info_log "Stopping registry processes (if still running)"
+    run_a_script "pgrep '^registry'" pids --ignore_error
+
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
+    done
+
+    info_log "...successfully stopped registry processes."
+
+    info_log "Stopping pypiserver processes (if still running)"
+
+    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
+    done
+
+    info_log "...successfully stopped pypiserver processes."
+
+    info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Remove k3s data directory if its been changed
+############################################################
+function remove_k3s_data_dir() {
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.clusterDataDir' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" cluster_data_dir
+    if [[ -z "${cluster_data_dir}" ]] ; then
+        info_log "Cluster data directory not set.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
     fi
+
+    if [[ ! -d "${cluster_data_dir}" ]]; then
+        info_log "Cluster data directory already removed.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Removing all directories and files under '${cluster_data_dir}'..."
+    run_a_script "rm -rf ${cluster_data_dir}/*"
+    info_log "...successfully removed all the directories and files under '${cluster_data_dir}'..."
 
     info_log "END: ${FUNCNAME[0]}"
 }
@@ -178,6 +219,7 @@ function main() {
     remove_k3s
     prune_docker
     prune_registry
+    remove_k3s_data_dir
 
     info_log "Removing '${SPACEFX_DIR:?}'..."
     run_a_script "rm -rf ${SPACEFX_DIR:?}"

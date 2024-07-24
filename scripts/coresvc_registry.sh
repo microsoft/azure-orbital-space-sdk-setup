@@ -191,6 +191,27 @@ function stop_registry(){
         fi
     fi
 
+    info_log "Stopping registry processes (if still running)"
+    run_a_script "pgrep '^registry'" pids --ignore_error
+
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
+    done
+
+    info_log "...successfully stopped registry processes."
+
+    info_log "Stopping pypiserver processes (if still running)"
+
+    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
+    done
+
+    info_log "...successfully stopped pypiserver processes."
+
     IS_RUNNING=false
 
     info_log "END: ${FUNCNAME[0]}"
