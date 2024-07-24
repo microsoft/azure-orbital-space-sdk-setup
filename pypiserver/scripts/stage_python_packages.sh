@@ -5,7 +5,7 @@
 #
 # Example Usage:
 #
-# bash /var/spacedev/pypiserver/scripts/stage_python_packages.sh
+# bash ./pypiserver/scripts/stage_python_packages.sh
 
 ############################################################
 # Script variables
@@ -32,7 +32,7 @@ function show_help() {
     echo ""
     echo "Example Usage:"
     echo ""
-    echo "bash /var/spacedev/pypiserver/scripts/stage_python_packages.sh"
+    echo "bash ./pypiserver/scripts/stage_python_packages.sh"
     echo ""
     exit 1
 }
