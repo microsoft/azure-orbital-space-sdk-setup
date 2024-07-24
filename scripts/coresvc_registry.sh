@@ -325,7 +325,7 @@ function start_registry_docker(){
             -p 8080:8080 \
             -v ${SPACEFX_DIR}/registry/data:/var/lib/registry \
             -v ${SPACEFX_DIR}/certs/registry:/certs \
-            -v ${SPACEFX_DIR}/registry/pypiserver:/data \
+            -v ${SPACEFX_DIR}/pypiserver:/data \
             -e REGISTRY_HTTP_TLS_CERTIFICATE=/certs/registry.spacefx.local.crt \
             -e REGISTRY_HTTP_TLS_KEY=/certs/registry.spacefx.local.key -e \
             --name=${REGISTRY_REPO} ${coresvc_registry_parent}/${_repo_name}:${spacefx_version_tag}"
