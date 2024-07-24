@@ -475,6 +475,31 @@ function stage_build_artifacts(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Stage python wheels
+############################################################
+function stage_python_wheels(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    if [[ ! -f "${SPACEFX_DIR}/pypiserver/requirements.txt" ]]; then
+        info_log "...no requirements file found at '${SPACEFX_DIR}/pypiserver/requirements.txt'.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    if [[ ! -s "${SPACEFX_DIR}/pypiserver/requirements.txt" ]]; then
+        info_log "...the requirements file '${SPACEFX_DIR}/pypiserver/requirements.txt' is empty.  Nothing to do.  Nothing to do."
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
+
+    info_log "Staging python wheels..."
+    run_a_script "docker exec coresvc-registry /data/scripts/stage_python_packages.sh"
+    info_log "...successfully staged python wheels."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
@@ -539,6 +564,8 @@ function main() {
     stage_spacefx_service_images --service_group host
     info_log "...service images successfully staged."
 
+
+    stage_python_wheels
 
 
     info_log "Stopping coresvc-registry..."
