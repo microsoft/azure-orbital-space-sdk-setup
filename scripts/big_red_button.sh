@@ -160,19 +160,26 @@ function prune_registry() {
     info_log "START: ${FUNCNAME[0]}"
 
 
-    registry_pids=$(ps -aux | grep 'registry' | awk '{print $2}')
+    info_log "Stopping registry processes (if still running)"
+    run_a_script "pgrep '^registry'" pids --ignore_error
 
-    # Kill the Docker container processes
-    for pid in $registry_pids; do
-        run_a_script "kill -9 $pid" --disable_log --ignore_error
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
     done
 
-    pypiserver_pids=$(ps -aux | grep 'pypiserver' | awk '{print $2}')
+    info_log "...successfully stopped registry processes."
 
-    # Kill the Docker container processes
-    for pid in $pypiserver_pids; do
-        run_a_script "kill -9 $pid" --disable_log --ignore_error
+    info_log "Stopping pypiserver processes (if still running)"
+
+    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
     done
+
+    info_log "...successfully stopped pypiserver processes."
 
     info_log "END: ${FUNCNAME[0]}"
 }
