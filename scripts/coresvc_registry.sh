@@ -198,7 +198,7 @@ function stop_registry(){
         run_a_script "kill -9 ${pid}"
     fi
 
-    pypiserver_pids=$(ps -e | grep 'pypiserver' | awk '{print $1}')
+    pypiserver_pids=$(ps -aux | grep 'pypiserver' | awk '{print $2}')
 
     # Kill the Docker container processes
     for pid in $pypiserver_pids; do
