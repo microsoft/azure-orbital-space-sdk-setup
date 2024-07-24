@@ -159,12 +159,13 @@ function prune_docker() {
 function prune_registry() {
     info_log "START: ${FUNCNAME[0]}"
 
-    run_a_script "lsof -i -P -n | grep LISTEN | grep registry" pid --disable_log --ignore_error
 
-    if [[ -n "${pid}" ]]; then
-        pid=$(echo $pid | cut -d ' ' -f 2)
-        run_a_script "kill -9 ${pid}"
-    fi
+    registry_pids=$(ps -aux | grep 'registry' | awk '{print $2}')
+
+    # Kill the Docker container processes
+    for pid in $registry_pids; do
+        run_a_script "kill -9 $pid" --disable_log --ignore_error
+    done
 
     pypiserver_pids=$(ps -aux | grep 'pypiserver' | awk '{print $2}')
 

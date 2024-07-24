@@ -191,12 +191,12 @@ function stop_registry(){
         fi
     fi
 
-    run_a_script "lsof -i -P -n | grep LISTEN | grep registry" pid --disable_log --ignore_error
+    registry_pids=$(ps -aux | grep 'registry' | awk '{print $2}')
 
-    if [[ -n "${pid}" ]]; then
-        pid=$(echo $pid | cut -d ' ' -f 2)
-        run_a_script "kill -9 ${pid}"
-    fi
+    # Kill the Docker container processes
+    for pid in $registry_pids; do
+        run_a_script "kill -9 $pid" --disable_log --ignore_error
+    done
 
     pypiserver_pids=$(ps -aux | grep 'pypiserver' | awk '{print $2}')
 
