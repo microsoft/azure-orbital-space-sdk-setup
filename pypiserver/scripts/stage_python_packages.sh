@@ -24,7 +24,7 @@ SPACEFX_PYPI_SERVER="https://localhost:8080"
 # Help
 ############################################################
 
-function help() {
+function show_help() {
     echo "Usage: $0"
     echo ""
     echo "Downloads the python packages specified in pypiserver/requirements.txt via pip"
@@ -41,22 +41,18 @@ function help() {
 # Main
 ############################################################
 
-#Trigger a ca cert regen if we have the spacefx ca certificate available
-if [[ -f "/etc/pki/ca-trust/source/anchors/ca.spacefx.local.pem" ]]; then
-    update-ca-trust
+# Check if requirements.txt exists
+if [ ! -f "${SCRIPT_DIR}/../requirements.txt" ]; then
+    echo "ERROR: pypiserver/requirements.txt does not exist."
+    show_help
+elif [ ! -s "${SCRIPT_DIR}/../requirements.txt" ]; then
+    echo "WARNING: pypiserver/requirements.txt is empty. Skipping staging."
+    exit 0
 fi
-
-
 
 # Empty and recreate the package staging directory
 rm -rf "${PACKAGE_STAGING_DIR}"
 mkdir -p "${PACKAGE_STAGING_DIR}"
-
-# Confirm that requirements.txt exists and is non-empty
-if [ ! -s "${SCRIPT_DIR}/../requirements.txt" ]; then
-    echo "ERROR: pypiserver/requirements.txt does not exist or is empty."
-    help
-fi
 
 # Install the python packages specified in requirements.txt
 echo "Downloading python packages to ${PACKAGE_STAGING_DIR}"
