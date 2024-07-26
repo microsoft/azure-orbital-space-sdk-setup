@@ -100,7 +100,7 @@ SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
     --image-tag ${SPACEFX_VERSION} \
     --repo-dir ${PWD} \
     --app-name spacesdk-base \
-    --annotation-config azure-orbital-space-sdk-core.yaml
+    --annotation-config azure-orbital-space-sdk-setup.yaml
 
 
 # Python-Base and SpaceSDK-Base-Python Container image build
