@@ -113,9 +113,6 @@ function calculate_spacefx_registry(){
     find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
 
-    # Add SpaceSDK Base to staging list
-    # CONTAINERS+=("spacesdk-base:${SPACEFX_VERSION_TAG}")
-
     if [[ -z "${SPACEFX_REGISTRY}" ]]; then
         exit_with_error "Unable to find a registry for 'spacesdk-base:${SPACEFX_VERSION_TAG}'.  Please check that you have the right channel, that you have access to all the container registries in ${SPACEFX_DIR}/config/*.yaml, login to all container registries in ${SPACEFX_DIR}/config/*.yaml (if applicable), and/or update your ${SPACEFX_DIR}/config/*.yaml to include a container registry with spacesdk-base:${SPACEFX_VERSION_TAG}."
     fi
@@ -130,6 +127,34 @@ function calculate_spacefx_registry(){
     write_parameter_to_log SPACEFX_REGISTRY
     write_parameter_to_log SPACEFX_VERSION_TAG
     write_parameter_to_log SPACEFX_VERSION_BASE_TAG
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Loop through any extra containers in config and add them to the pull
+############################################################
+function add_extra_containers_from_config(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.extraContainers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" extra_containers --disable_log
+
+    info_log "Checking for extra containers from config..."
+    for row in $extra_containers; do
+        parse_json_line --json "${row}" --property ".repository" --result container_repository
+        parse_json_line --json "${row}" --property ".tag" --result container_tag
+        parse_json_line --json "${row}" --property ".appendChannel" --result container_appendChannel
+
+        if [[ "${container_appendChannel}" == "true" ]]; then
+            calculate_tag_from_channel --tag "${container_tag}" --result container_tag
+        fi
+
+        info_log "...adding '${container_repository}:${container_tag}'..."
+
+        CONTAINERS+=("${container_repository}:${container_tag}")
+    done
+
+    info_log "...successfully added config extra containers to queue."
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -526,6 +551,7 @@ function main() {
 
     toggle_dev_environment
     calculate_spacefx_registry
+    add_extra_containers_from_config
     toggle_security_restrictions
     toggle_nvidia_gpu
     enable_vth

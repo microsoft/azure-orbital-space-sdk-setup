@@ -36,9 +36,8 @@ function _generate_spacefx_config_json() {
     fi
 
     # Build the JSON output from the configuration in yq
-    # This'll take all the yamls in config and generate the
-    # json file
-    run_a_script "yq ea '. as \$item ireduce ({}; . * \$item )' ${SPACEFX_DIR}/config/*.yaml --output-format=json" spacefx_json_config --disable_log
+    # This'll take all the yamls in config and generate the json file
+    run_a_script "yq ea '. as \$item ireduce ({}; ( . * (select(type != \"!!map\") |= to_string) ) * \$item )' ${SPACEFX_DIR}/config/*.yaml --output-format=json" spacefx_json_config --disable_log
 
 
     run_a_script "tee ${SPACEFX_DIR}/tmp/config/spacefx-config.json > /dev/null << SPACEFX_END
