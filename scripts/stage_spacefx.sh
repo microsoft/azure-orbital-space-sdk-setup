@@ -525,6 +525,37 @@ function stage_python_wheels(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Loop through all the extra containers and retag them to remove the prefix from coresvc-registry
+############################################################
+function remove_channels_from_extra_containers(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.extraContainers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" extra_containers --disable_log
+
+    info_log "Retagging any extra containers in config that have the channel suffix..."
+    for row in $extra_containers; do
+        parse_json_line --json "${row}" --property ".repository" --result container_repository
+        parse_json_line --json "${row}" --property ".tag" --result container_tag
+        parse_json_line --json "${row}" --property ".appendChannel" --result container_appendChannel
+
+        [[ "${container_appendChannel}" == "false" ]] && continue
+
+        calculate_tag_from_channel --tag "${container_tag}" --result container_tagWithChannel
+
+        [[ "${container_tag}" != "${container_tagWithChannel}" ]] && continue
+
+        info_log "...retagging '${container_repository}:${container_tagWithChannel}' to '${container_repository}:${container_tag}'..."
+        run_a_script "regctl image copy registry.spacefx.local/${container_repository}:${container_tagWithChannel} registry.spacefx.local/${container_repository}:${container_tag}"
+        info_log "...successfully retagged ${container_repository}:${container_tagWithChannel} to ${container_repository}:${container_tag}"
+    done
+
+    info_log "...extra containers with channel suffixes successfully retagged."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
@@ -592,6 +623,9 @@ function main() {
 
 
     stage_python_wheels
+
+
+    remove_channels_from_extra_containers
 
 
     info_log "Stopping coresvc-registry..."
