@@ -145,19 +145,6 @@ services:
         cpu:
           limit: 1000m
           request: 10m
-    spacesdkBase:
-      appName: spacesdk-base
-      serviceNamespace: coresvc
-      prod:
-        pull: true
-        enabled: false
-        hasBase: false
-      dev:
-        pull: true
-        enabled: false
-        hasBase: false
-      enabled: false
-      repository: spacesdk-base
     switchboard:
       appName: coresvc-switchboard
       serviceNamespace: coresvc

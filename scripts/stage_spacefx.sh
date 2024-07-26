@@ -113,9 +113,6 @@ function calculate_spacefx_registry(){
     find_registry_for_image "spacesdk-base:${SPACEFX_VERSION_TAG}" SPACEFX_REGISTRY
     info_log "SPACEFX_REGISTRY calculated as '${SPACEFX_REGISTRY}'"
 
-    # Add SpaceSDK Base to staging list
-    # CONTAINERS+=("spacesdk-base:${SPACEFX_VERSION_TAG}")
-
     if [[ -z "${SPACEFX_REGISTRY}" ]]; then
         exit_with_error "Unable to find a registry for 'spacesdk-base:${SPACEFX_VERSION_TAG}'.  Please check that you have the right channel, that you have access to all the container registries in ${SPACEFX_DIR}/config/*.yaml, login to all container registries in ${SPACEFX_DIR}/config/*.yaml (if applicable), and/or update your ${SPACEFX_DIR}/config/*.yaml to include a container registry with spacesdk-base:${SPACEFX_VERSION_TAG}."
     fi
@@ -130,6 +127,34 @@ function calculate_spacefx_registry(){
     write_parameter_to_log SPACEFX_REGISTRY
     write_parameter_to_log SPACEFX_VERSION_TAG
     write_parameter_to_log SPACEFX_VERSION_BASE_TAG
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Loop through any extra containers in config and add them to the pull
+############################################################
+function add_extra_containers_from_config(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.extraContainers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" extra_containers --disable_log
+
+    info_log "Checking for extra containers from config..."
+    for row in $extra_containers; do
+        parse_json_line --json "${row}" --property ".repository" --result container_repository
+        parse_json_line --json "${row}" --property ".tag" --result container_tag
+        parse_json_line --json "${row}" --property ".appendChannel" --result container_appendChannel
+
+        if [[ "${container_appendChannel}" == "true" ]]; then
+            calculate_tag_from_channel --tag "${container_tag}" --result container_tag
+        fi
+
+        info_log "...adding '${container_repository}:${container_tag}'..."
+
+        CONTAINERS+=("${container_repository}:${container_tag}")
+    done
+
+    info_log "...successfully added config extra containers to queue."
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -289,7 +314,7 @@ function stage_coresvc_registry(){
         info_log "...successfully pulled ${_stage_registry_image_name}:${SPACEFX_VERSION_TAG} to Docker."
     fi
 
-    create_directory "${SPACEFX_DIR}/images/amd64"
+    create_directory "${SPACEFX_DIR}/images/${ARCHITECTURE}"
 
     run_a_script "docker save ${_stage_registry_image_name}:${SPACEFX_VERSION_TAG} --output ${SPACEFX_DIR}/images/${ARCHITECTURE}/coresvc-registry_${SPACEFX_VERSION}.tar"
 
@@ -500,6 +525,42 @@ function stage_python_wheels(){
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
+############################################################
+# Loop through all the extra containers and retag them to remove the prefix from coresvc-registry
+############################################################
+function remove_channels_from_extra_containers(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    run_a_script "jq -r '.config.extraContainers[] | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" extra_containers --disable_log
+
+    info_log "Retagging any extra containers in config that have the channel suffix..."
+    for row in $extra_containers; do
+        parse_json_line --json "${row}" --property ".repository" --result container_repository
+        parse_json_line --json "${row}" --property ".tag" --result container_tag
+        parse_json_line --json "${row}" --property ".appendChannel" --result container_appendChannel
+
+        if [[ "${container_appendChannel}" == "true" ]]; then
+            debug_log "Checking for channel suffix for '${container_repository}:${container_tag}'..."
+            calculate_tag_from_channel --tag "${container_tag}" --result container_tagWithChannel
+
+            if [[ "${container_tag}" != "${container_tagWithChannel}" ]]; then
+                info_log "...retagging '${container_repository}:${container_tagWithChannel}' to '${container_repository}:${container_tag}'..."
+                run_a_script "regctl image copy registry.spacefx.local/${container_repository}:${container_tagWithChannel} registry.spacefx.local/${container_repository}:${container_tag}"
+                info_log "...successfully retagged ${container_repository}:${container_tagWithChannel} to ${container_repository}:${container_tag}"
+            else
+                info_log "...container tag matches calculated container tag with channel.  ('${container_tagWithChannel}' = '${container_tag}').  Nothing to do."
+            fi
+        else
+            debug_log "...container does not have channel suffix.  Nothing to do."
+        fi
+    done
+
+    info_log "...extra containers with channel suffixes successfully retagged."
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
 function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
@@ -526,6 +587,7 @@ function main() {
 
     toggle_dev_environment
     calculate_spacefx_registry
+    add_extra_containers_from_config
     toggle_security_restrictions
     toggle_nvidia_gpu
     enable_vth
@@ -566,6 +628,9 @@ function main() {
 
 
     stage_python_wheels
+
+
+    remove_channels_from_extra_containers
 
 
     info_log "Stopping coresvc-registry..."
