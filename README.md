@@ -118,7 +118,7 @@ for i in "${!PYTHON_VERSIONS[@]}"; do
         --no-spacefx-dev \
         --app-name python-base \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
-        --annotation-config azure-orbital-space-sdk-core.yaml
+        --annotation-config azure-orbital-space-sdk-setup.yaml
 
     # Build spacesdk-python-base, which is a combination of spacesdk-base and python-base
     /var/spacedev/build/build_containerImage.sh \
@@ -129,7 +129,7 @@ for i in "${!PYTHON_VERSIONS[@]}"; do
         --app-name spacesdk-base-python \
         --build-arg PYTHON_VERSION="${PYTHON_VERSION_TAG_CHANNEL}" \
         --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
-        --annotation-config azure-orbital-space-sdk-core.yaml
+        --annotation-config azure-orbital-space-sdk-setup.yaml
 done
 
 
@@ -144,7 +144,7 @@ for i in "${!CUDA_VERSIONS[@]}"; do
         --repo-dir ${PWD} \
         --no-spacefx-dev \
         --app-name spacesdk-jetson-devicequery \
-        --annotation-config azure-orbital-space-sdk-core.yaml
+        --annotation-config azure-orbital-space-sdk-setup.yaml
 
     /var/spacedev/build/build_containerImage.sh \
         --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery.dev \
@@ -153,7 +153,7 @@ for i in "${!CUDA_VERSIONS[@]}"; do
         --repo-dir ${PWD} \
         --no-spacefx-dev \
         --app-name spacesdk-jetson-devicequery \
-        --annotation-config azure-orbital-space-sdk-core.yaml
+        --annotation-config azure-orbital-space-sdk-setup.yaml
 done
 
 ```
