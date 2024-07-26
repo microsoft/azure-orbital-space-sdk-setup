@@ -63,12 +63,12 @@ spec:
             mountPath: /var/lib/registry
           - name: registry-cert-mount
             mountPath: /certs
-          - name: pypiserver-data-mount
-            mountPath: /data
+          - name: pypiserver-packages-mount
+            mountPath: /data/packages
       volumes:
-        - name: pypiserver-data-mount
+        - name: pypiserver-packages-mount
           hostPath:
-            path: {{ $globalValues.spacefxDirectories.base }}/registry/pypiserver
+            path: {{ $globalValues.spacefxDirectories.base }}/registry/pypiserver/packages
             type: DirectoryOrCreate
         - name: registry-data-mount
           hostPath:

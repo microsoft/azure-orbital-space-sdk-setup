@@ -506,21 +506,14 @@ function stage_build_artifacts(){
 function stage_python_wheels(){
     info_log "START: ${FUNCNAME[0]}"
 
-    if [[ ! -f "${SPACEFX_DIR}/pypiserver/requirements.txt" ]]; then
-        info_log "...no requirements file found at '${SPACEFX_DIR}/pypiserver/requirements.txt'.  Nothing to do."
-        info_log "END: ${FUNCNAME[0]}"
-        return
-    fi
+    # Stage the microsoft-azure-orbital-sdk wheel to the wheel directory
+    run_a_script "${SPACEFX_DIR}/scripts/stage/stage_build_artifact.sh --architecture ${ARCHITECTURE} --artifact microsoftazurespacefx-${SPACEFX_VERSION}-py3-none-any.whl"
 
-    if [[ ! -s "${SPACEFX_DIR}/pypiserver/requirements.txt" ]]; then
-        info_log "...the requirements file '${SPACEFX_DIR}/pypiserver/requirements.txt' is empty.  Nothing to do.  Nothing to do."
-        info_log "END: ${FUNCNAME[0]}"
-        return
-    fi
-
-    info_log "Staging python wheels..."
-    run_a_script "docker exec coresvc-registry /data/scripts/stage_python_packages.sh"
-    info_log "...successfully staged python wheels."
+    # Find all wheels in the ${SPACEFX_DIR}/wheel directory and copy them to the ${SPACEFX_DIR}/registry/pypiserver/packages directory
+    # Copy only the wheel itself to the root level of the pypiserver/packages directory and not the entire directory structure
+    # The pypiserver will detect these wheels and serve the python packages when it boots up
+    run_a_script "mkdir -p ${SPACEFX_DIR}/registry/pypiserver/packages"
+    run_a_script "find ${SPACEFX_DIR}/wheel -type f -name '*.whl' -exec cp {} ${SPACEFX_DIR}/registry/pypiserver/packages \;"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
@@ -594,6 +587,10 @@ function main() {
     enable_fileserver
     _generate_spacefx_config_json
 
+    info_log "Staging python wheels..."
+    stage_python_wheels
+    info_log "...successfully staged python wheels"
+
     info_log "Staging coresvc-registry..."
     stage_coresvc_registry
     info_log "...successfully staged coresvc-registry"
@@ -626,12 +623,7 @@ function main() {
     stage_spacefx_service_images --service_group host
     info_log "...service images successfully staged."
 
-
-    stage_python_wheels
-
-
     remove_channels_from_extra_containers
-
 
     info_log "Stopping coresvc-registry..."
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --stop"
