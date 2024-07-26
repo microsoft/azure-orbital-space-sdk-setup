@@ -21,6 +21,25 @@ function _app_prereqs_validate() {
     is_cmd_available "cfssljson" has_cfssljson_cmd
     is_cmd_available "helm" has_helm_cmd
 
+    if [[ $has_yq_cmd == true ]]; then
+        debug_log "yq is installed.  Checking version..."
+        run_a_script "yq --version" yq_version
+        if [[ "${yq_version}" == *"${VER_YQ}"* ]]; then
+            debug_log "yq version is correct. (${VER_YQ})"
+        else
+            debug_log "yq version is incorrect.  Expected: ${VER_YQ}.  Found: ${yq_version}.  Removing previous to trigger reinstall"
+            run_a_script "which -a yq" yq_paths
+            for yq_path in $yq_paths; do
+                if [[ -f "$yq_path" ]]; then
+                    debug_log "Removing yq at $yq_path"
+                    run_a_script "sudo rm -f $yq_path"
+                    debug_log "...successfull removed old version of yq at $yq_path"
+                fi
+            done
+            debug_log "Successfully removed previous versions of yq"
+            has_yq_cmd=false
+        fi
+    fi
 
     if [[ $has_yq_cmd == true ]] && [[ $has_jq_cmd == true ]] && [[ $has_regctl_cmd == true ]] && [[ $has_cfssl_cmd == true ]] && [[ $has_cfssljson_cmd == true ]] && [[ $has_helm_cmd == true ]]; then
         info_log "All third party apps are installed and available."
