@@ -7,19 +7,10 @@ config:
       tag: 0.11.0
       appendChannel: true
     - repository: spacesdk-base-python
-      tag: 0.11.0_3.9
-      appendChannel: true
-    - repository: spacesdk-base-python
       tag: 0.11.0_3.10
-      appendChannel: true
-    - repository: spacesdk-base-python
-      tag: 0.11.0_3.9
       appendChannel: true
     - repository: python-base
       tag: 3.10
-      appendChannel: true
-    - repository: python-base
-      tag: 3.9
       appendChannel: true
   clusterDataDir: /var/lib/rancher
   charts:
