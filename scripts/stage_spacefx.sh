@@ -509,11 +509,14 @@ function stage_python_wheels(){
     # Stage the microsoft-azure-orbital-sdk wheel to the wheel directory
     run_a_script "${SPACEFX_DIR}/scripts/stage/stage_build_artifact.sh --architecture ${ARCHITECTURE} --artifact microsoftazurespacefx-${SPACEFX_VERSION}-py3-none-any.whl"
 
-    # Find all wheels in the ${SPACEFX_DIR}/wheel directory and copy them to the ${SPACEFX_DIR}/registry/pypiserver/packages directory
-    # Copy only the wheel itself to the root level of the pypiserver/packages directory and not the entire directory structure
+    # Find all wheels in the ${SPACEFX_DIR}/wheel directory and move them to the ${SPACEFX_DIR}/registry/pypiserver/packages directory
+    # Move only the wheel itself to the root level of the ${SPACEFX_DIR}/registry/pypiserver/packages directory and not the entire directory structure
     # The pypiserver will detect these wheels and serve the python packages when it boots up
     run_a_script "mkdir -p ${SPACEFX_DIR}/registry/pypiserver/packages"
-    run_a_script "find ${SPACEFX_DIR}/wheel -type f -name '*.whl' -exec cp {} ${SPACEFX_DIR}/registry/pypiserver/packages \;"
+    run_a_script "find ${SPACEFX_DIR}/wheel -type f -name '*.whl' -exec mv {} ${SPACEFX_DIR}/registry/pypiserver/packages \;"
+
+    # Remove the wheel directory
+    run_a_script "rm -rf ${SPACEFX_DIR}/wheel"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
