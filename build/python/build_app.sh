@@ -428,9 +428,26 @@ function main() {
     build_app
     copy_to_output_dir --subfolder "dist"
 
-    # if [[ "${PUSH_ENABLED}" == true ]]; then
-    #     info_log "Pushing app will be enabled in a future PR"
-    # fi
+    if [[ "${PUSH_ENABLED}" == true ]]; then
+        info_log "Building container image..."
+
+        local extra_cmds=""
+        [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
+
+        run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
+                        --dockerfile ${SPACEFX_DIR}/build/python/Dockerfile.python.app-base \
+                        --image-tag ${APP_VERSION}_base \
+                        --no-spacefx-dev \
+                        --architecture ${ARCHITECTURE} \
+                        --repo-dir ${OUTPUT_DIR} \
+                        --build-arg APP_NAME=${APP_NAME} \
+                        --build-arg APP_VERSION=${APP_VERSION} \
+                        --build-arg SPACEFX_VERSION=${SPACEFX_VERSION} \
+                        --build-arg APP_BUILDDATE=${BUILDDATE_VALUE} \
+                        --build-arg ARCHITECTURE=${ARCHITECTURE} \
+                        --build-arg WORKING_DIRECTORY=${CONTAINER_WORKSPACE_FOLDER} \
+                        --app-name ${APP_NAME} ${_annotation_config} ${extra_cmds}"
+    fi
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
