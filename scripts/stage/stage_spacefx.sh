@@ -1,1 +1,0 @@
-./scripts/stage_spacefx.sh

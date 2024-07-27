@@ -87,7 +87,7 @@ function stage_k3s(){
     _app_install --app "k3s_install.sh" --source "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh" --url "https://get.k3s.io/" --destination "${DEST_STAGE_DIR}/k3s/${VER_K3S}/k3s_install.sh"
 
     # Download k3s airgap images
-    _app_install --app "k3s-airgap-images-${ARCHITECTURE}.tar.gz" --source "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.gz" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.gz"
+    _app_install --app "k3s-airgap-images-${ARCHITECTURE}.tar.zst" --source "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.zst" --url "https://github.com/k3s-io/k3s/releases/download/${url_encoded_k3s_vers}/k3s-airgap-images-${ARCHITECTURE}.tar.zst" --destination "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.zst"
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }

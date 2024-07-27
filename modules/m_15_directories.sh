@@ -25,6 +25,14 @@ function _setup_initial_directories() {
     create_directory "${SPACEFX_DIR}/tmp"
     create_directory "${SPACEFX_DIR}/tmp/yamls"
     create_directory "${SPACEFX_DIR}/xfer"
+
+    if [[ ! -L "${SPACEFX_DIR}/scripts/deploy/deploy_spacefx.sh" ]]; then
+        ln -s "${SPACEFX_DIR}/scripts/deploy_spacefx.sh" "${SPACEFX_DIR}/scripts/deploy/deploy_spacefx.sh"
+    fi
+
+    if [[ ! -L "${SPACEFX_DIR}/scripts/stage/stage_spacefx.sh" ]]; then
+        ln -s "${SPACEFX_DIR}/scripts/stage_spacefx.sh" "${SPACEFX_DIR}/scripts/stage/stage_spacefx.sh"
+    fi
 }
 
 ############################################################
