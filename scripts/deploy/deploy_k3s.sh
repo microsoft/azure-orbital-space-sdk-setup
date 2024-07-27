@@ -76,7 +76,7 @@ SPACEFX_UPDATE_END"
 
     _check_for_file "${SPACEFX_DIR}/bin/${ARCHITECTURE}/k3s/${VER_K3S}/k3s"
     _check_for_file "${SPACEFX_DIR}/bin/${ARCHITECTURE}/k3s/${VER_K3S}/k3s_install.sh"
-    _check_for_file "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.zst"
+    _check_for_file "${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar"
 
     info_log "...copying files to destinations..."
 
@@ -85,7 +85,7 @@ SPACEFX_UPDATE_END"
     run_a_script "cp ${SPACEFX_DIR}/bin/${ARCHITECTURE}/k3s/${VER_K3S}/k3s /usr/local/bin/k3s"
 
     [[ ! -d "/var/lib/rancher/k3s/agent/images" ]] && create_directory "/var/lib/rancher/k3s/agent/images"
-    run_a_script "cp ${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar.zst /var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar.zst"
+    run_a_script "cp ${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar /var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar"
 
 
     export INSTALL_K3S_SKIP_DOWNLOAD=true
