@@ -238,9 +238,13 @@ function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
 
-    info_log "Updating ownership of ${SPACEFX_DIR}..."
-    run_a_script "chown -R \${USER}:\${USER} ${SPACEFX_DIR}"
-    info_log "...successfully updated ownership of ${SPACEFX_DIR}"
+    if [[ -n "${USER}" ]]; then
+        info_log "Updating ownership of ${SPACEFX_DIR}..."
+        run_a_script "chown -R ${USER}:${USER} ${SPACEFX_DIR}"
+        info_log "...successfully updated ownership of ${SPACEFX_DIR}"
+    fi
+
+
 
     check_and_create_certificate_authority
 
