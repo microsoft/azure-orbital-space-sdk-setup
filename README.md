@@ -25,6 +25,11 @@ Production deploments are intended to run on a satellite with an emphasis on red
     # Or specify the architecture to download a different architecture
     /var/spacedev/scripts/stage_spacefx.sh --architecture arm64
 
+    # Clean out /var/spacedev of unnecessary logs and artifacts
+    sudo rm /var/spacedev/logs/* -rf
+    sudo rm /var/spacedev/tmp/* -rf
+    sudo find /var/spacedev/certs -type f ! -name '*.json' -delete
+
     # Create a clean output directory
     sudo mkdir -p ./output && sudo rm -rf ./output/*
     sudo tar -czf ./output/msft_azure_orbital_framework.tar.gz -C /var/spacedev .

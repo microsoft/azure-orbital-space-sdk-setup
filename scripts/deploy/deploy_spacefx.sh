@@ -1,0 +1,1 @@
+./scripts/deploy_spacefx.sh
