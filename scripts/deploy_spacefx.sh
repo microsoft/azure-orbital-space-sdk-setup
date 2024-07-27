@@ -226,7 +226,7 @@ function deploy_prestaged_yamls(){
         else
             error_log "...'${yamlFile}' failed to deploy.  See logs for more information."
         fi
-    done < <(find "${SPACEFX_DIR}/yamls" -iname "*.yaml")
+    done < <(find "${SPACEFX_DIR}/yamls" -maxdepth 1 -name "*.yaml")
 
     info_log "All pre-staged yaml files have been deployed."
 
