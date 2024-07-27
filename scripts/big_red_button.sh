@@ -185,6 +185,33 @@ function prune_registry() {
 }
 
 ############################################################
+# Remove apps that we installed as part of setup
+############################################################
+function remove_app(){
+    local app=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --app)
+                shift
+                app=$1
+                ;;
+            *) echo "Unknown parameter '$1'"; show_help ;;
+        esac
+        shift
+    done
+
+    run_a_script "which -a ${app}" app_paths --ignore_error
+    for app_path in $app_paths; do
+        if [[ -f "$app_path" ]]; then
+            debug_log "Removing ${app} at $app_path"
+            run_a_script "sudo rm -f $app_path"
+            debug_log "...successfull removed old version of ${app} at $app_path"
+        fi
+    done
+}
+
+############################################################
 # Remove k3s data directory if its been changed
 ############################################################
 function remove_k3s_data_dir() {
@@ -214,16 +241,24 @@ function main() {
     show_header
 
     check_and_disable_k3s
-
     stop_all_docker_containers
     remove_k3s
     prune_docker
     prune_registry
+
     remove_k3s_data_dir
 
     info_log "Removing '${SPACEFX_DIR:?}'..."
     run_a_script "rm -rf ${SPACEFX_DIR:?}"
     info_log "...successfully removed '${SPACEFX_DIR:?}'"
+
+    remove_app --app "yq"
+    remove_app --app "jq"
+    remove_app --app "regctl"
+    remove_app --app "cfssl"
+    remove_app --app "cfssljson"
+    remove_app --app "helm"
+
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"
