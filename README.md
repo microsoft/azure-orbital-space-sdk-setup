@@ -27,17 +27,18 @@ Production deploments are intended to run on a satellite with an emphasis on red
 
     # Create a clean output directory
     sudo mkdir -p ./output && sudo rm -rf ./output/*
-    sudo tar -czf ./output/msft_azure_orbital_space_sdk.tar.gz -C /var/spacedev .
+    sudo tar -czf ./output/msft_azure_orbital_framework.tar.gz -C /var/spacedev .
+    sudo sha256sum ./output/msft_azure_orbital_framework.tar.gz | awk '{print $1}' | sudo tee ./output/msft_azure_orbital_framework.tar.gz.sha256
     ```
 
-1.  Copy the `./output/msft_azure_orbital_space_sdk.tar.gz` to the target hardware / satellite / host
+1.  Copy the `./output/msft_azure_orbital_framework.tar.gz` to the target hardware / satellite / host
 
 1.  Deploy the Microsoft Azure Orbital Space SDK
     ```bash
     # Extract the Microsoft Azure Orbital Space SDK to /var/spacedev
     sudo mkdir -p /var/spacedev
     sudo chown -R "${USER:-$(id -un)}" /var/spacedev
-    sudo tar -xzvf msft_azure_orbital_space_sdk.tar.gz -C /var/spacedev
+    sudo tar -xzvf msft_azure_orbital_framework.tar.gz -C /var/spacedev
 
     # Deploy the Microsoft Azure Orbital Space SDK
     /var/spacedev/scripts/deploy_spacefx.sh
