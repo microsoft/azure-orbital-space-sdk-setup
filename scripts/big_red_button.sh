@@ -128,6 +128,22 @@ function remove_k3s() {
         wait $((k3s_uninstall_pid))
     fi
 
+    info_log "Cleaning \$PATH array of any k3s references"
+
+    #Loop through the PATH array and remove any paths that contain 'k3s'
+    IFS=':' read -r -a path_array <<< "$PATH"
+
+    cleaned_paths=()
+    for path in "${path_array[@]}"; do
+        if [[ "$path" != *k3s* ]]; then
+            cleaned_paths+=("$path")
+        fi
+    done
+
+    # Rebuild the PATH array and export it back out
+    cleaned_path=$(IFS=:; echo "${cleaned_paths[*]}")
+    export PATH=$cleaned_path
+
     info_log "...k3s successfully uninstalled"
 
 
