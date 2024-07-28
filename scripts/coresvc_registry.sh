@@ -65,6 +65,7 @@ function check_prerequisites(){
 
     is_cmd_available "docker" HAS_DOCKER
     is_cmd_available "kubectl" HAS_K3S
+    is_cmd_available "pgrep" HAS_PGREP
 
     if [[ "${HAS_K3S}" == true ]]; then
         # if we have kubectl, then check if we have k3s
@@ -72,7 +73,12 @@ function check_prerequisites(){
 
         if [[ "${HAS_K3S}" == true ]]; then
             # We have k3s, so we need to check if it's running
-            run_a_script "ps | grep \"k3s server\"" k3s_status --ignore_error
+            if [[ "${HAS_PGREP}" == true ]]; then
+                run_a_script "pgrep \"k3s\"" k3s_status --ignore_error
+            else
+                run_a_script "ps | grep \"k3s server\"" k3s_status --ignore_error
+            fi
+
 
             if [[ -z "${k3s_status}" ]]; then
                 # k3s is installed but not running
