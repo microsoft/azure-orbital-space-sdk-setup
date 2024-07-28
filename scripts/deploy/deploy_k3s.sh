@@ -111,6 +111,43 @@ SPACEFX_UPDATE_END"
 function wait_for_k3s_to_finish_initializing(){
     info_log "START: ${FUNCNAME[0]}"
 
+
+
+    start_time=$(date +%s)
+    is_cmd_available "ctr" has_ctr_cmd
+    while [[ "${has_ctr_cmd}" == "false" ]]; do
+        current_time=$(date +%s)
+        elapsed_time=$((current_time - start_time))
+        if [[ $elapsed_time -ge $MAX_WAIT_SECS ]]; then
+            exit_with_error "Timed out waiting for k3s to come online."
+        fi
+
+        info_log "...ctr not available yet.  Rechecking in 5 seconds..."
+        sleep 5
+        is_cmd_available "ctr" has_ctr_cmd
+    done
+
+    info_log "ctr is available.  Checking if images are needed..."
+    k3s_images=("klipper-helm" "klipper-lb" "local-path-provisioner" "mirrored-coredns-coredns" "mirrored-library-busybox" "mirrored-library-traefik" "mirrored-metrics-server" "mirrored-pause")
+
+    run_a_script "ctr images list" ctr_images
+
+    needs_images="false"
+
+    for k3s_image in "${k3s_images[@]}"; do
+        if [[ "$ctr_images" != *"$k3s_image"* ]]; then
+            needs_images="true"
+        fi
+    done
+
+    if [[ "${needs_images}" == "true" ]]; then
+        info_log "Detected missing mirrored images.  Loading from '/var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar'..."
+        run_a_script "ctr images import /var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar"
+        info_log "Images successfully imported"
+    else
+        info_log "All k3s images are already loaded.  Nothing to do."
+    fi
+
     info_log "Waiting for k3s to finish initializing (max 5 mins)..."
 
     start_time=$(date +%s)

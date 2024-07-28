@@ -204,7 +204,6 @@ function run_a_script() {
         exec 0</dev/null
         exec 1> >(tee $ROOT_TTY > "$script_temp_std_file")
         exec 2>&1
-        [ -f "${SPACEFX_DIR}/env/spacefx.env" ] && source ${SPACEFX_DIR}/env/spacefx.env
         eval "${run_cmd}" > $script_temp_file
         echo $? > $script_temp_exit_code
     ) &
