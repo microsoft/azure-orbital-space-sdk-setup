@@ -104,16 +104,44 @@ SPACEFX_UPDATE_END"
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
 
-
 ############################################################
-# Wait for k3s to finish deploying by checking for running pods
+# Check if the images need to be loaded into k3s
 ############################################################
-function wait_for_k3s_to_finish_initializing(){
+function load_images_to_k3s(){
     info_log "START: ${FUNCNAME[0]}"
 
+    info_log "Validating images are loaded for k3s..."
 
+    if [[ ! -f "/etc/systemd/system/k3s.service" ]]; then
+        info_log "/etc/systemd/system/k3s.service not found.  Nothing to do."
+        info_log "FINISHED: ${FUNCNAME[0]}"
+        return
+    fi
+
+    run_a_script "cat /etc/systemd/system/k3s.service" k3s_service_file
+    if [[ "$k3s_service_file" == *"--docker"* ]]; then
+        info_log "...docker detected.  Validating images via docker..."
+        load_images_to_k3s_docker
+    else
+        info_log "...docker not detected.  Validating images via ctr..."
+        load_images_to_k3s_ctr
+    fi
+
+    info_log "Validated images are loaded"
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+
+############################################################
+# Check if the images need to be loaded into k3s (via docker)
+############################################################
+function load_images_to_k3s_ctr(){
+    info_log "START: ${FUNCNAME[0]}"
 
     start_time=$(date +%s)
+
+
     is_cmd_available "ctr" has_ctr_cmd
     while [[ "${has_ctr_cmd}" == "false" ]]; do
         current_time=$(date +%s)
@@ -141,12 +169,53 @@ function wait_for_k3s_to_finish_initializing(){
     done
 
     if [[ "${needs_images}" == "true" ]]; then
-        info_log "Detected missing mirrored images.  Loading from '/var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar'..."
-        run_a_script "ctr images import /var/lib/rancher/k3s/agent/images/k3s-airgap-images-${ARCHITECTURE}.tar"
+        info_log "Detected missing mirrored images.  Loading from '${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar'..."
+        run_a_script "ctr images import ${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar"
         info_log "Images successfully imported"
     else
         info_log "All k3s images are already loaded.  Nothing to do."
     fi
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Check if the images need to be loaded into k3s (via docker)
+############################################################
+function load_images_to_k3s_docker(){
+    info_log "START: ${FUNCNAME[0]}"
+
+    info_log "Checking if images are needed (docker)..."
+    k3s_images=("klipper-helm" "klipper-lb" "local-path-provisioner" "mirrored-coredns-coredns" "mirrored-library-busybox" "mirrored-library-traefik" "mirrored-metrics-server" "mirrored-pause")
+
+    run_a_script "docker images" ctr_images
+
+    needs_images="false"
+
+    for k3s_image in "${k3s_images[@]}"; do
+        if [[ "$ctr_images" != *"$k3s_image"* ]]; then
+            needs_images="true"
+        fi
+    done
+
+    if [[ "${needs_images}" == "true" ]]; then
+        info_log "Detected missing k3s images.  Loading from '${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar'..."
+        run_a_script "docker load --input ${SPACEFX_DIR}/images/${ARCHITECTURE}/k3s-airgap-images-${ARCHITECTURE}.tar"
+        info_log "Images successfully imported"
+    else
+        info_log "All k3s images are already loaded.  Nothing to do."
+    fi
+
+
+    info_log "FINISHED: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Wait for k3s to finish deploying by checking for running pods
+############################################################
+function wait_for_k3s_to_finish_initializing(){
+    info_log "START: ${FUNCNAME[0]}"
 
     info_log "Waiting for k3s to finish initializing (max 5 mins)..."
 
@@ -198,6 +267,7 @@ function wait_for_k3s_to_finish_initializing(){
 function main() {
 
     deploy_k3s_cluster
+    load_images_to_k3s
     wait_for_k3s_to_finish_initializing
 
     info_log "------------------------------------------"
