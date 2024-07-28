@@ -218,9 +218,9 @@ function stop_registry(){
     info_log "Stopping pypiserver processes (if still running)"
 
     if [[ "${HAS_PGREP}" == true ]]; then
-        run_a_script "pgrep '^pypiserver'" pids --ignore_error
+        run_a_script "pgrep '^pypi-server'" pids --ignore_error
     else
-        run_a_script "ps aux | grep '^pypiserver' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+        run_a_script "ps aux | grep '^pypi-server' | grep -v grep | awk '{print \$2}'" pids --ignore_error
     fi
 
     for pid in $pids; do
