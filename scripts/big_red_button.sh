@@ -124,6 +124,7 @@ function remove_k3s() {
     info_log "...k3s found.  Uninstalling..."
     if [[ -f "/usr/local/bin/k3s-uninstall.sh" ]]; then
         run_a_script "/usr/local/bin/k3s-uninstall.sh" k3s_uninstall_pid --background
+        debug_log "...wating for k3s to finish uninstalling (pid $k3s_uninstall_pid)..."
         wait $((k3s_uninstall_pid))
     fi
 
