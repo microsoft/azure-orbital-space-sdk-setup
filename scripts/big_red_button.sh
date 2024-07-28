@@ -179,9 +179,14 @@ function prune_docker() {
 function prune_registry() {
     info_log "START: ${FUNCNAME[0]}"
 
+    is_cmd_available "pgrep" HAS_PGREP
 
     info_log "Stopping registry processes (if still running)"
-    run_a_script "pgrep '^registry'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^registry'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^registry' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
     for pid in $pids; do
         debug_log "...terminating process id '${pid}'"
@@ -192,12 +197,12 @@ function prune_registry() {
 
     info_log "Stopping pypiserver processes (if still running)"
 
-    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^pypiserver'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^pypiserver' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
-    for pid in $pids; do
-        debug_log "...terminating process id '${pid}'"
-        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
-    done
 
     info_log "...successfully stopped pypiserver processes."
 
