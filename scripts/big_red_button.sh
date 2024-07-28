@@ -203,6 +203,11 @@ function prune_registry() {
         run_a_script "ps aux | grep '^pypi-server' | grep -v grep | awk '{print \$2}'" pids --ignore_error
     fi
 
+    for pid in $pids; do
+        debug_log "...terminating process id '${pid}'"
+        run_a_script "kill -9 ${pid}" --disable_log --ignore_error
+    done
+
 
     info_log "...successfully stopped pypiserver processes."
 
