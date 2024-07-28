@@ -72,7 +72,7 @@ function check_prerequisites(){
 
         if [[ "${HAS_K3S}" == true ]]; then
             # We have k3s, so we need to check if it's running
-            run_a_script "pgrep \"k3s\"" k3s_status --ignore_error
+            run_a_script "ps | grep \"k3s server\"" k3s_status --ignore_error
 
             if [[ -z "${k3s_status}" ]]; then
                 # k3s is installed but not running
@@ -90,6 +90,10 @@ function check_prerequisites(){
     if [[ "${HAS_K3S}" == true ]]; then
         debug_log "K3s found."
         DESTINATION_HOST="k3s"
+    fi
+
+    if [[ "${HAS_DOCKER}" == false ]] && [[ "${HAS_K3S}" == false ]]; then
+        exit_with_error "No suitable environment found (HAS_DOCKER = 'false'.  HAS_K#s = 'false').  Please install either Docker or K3s"
     fi
 
     [[ ! -d "${SPACEFX_DIR}/registry/data" ]] && create_directory "${SPACEFX_DIR}/registry/data"
