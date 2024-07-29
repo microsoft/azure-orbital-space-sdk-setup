@@ -187,7 +187,7 @@ function calculate_tag_from_channel() {
     fi
 
     if [[ "${SPACEFX_CHANNEL}" == "stable" ]]; then
-        return_tag="${tag}-stable"
+        return_tag="${tag}"
     fi
 
     if [[ "${SPACEFX_CHANNEL}" == "rc" ]]; then
