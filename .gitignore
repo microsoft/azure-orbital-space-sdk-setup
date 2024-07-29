@@ -1,4 +1,5 @@
 spacedev_cache
+wheel
 *.log
 tmp
 output
