@@ -186,6 +186,10 @@ function calculate_tag_from_channel() {
         return_tag="${tag}-nightly"
     fi
 
+    if [[ "${SPACEFX_CHANNEL}" == "stable" ]]; then
+        return_tag="${tag}-stable"
+    fi
+
     if [[ "${SPACEFX_CHANNEL}" == "rc" ]]; then
         return_tag="${tag}-rc"
     fi
