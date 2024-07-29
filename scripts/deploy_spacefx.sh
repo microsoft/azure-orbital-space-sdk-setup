@@ -226,7 +226,7 @@ function deploy_prestaged_yamls(){
         else
             error_log "...'${yamlFile}' failed to deploy.  See logs for more information."
         fi
-    done < <(find "${SPACEFX_DIR}/yamls" -iname "*.yaml")
+    done < <(find "${SPACEFX_DIR}/yamls" -maxdepth 1 -name "*.yaml")
 
     info_log "All pre-staged yaml files have been deployed."
 
@@ -238,11 +238,20 @@ function main() {
     write_parameter_to_log ARCHITECTURE
     write_parameter_to_log DEV_ENVIRONMENT
 
+    if [[ -n "${USER}" ]]; then
+        info_log "Updating ownership of ${SPACEFX_DIR}..."
+        run_a_script "chown -R ${USER}:${USER} ${SPACEFX_DIR}"
+        info_log "...successfully updated ownership of ${SPACEFX_DIR}"
+    fi
+
+
+
+    check_and_create_certificate_authority
+
     info_log "Deploying k3s..."
     run_a_script "${SPACEFX_DIR}/scripts/deploy/deploy_k3s.sh"
     info_log "...successfully deployed k3s"
 
-    check_and_create_certificate_authority
     deploy_namespaces
 
     run_a_script "${SPACEFX_DIR}/scripts/coresvc_registry.sh --start"

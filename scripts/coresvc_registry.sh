@@ -65,6 +65,7 @@ function check_prerequisites(){
 
     is_cmd_available "docker" HAS_DOCKER
     is_cmd_available "kubectl" HAS_K3S
+    is_cmd_available "pgrep" HAS_PGREP
 
     if [[ "${HAS_K3S}" == true ]]; then
         # if we have kubectl, then check if we have k3s
@@ -72,7 +73,12 @@ function check_prerequisites(){
 
         if [[ "${HAS_K3S}" == true ]]; then
             # We have k3s, so we need to check if it's running
-            run_a_script "pgrep \"k3s\"" k3s_status --ignore_error
+            if [[ "${HAS_PGREP}" == true ]]; then
+                run_a_script "pgrep \"k3s\"" k3s_status --ignore_error
+            else
+                run_a_script "ps | grep \"k3s server\"" k3s_status --ignore_error
+            fi
+
 
             if [[ -z "${k3s_status}" ]]; then
                 # k3s is installed but not running
@@ -90,6 +96,10 @@ function check_prerequisites(){
     if [[ "${HAS_K3S}" == true ]]; then
         debug_log "K3s found."
         DESTINATION_HOST="k3s"
+    fi
+
+    if [[ "${HAS_DOCKER}" == false ]] && [[ "${HAS_K3S}" == false ]]; then
+        exit_with_error "No suitable environment found (HAS_DOCKER = 'false'.  HAS_K#s = 'false').  Please install either Docker or K3s"
     fi
 
     [[ ! -d "${SPACEFX_DIR}/registry/data" ]] && create_directory "${SPACEFX_DIR}/registry/data"
@@ -192,7 +202,11 @@ function stop_registry(){
     fi
 
     info_log "Stopping registry processes (if still running)"
-    run_a_script "pgrep '^registry'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^registry'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^registry' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
     for pid in $pids; do
         debug_log "...terminating process id '${pid}'"
@@ -203,7 +217,11 @@ function stop_registry(){
 
     info_log "Stopping pypiserver processes (if still running)"
 
-    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^pypi-server'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^pypi-server' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
     for pid in $pids; do
         debug_log "...terminating process id '${pid}'"

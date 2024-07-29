@@ -122,7 +122,27 @@ function remove_k3s() {
     fi
 
     info_log "...k3s found.  Uninstalling..."
-    [[ -f "/usr/local/bin/k3s-uninstall.sh" ]] && run_a_script "/usr/local/bin/k3s-uninstall.sh"
+    if [[ -f "/usr/local/bin/k3s-uninstall.sh" ]]; then
+        run_a_script "/usr/local/bin/k3s-uninstall.sh" k3s_uninstall_pid --background
+        debug_log "...wating for k3s to finish uninstalling (pid $k3s_uninstall_pid)..."
+        wait $((k3s_uninstall_pid))
+    fi
+
+    info_log "Cleaning \$PATH array of any k3s references"
+
+    #Loop through the PATH array and remove any paths that contain 'k3s'
+    IFS=':' read -r -a path_array <<< "$PATH"
+
+    cleaned_paths=()
+    for path in "${path_array[@]}"; do
+        if [[ "$path" != *k3s* ]]; then
+            cleaned_paths+=("$path")
+        fi
+    done
+
+    # Rebuild the PATH array and export it back out
+    cleaned_path=$(IFS=:; echo "${cleaned_paths[*]}")
+    export PATH=$cleaned_path
 
     info_log "...k3s successfully uninstalled"
 
@@ -159,9 +179,14 @@ function prune_docker() {
 function prune_registry() {
     info_log "START: ${FUNCNAME[0]}"
 
+    is_cmd_available "pgrep" HAS_PGREP
 
     info_log "Stopping registry processes (if still running)"
-    run_a_script "pgrep '^registry'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^registry'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^registry' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
     for pid in $pids; do
         debug_log "...terminating process id '${pid}'"
@@ -172,16 +197,48 @@ function prune_registry() {
 
     info_log "Stopping pypiserver processes (if still running)"
 
-    run_a_script "pgrep '^pypiserver'" pids --ignore_error
+    if [[ "${HAS_PGREP}" == true ]]; then
+        run_a_script "pgrep '^pypi-server'" pids --ignore_error
+    else
+        run_a_script "ps aux | grep '^pypi-server' | grep -v grep | awk '{print \$2}'" pids --ignore_error
+    fi
 
     for pid in $pids; do
         debug_log "...terminating process id '${pid}'"
         run_a_script "kill -9 ${pid}" --disable_log --ignore_error
     done
 
+
     info_log "...successfully stopped pypiserver processes."
 
     info_log "END: ${FUNCNAME[0]}"
+}
+
+############################################################
+# Remove apps that we installed as part of setup
+############################################################
+function remove_app(){
+    local app=""
+
+    while [[ "$#" -gt 0 ]]; do
+        case $1 in
+            --app)
+                shift
+                app=$1
+                ;;
+            *) echo "Unknown parameter '$1'"; show_help ;;
+        esac
+        shift
+    done
+
+    run_a_script "which -a ${app}" app_paths --ignore_error
+    for app_path in $app_paths; do
+        if [[ -f "$app_path" ]]; then
+            debug_log "Removing ${app} at $app_path"
+            run_a_script "sudo rm -f $app_path"
+            debug_log "...successfull removed old version of ${app} at $app_path"
+        fi
+    done
 }
 
 ############################################################
@@ -214,16 +271,24 @@ function main() {
     show_header
 
     check_and_disable_k3s
-
     stop_all_docker_containers
     remove_k3s
     prune_docker
     prune_registry
+
     remove_k3s_data_dir
 
     info_log "Removing '${SPACEFX_DIR:?}'..."
     run_a_script "rm -rf ${SPACEFX_DIR:?}"
     info_log "...successfully removed '${SPACEFX_DIR:?}'"
+
+    remove_app --app "yq"
+    remove_app --app "jq"
+    remove_app --app "regctl"
+    remove_app --app "cfssl"
+    remove_app --app "cfssljson"
+    remove_app --app "helm"
+
 
     info_log "------------------------------------------"
     info_log "END: ${SCRIPT_NAME}"

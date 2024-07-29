@@ -67,7 +67,7 @@ devcontainer features package --force-clean-output-folder ${WORKING_DIR}/.devcon
 
 echo "Pushing the devcontainer feature '${REGISTRY}/${FEATURE}:${VERSION}'..."
 # Push the devcontainer feature tarball to the registry
-oras push ${REGISTRY}/${FEATURE}:${VERSION} \
+oras push --disable-path-validation ${REGISTRY}/${FEATURE}:${VERSION} \
     --config /dev/null:application/vnd.devcontainers \
     --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
             ${ARTIFACT_PATH}:application/vnd.devcontainers.layer.v1+tar
