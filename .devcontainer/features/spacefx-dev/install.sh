@@ -217,9 +217,12 @@ function update_spacefx_env() {
     sed -i '/^SPACEFX_DIR/d' ./azure-orbital-space-sdk-setup/env/spacefx.env
     sed -i '/^LOG_LEVEL/d' ./azure-orbital-space-sdk-setup/env/spacefx.env
 
-    # Add the values to the spacefx.env file
-    echo "SPACEFX_DIR=${SPACEFX_DIR}" >> ./azure-orbital-space-sdk-setup/env/spacefx.env
-    echo "LOG_LEVEL=${LOG_LEVEL}" >> ./azure-orbital-space-sdk-setup/env/spacefx.env
+    # Add the values to the spacefx.env file.  We're using tee to append the values to the file and make sure the line break is added
+    tee -a ./azure-orbital-space-sdk-setup/env/spacefx.env > /dev/null <<SPACEFX_EOF
+
+SPACEFX_DIR=${SPACEFX_DIR}
+LOG_LEVEL=${LOG_LEVEL}
+SPACEFX_EOF
 
 }
 
