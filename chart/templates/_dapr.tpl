@@ -16,6 +16,6 @@ dapr.io/sidecar-liveness-probe-delay-seconds: "2"
 dapr.io/sidecar-liveness-probe-period-seconds: "2"
 dapr.io/sidecar-liveness-probe-threshold: "9999"
 {{- else }}
-dapr.io/enable-app-health-check: {{ $serviceValues.appHealthCheck | ternary "true" "false" }}
+dapr.io/enable-app-health-check: {{ $serviceValues.appHealthCheck | quote }}
 {{- end }}
 {{- end }}
