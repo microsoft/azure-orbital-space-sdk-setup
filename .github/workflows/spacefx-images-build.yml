@@ -147,7 +147,7 @@ jobs:
                 --annotation-config azure-orbital-space-sdk-setup.yaml
         done
 
-   build-space-sdk-jetson-deviceyquery-arm64:
+  build-space-sdk-jetson-deviceyquery-arm64:
     runs-on:  build-spacefx-base-image-arm64
     needs: build-python-images-arm64
     permissions:
