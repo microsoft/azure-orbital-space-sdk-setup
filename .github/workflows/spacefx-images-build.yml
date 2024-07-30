@@ -3,8 +3,8 @@ name: spacefx-images-build-publish
 on: 
     workflow_dispatch:
     push:
-        branches:
-         - main
+      branches:
+        - main
 
 jobs:
   build-spacefx-base-image-amd64:
@@ -147,8 +147,8 @@ jobs:
                 --annotation-config azure-orbital-space-sdk-setup.yaml
         done
 
-   build-space-sdk-jetson-deviceyquery-arm64:
-    runs-on:  build-spacefx-base-image-arm64
+  build-space-sdk-jetson-deviceyquery-arm64:
+    runs-on:  spacesdk-ubuntu-2204LTS-arm64
     needs: build-python-images-arm64
     permissions:
       contents: read
@@ -161,7 +161,7 @@ jobs:
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - name: Build Python-Base and SpaceSDK-Base-Python Container images
+    - name: Build Jetson DeviceQuery Container images
       shell: bash
       run: |
         echo "Sourcing environment variables..."
