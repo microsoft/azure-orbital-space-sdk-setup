@@ -1,0 +1,195 @@
+name: spacefx-images-build-publish
+
+on: 
+    workflow_dispatch:
+    push:
+        branches:
+         - main
+
+jobs:
+  build-spacefx-base-image-amd64:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+      with: 
+        docker-file: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
+        architecture: amd64
+        repo-dir: ${{ github.workspace }}
+        app-name: spacesdk-base
+        annotation-config: azure-orbital-space-sdk-setup.yaml
+
+  build-spacefx-base-image-arm64:
+    runs-on: spacesdk-ubuntu-2204LTS-arm64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+      with: 
+        docker-file: ./build/spacesdk-base/Dockerfile.spacesdk-base
+        architecture: arm64
+        repo-dir: ${{ github.workspace }}
+        app-name: spacesdk-base
+        annotation-config: azure-orbital-space-sdk-setup.yaml
+
+  build-python-images-amd64:
+    runs-on: ubuntu-latest
+    needs: build-spacefx-base-image-amd64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - name: Build Python-Base and SpaceSDK-Base-Python Container images
+      shell: bash
+      run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        # Python-Base and SpaceSDK-Base-Python Container image build
+        PYTHON_VERSIONS=("3.10" "3.9" "3.8")
+        for i in "${!PYTHON_VERSIONS[@]}"; do
+            PYTHON_VERSION=${PYTHON_VERSIONS[i]}
+            PYTHON_VERSION_TAG_CHANNEL=${PYTHON_VERSION}
+            [[ "${SPACEFX_CHANNEL}" != "stable" ]] && PYTHON_VERSION_TAG_CHANNEL="${PYTHON_VERSION_TAG_CHANNEL}-${SPACEFX_CHANNEL}"
+
+            # Build and push Python-Base images.  This is an intermediate layer with only Python (built from source)
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/python/Dockerfile.python-base \
+                --image-tag ${PYTHON_VERSION} \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name python-base \
+                --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+
+            # Build spacesdk-python-base, which is a combination of spacesdk-base and python-base
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/python/Dockerfile.python-spacesdk-base \
+                --image-tag 0.11.0_${PYTHON_VERSION} \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name spacesdk-base-python \
+                --build-arg PYTHON_VERSION="${PYTHON_VERSION_TAG_CHANNEL}" \
+                --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+        done
+
+  build-python-images-arm64:
+    runs-on: spacesdk-ubuntu-2204LTS-arm64
+    needs: build-spacefx-base-image-arm64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - name: Build Python-Base and SpaceSDK-Base-Python Container images
+      shell: bash
+      run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        # Python-Base and SpaceSDK-Base-Python Container image build
+        PYTHON_VERSIONS=("3.10" "3.9" "3.8")
+        for i in "${!PYTHON_VERSIONS[@]}"; do
+            PYTHON_VERSION=${PYTHON_VERSIONS[i]}
+            PYTHON_VERSION_TAG_CHANNEL=${PYTHON_VERSION}
+            [[ "${SPACEFX_CHANNEL}" != "stable" ]] && PYTHON_VERSION_TAG_CHANNEL="${PYTHON_VERSION_TAG_CHANNEL}-${SPACEFX_CHANNEL}"
+
+            # Build and push Python-Base images.  This is an intermediate layer with only Python (built from source)
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/python/Dockerfile.python-base \
+                --image-tag ${PYTHON_VERSION} \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name python-base \
+                --build-arg PYTHON_VERSION="${PYTHON_VERSION}" \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+
+            # Build spacesdk-python-base, which is a combination of spacesdk-base and python-base
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/python/Dockerfile.python-spacesdk-base \
+                --image-tag 0.11.0_${PYTHON_VERSION} \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name spacesdk-base-python \
+                --build-arg PYTHON_VERSION="${PYTHON_VERSION_TAG_CHANNEL}" \
+                --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+        done
+
+   build-space-sdk-jetson-deviceyquery-arm64:
+    runs-on:  build-spacefx-base-image-arm64
+    needs: build-python-images-arm64
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+      with:
+        GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
+        GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
+        SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
+
+    - name: Build Python-Base and SpaceSDK-Base-Python Container images
+      shell: bash
+      run: |
+        echo "Sourcing environment variables..."
+        source ./env/spacefx.env
+
+        # Build the SpaceSDK-Jetson-DeviceQuery Versions
+        CUDA_VERSIONS=("11.4" "12.2")
+        for i in "${!CUDA_VERSIONS[@]}"; do
+            CUDA_VERSION=${CUDA_VERSIONS[i]}
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery \
+                --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+                --image-tag "cuda-${CUDA_VERSION}" \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name spacesdk-jetson-devicequery \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+
+            /var/spacedev/build/build_containerImage.sh \
+                --dockerfile /var/spacedev/build/gpu/jetson/Dockerfile.deviceQuery.dev \
+                --build-arg CUDA_VERSION="${CUDA_VERSION}" \
+                --image-tag "cuda-${CUDA_VERSION}-dev" \
+                --repo-dir ${PWD} \
+                --no-spacefx-dev \
+                --app-name spacesdk-jetson-devicequery \
+                --annotation-config azure-orbital-space-sdk-setup.yaml
+        done
+
+
+
+    
