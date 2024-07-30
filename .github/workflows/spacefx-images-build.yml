@@ -3,6 +3,8 @@ name: spacefx-images-build-publish
 on: 
     workflow_dispatch:
     push:
+      branches:
+        - main
 
 jobs:
   build-spacefx-base-image-amd64:
@@ -159,7 +161,7 @@ jobs:
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - name: Build Python-Base and SpaceSDK-Base-Python Container images
+    - name: Build Jetson DeviceQuery Container images
       shell: bash
       run: |
         echo "Sourcing environment variables..."
