@@ -16,15 +16,21 @@ config:
   charts:
     - group: dapr
       enabled: true
-      version: 1.9.6
+      version: 1.13.5
       namespace: dapr-system
       containers:
         - registry: ghcr.io
-          repository: dapr/dapr
-          tag: 1.9.6
-        - registry: ghcr.io
           repository: dapr/daprd
-          tag: 1.9.6
+          tag: 1.13.5
+        - registry: ghcr.io
+          repository: dapr/sentry
+          tag: 1.13.5
+        - registry: ghcr.io
+          repository: dapr/injector
+          tag: 1.13.5
+        - registry: ghcr.io
+          repository: dapr/operator
+          tag: 1.13.5
     - group: smb
       enabled: false
       version: 1.15.0

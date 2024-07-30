@@ -71,10 +71,6 @@ spec:
     value: 16
   - name: enableDeadLetter # Optional enable dead Letter or not
     value: false
-  - name: maxLen # Optional max message count in a queue
-    value: 3000
-  - name: maxLenBytes # Optional maximum length in bytes of a queue.
-    value: 10485760
 {{- if eq $globalValues.security.topicRestrictionEnabled true }}
 {{- $protectedTopics := list -}}
 {{- $publishingScopes := list -}}

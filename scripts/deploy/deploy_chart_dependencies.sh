@@ -194,9 +194,11 @@ function deploy_dapr_plugin(){
             --set global.registry=${_registry_url}/dapr \
             --set global.logAsJson=true \
             --set dapr_placement.logLevel=debug \
+            --set global.prometheus.enabled=false \
             --set dapr_sidecar_injector.sidecarImagePullPolicy=IfNotPresent \
             --set global.imagePullPolicy=IfNotPresent \
             --set global.mtls.enabled=true \
+            --set global.actors.enabled=false \
             --set dapr_placement.cluster.forceInMemoryLog=true \
             --set dapr_dashboard.enabled=false"
 
