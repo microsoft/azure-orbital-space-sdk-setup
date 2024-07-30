@@ -9,8 +9,8 @@ dapr.io/log-level: {{ $globalValues.dapr.logLevel | quote }}
 dapr.io/enable-api-logging: "true"
 dapr.io/enable-app-health-check: "true"
 dapr.io/app-health-probe-interval: "5"
-dapr.io/app-health-probe-timeout: "5000"
-dapr.io/app-health-threshold: "10"
+dapr.io/app-health-probe-timeout: "10000"
+dapr.io/app-health-threshold: "60"
 {{- if $serviceValues.debugShim }}
 dapr.io/sidecar-liveness-probe-delay-seconds: "2"
 dapr.io/sidecar-liveness-probe-period-seconds: "2"
