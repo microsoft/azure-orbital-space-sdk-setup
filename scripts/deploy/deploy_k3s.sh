@@ -118,8 +118,9 @@ function load_images_to_k3s(){
         return
     fi
 
-    run_a_script "cat /etc/systemd/system/k3s.service" k3s_service_file
-    if [[ "$k3s_service_file" == *"--docker"* ]]; then
+    run_a_script "grep -q -- \"--docker\" \"/etc/systemd/system/k3s.service\"" --ignore_error
+
+    if [[ $RETURN_CODE -eq 0 ]]; then
         info_log "...docker detected.  Validating images via docker..."
         load_images_to_k3s_docker
     else
