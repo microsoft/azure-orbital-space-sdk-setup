@@ -179,7 +179,6 @@ services:
       appConfig:
         - name: messageResponseTimeoutMS
           value: 15000
-      appHealthCheck: false
       appName: platform-mts
       buildService:
         dockerFile: Dockerfile.buildsvc.app
@@ -199,7 +198,6 @@ services:
       workingDir: /workspaces/platform-mts
     deployment:
       appName: platform-deployment
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -256,7 +254,6 @@ services:
         - name: enableRoutingToMTS
           value: true
       appName: vth
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -281,7 +278,6 @@ services:
         - name: messageResponseTimeoutMS
           value: 15000
       appName: hostsvc-sensor
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -309,7 +305,6 @@ services:
         - name: allowLinksToDeploymentSvc
           value: false
       appName: hostsvc-link
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -337,7 +332,6 @@ services:
         - name: writeTelemetryToLog
           value: true
       appName: hostsvc-logging
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -356,7 +350,6 @@ services:
       workingDir: /workspaces/hostsvc-logging
     position:
       appName: hostsvc-position
-      appHealthCheck: false
       buildService:
         dockerFile: Dockerfile.buildsvc.app
         contextDir: build/dotnet
@@ -406,7 +399,6 @@ services:
       serviceAccount:
         enabled: false
       appContext: null
-      appHealthCheck: false
       appName: payloadappTemplate
       appGroup: payloadappGroup
       correlationId: null

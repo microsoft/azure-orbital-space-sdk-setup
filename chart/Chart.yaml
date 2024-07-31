@@ -10,6 +10,6 @@ dependencies:
     repository: https://raw.githubusercontent.com/kubernetes-csi/csi-driver-smb/master/charts
     condition: subcharts.smb.enabled
   - name: dapr
-    version: 1.13.5
+    version: 1.11.6
     repository: https://dapr.github.io/helm-charts
     condition: subcharts.dapr.enabled
