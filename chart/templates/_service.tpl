@@ -45,6 +45,21 @@ spec:
       {{- end }}
       containers:
         - name: {{ $serviceValues.appName | quote }}
+        {{- if or $serviceValues.appHealthChecks $serviceValues.debugShim }}
+          ports:
+          - name: liveness-port
+            containerPort: 50051
+          livenessProbe:
+            grpc:
+              port: 50051
+            failureThreshold: 2
+            periodSeconds: 5
+          startupProbe:
+            grpc:
+              port: 50051
+            failureThreshold: 100
+            periodSeconds: 5
+        {{- end }}
         {{- if $serviceValues.securityContext }}
           securityContext:
         {{- range $index, $securityContext := $serviceValues.securityContext }}
