@@ -2,18 +2,20 @@ ARG PYTHON_VERSION="3.10"
 ARG SDK_VERSION="0.11.0"
 ARG CONTAINER_REGISTRY="ghcr.io/microsoft"
 
-FROM ${CONTAINER_REGISTRY}/python-base:${PYTHON_VERSION} as pythonbase
+FROM ${CONTAINER_REGISTRY}/azure-orbital-space-sdk/python-base:testing as pythonbase
 ARG PYTHON_VERSION
 
-FROM ${CONTAINER_REGISTRY}/spacesdk-base:${SDK_VERSION} as core
+FROM ${CONTAINER_REGISTRY}/azure-orbital-space-sdk/spacesdk-base:${SDK_VERSION} as core
 ARG PYTHON_VERSION
 ENV PATH=/root/.dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:${PATH}
 ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV PYTHON_PATH=/usr/local/bin/python3.10
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
-COPY --from=pythonbase /usr/ /usr/
+COPY --from=pythonbase /etc/ /etc/
+COPY --from=pythonbase /lib/ /lib/
+COPY --from=pythonbase /lib64/ /lib64/
 COPY --from=pythonbase /python-symlinks/ /
-
+COPY --from=pythonbase /usr/ /usr/
 
 ENTRYPOINT ["/bin/python"]

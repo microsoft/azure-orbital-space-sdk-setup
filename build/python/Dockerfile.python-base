@@ -1,8 +1,10 @@
 # This builds an intermediate Python image layer that can be used to build a Python-based payload-app container image
 
 ARG PYTHON_VERSION="0.0"
+ARG ASPNET_VERSION=6.0.25
+ARG DOTNET_VERSION=6.0.25
 
-# Create a venv so we can get our python dependencies
+# Stage 1: Build Python
 #FROM mcr.microsoft.com/mirror/docker/library/python:${PYTHON_VERSION}-slim as builder
 FROM mcr.microsoft.com/devcontainers/python:1-${PYTHON_VERSION} as builder
 ARG PYTHON_VERSION
@@ -11,17 +13,25 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
-
 # Download python dependencies
-RUN apt-get update && apt-get install --no-install-suggests -y build-essential \
-                ca-certificates curl dirmngr gcc gnupg2 libbz2-dev \
-                libffi-dev libgdbm-dev liblzma-dev libncurses5-dev \
-                libncursesw5-dev libreadline-dev libsqlite3-dev \
-                libssl-dev libxml2-dev libxmlsec1-dev llvm make \
-                tar tk-dev uuid-dev wget xz-utils zlib1g-dev \
-                && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --no-install-suggests -y \
+        build-essential \
+        ca-certificates \
+        curl \
+        gcc \
+        libbz2-dev \
+        libffi-dev \
+        liblzma-dev \
+        libncurses5-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        wget \
+        xz-utils \
+        zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Download python source code
+# Download and build Python
 RUN PYTHON_INSTALLED_VERSION=$(python --version 2>&1 | awk '{print $2}') \
     && curl --silent --fail --create-dirs --output /tmp/Python-${PYTHON_INSTALLED_VERSION}.tgz -L https://www.python.org/ftp/python/${PYTHON_INSTALLED_VERSION}/Python-${PYTHON_INSTALLED_VERSION}.tgz \
     && mkdir -p /tmp/python-src \
@@ -52,27 +62,88 @@ RUN ln -s /usr/local/bin/python${PYTHON_VERSION} /opt/python-symlinks/bin/python
 RUN [ -d /opt/python/usr/local/lib/python${PYTHON_VERSION}/test ] && rm -rf /opt/python/usr/local/lib/python${PYTHON_VERSION}/test
 
 
-# Download and build libffi.  Libffi is used by grpcio
-RUN apt-get update \
-&& apt-get install -y \
-        curl \
-        dpkg-dev \
+# Stage 2: Stage additional system dependencies used by python packages
+FROM ubuntu:22.04 as system-dependencies
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Download additional system dependencies used by python packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        # Essential tools
         build-essential \
-        wget
+        ca-certificates \
+        curl \
+        dirmngr \
+        gnupg2 \
+        wget \
+        tar \
+        make \
+        # Compilers and build tools
+        gcc \
+        llvm \
+        cmake \
+        gfortran \
+        # Compression libraries
+        bzip2 \
+        lzma \
+        xz-utils \
+        zlib1g \
+        # C libraries
+        libc6 \
+        musl \
+        # Database libraries
+        libdb5.3 \
+        sqlite3 \
+        # XML libraries
+        libexpat1 \
+        libxml2 \
+        libxmlsec1 \
+        # Other libraries
+        libffi7 \
+        libgdbm6 \
+        libncurses5 \
+        libncursesw5 \
+        libreadline8 \
+        libssl3 \
+        uuid-runtime \
+        # Linear algebra libraries
+        libblas3 \
+        liblapack3 \
+        libatlas3-base \
+        libopenblas-base \
+        # HDF5 support
+        libhdf5-103 \
+        # Compression support
+        libzstd1 \
+        liblz4-1 \
+        # Image processing and codecs
+        libjpeg-turbo8 \
+        libpng16-16 \
+        libtiff5 \
+        libavcodec58 \
+        libavformat58 \
+        libswscale5 \
+        libv4l-0 \
+        libxvidcore4 \
+        liblcms2-2 \
+        libwebp7 \
+        libopenjp2-7 \
+        # Development tools
+        tk8.6 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create target directory for the libffi-dev extraction
-WORKDIR /libffi
 
-# Download, compile, and install libffi
-RUN wget https://github.com/libffi/libffi/releases/download/v3.4.6/libffi-3.4.6.tar.gz \
-    && tar -xzf libffi-3.4.6.tar.gz \
-    && cd libffi-3.4.6 \
-    && ./configure --prefix=/usr \
-    && make \
-    && make install
+# Stage 3: Pull the GDAL image to get the GDAL shared libraries and dependencies
+FROM ghcr.io/osgeo/gdal:ubuntu-small-3.9.1 as gdal
 
 
+# Stage 4: Construct the final image
 FROM scratch as final
 COPY --from=builder /opt/python/ /
 COPY --from=builder /opt/python-symlinks/ /python-symlinks/
-COPY --from=builder /libffi/libffi-3.4.6/*/.libs/* /usr/local/lib/
+COPY --from=gdal /usr/bin/ /usr/local/bin/
+COPY --from=gdal /usr/include/ /usr/local/include/
+COPY --from=gdal /usr/lib/ /usr/local/lib/
+COPY --from=system-dependencies /usr/ /usr/
+COPY --from=system-dependencies /etc/ /etc/
+COPY --from=system-dependencies /lib/ /lib/
+COPY --from=system-dependencies /lib64/ /lib64/
