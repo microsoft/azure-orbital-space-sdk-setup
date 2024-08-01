@@ -3,10 +3,24 @@ global:
   appConfig:
     heartBeatPulseTimingMS: 2000
     heartBeatReceivedToleranceMS: 10000
+    heartBeatReceivedCriticalToleranceMS: 60000
     resourceMonitorEnabled: false
     resourceMonitorTimingMS: 5000
     resourceScavengerEnabled: true
     resourceScavengerTimingMS: 30000
+  probes:
+    liveness:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 30
+      timeoutSeconds: 5
+      failureThreshold: 3
+    startup:
+      enabled: true
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 100
   containerCommand: dotnet
   containerRegistry: registry.spacefx.local:5000
   containerRegistryInternal: coresvc-registry.coresvc.svc.cluster.local:5000

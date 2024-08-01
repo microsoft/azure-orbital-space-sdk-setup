@@ -22,6 +22,7 @@ data:
   spacefx_dir_xfer: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $globalValues.spacefxDirectories.xfer $serviceValues.appName | b64enc }}
   heartbeatpulsetimingms: {{ printf "%.0f" $globalValues.appConfig.heartBeatPulseTimingMS | b64enc }}
   heartbeatreceivedtolerancems: {{ printf "%.0f" $globalValues.appConfig.heartBeatReceivedToleranceMS | b64enc }}
+  heartbeatreceivedcriticaltolerancems: {{ printf "%.0f" $globalValues.appConfig.heartBeatReceivedCriticalToleranceMS | b64enc }}
   resourcemonitorenabled: {{ $globalValues.appConfig.resourceMonitorEnabled | ternary "true" "false" | b64enc }}
   resourcemonitortimingms: {{ printf "%.0f" $globalValues.appConfig.resourceMonitorTimingMS | b64enc }}
   resourcescavengerenabled: {{ $globalValues.appConfig.resourceScavengerEnabled | ternary "true" "false" | b64enc }}
