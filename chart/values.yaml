@@ -35,6 +35,8 @@ global:
       level: Debug
     - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
       level: Debug
+    - name: Microsoft.Azure.SpaceFx.Core.Services.LivenessCheck
+      level: Error
   devEnvironment: false
   fileserverSMB: false
   nvidia:
@@ -69,6 +71,8 @@ global:
     - name: Microsoft.Azure.SpaceFx.Core.Utils.SideCar
       level: Error
     - name: Microsoft.Azure.SpaceFx.Core.Services.HeartbeatService
+      level: Error
+    - name: Microsoft.Azure.SpaceFx.Core.Services.LivenessCheck
       level: Error
   resources:
     memory:
