@@ -39,26 +39,35 @@ spec:
 {{- include "spacefx.daprannotations" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 8 }}
     spec:
       serviceAccountName: {{  $serviceValues.appName | quote }}
+      terminationGracePeriodSeconds: 1
       {{- if eq $serviceValues.appName "platform-mts" }}
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       {{- end }}
       containers:
         - name: {{ $serviceValues.appName | quote }}
-        {{- if or $serviceValues.appHealthChecks $serviceValues.debugShim }}
           ports:
-          - name: liveness-port
+          - name: app-port
             containerPort: 50051
+        {{- if or $serviceValues.appHealthChecks $serviceValues.debugShim }}
+          {{- if $globalValues.probes.liveness.enabled }}
           livenessProbe:
             grpc:
               port: 50051
-            failureThreshold: 2
-            periodSeconds: 5
+            failureThreshold: {{ $globalValues.probes.liveness.failureThreshold }}
+            periodSeconds: {{ $globalValues.probes.liveness.periodSeconds }}
+            initialDelaySeconds: {{ $globalValues.probes.liveness.initialDelaySeconds }}
+            timeoutSeconds: {{ $globalValues.probes.liveness.timeoutSeconds }}
+          {{- end }}
+          {{- if $globalValues.probes.startup.enabled }}
           startupProbe:
             grpc:
               port: 50051
-            failureThreshold: 100
-            periodSeconds: 5
+            failureThreshold: {{ $globalValues.probes.startup.failureThreshold }}
+            periodSeconds: {{ $globalValues.probes.startup.periodSeconds }}
+            initialDelaySeconds: {{ $globalValues.probes.startup.initialDelaySeconds }}
+            timeoutSeconds: {{ $globalValues.probes.startup.timeoutSeconds }}
+          {{- end }}
         {{- end }}
         {{- if $serviceValues.securityContext }}
           securityContext:
