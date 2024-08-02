@@ -393,6 +393,9 @@ services:
       workingDir: /workspaces/hostsvc-position
   payloadapp:
     payloadappTemplate:
+      restartPolicy:
+        enabled: false
+        restartPolicy: Never
       annotations:
         enabled: false
         daprEnabled: false

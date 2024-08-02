@@ -75,4 +75,7 @@ volumes:
 {{- if $serviceValues.serviceAccount.enabled }}
 {{- include "spacefx.service_account" (dict "serviceValues" $serviceValues "globalValues" $globalValues) }}
 {{- end }}
+{{- if $serviceValues.restartPolicy.enabled }}
+{{  $serviceValues.restartPolicy.restartPolicy | quote }}
+{{- end }}
 {{- end }}
