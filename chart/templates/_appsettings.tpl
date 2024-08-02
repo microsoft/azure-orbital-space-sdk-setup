@@ -62,5 +62,5 @@ configMap:
 {{- $serviceValues := .serviceValues }}
 {{- $globalValues := .globalValues }}
 name: {{ $serviceValues.appName }}-config-volume
-mountPath: {{ $globalValues.spacefxSecretDirectory }}
+mountPath: {{ $globalValues.spacefxSecretDirectory }}/config
 {{- end }}
