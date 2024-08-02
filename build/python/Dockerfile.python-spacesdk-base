@@ -12,10 +12,11 @@ ENV PYTHON_VERSION=${PYTHON_VERSION}
 ENV PYTHON_PATH=/usr/local/bin/python3.10
 ENV LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
 
+# Copy the Python binaries and libraries from the Python base image
+# Do not copy the /bin or /opt/poetry directories from the Python base image so that this image is chiseled
 COPY --from=pythonbase /etc/ /etc/
 COPY --from=pythonbase /lib/ /lib/
 COPY --from=pythonbase /lib64/ /lib64/
-COPY --from=pythonbase /python-symlinks/ /
 COPY --from=pythonbase /usr/ /usr/
 
 ENTRYPOINT ["/bin/python"]
