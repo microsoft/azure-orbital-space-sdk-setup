@@ -25,8 +25,8 @@
 # VolumeMounts
 {{- if $serviceValues.fileServer.volumeMountsEnabled }}
 volumeMounts:
-{{- $secretsMount := printf "%s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
-{{- printf "- %s" $secretsMount | nindent 2 }}
+{{- $appSettingsMount := printf "%s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $appSettingsMount | nindent 2 }}
 {{- range $volumeKey, $volumeName := $globalValues.xferVolumes }}
 {{- $fileServerVolumeMount := printf "%s" (include "spacefx.fileserver.clientapp.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | nindent 2 | trim) }}
 {{- printf "- %s" $fileServerVolumeMount | nindent 2 }}
@@ -43,8 +43,6 @@ volumeMounts:
     mountPath: {{ $hostDirectoryMount.hostPath }}
 {{- end }}
 {{- end }}
-{{- $appSettingsMount := printf "%s" (include "spacefx.appsettings.json.volumemount" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
-{{- printf "- %s" $appSettingsMount | nindent 2 }}
 {{- end }}
 # Volumes
 {{- if $serviceValues.fileServer.volumesEnabled }}
