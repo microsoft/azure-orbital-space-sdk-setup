@@ -233,7 +233,7 @@ function python_poetry_install(){
         shift
     done
 
-    run_a_script "/root/.local/bin/poetry install ${extra_cmd}"
+    run_a_script "/root/.local/bin/poetry install --directory=${CONTAINER_WORKING_DIR:?} ${extra_cmd}"
 
 
     info_log "END: ${FUNCNAME[0]}"
