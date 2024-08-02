@@ -39,6 +39,7 @@ SPACEFX_TRACKING_ID: {{ default "" $serviceValues.trackingId | quote }}
 SPACEFX_CUSTOMER_TRACKING_ID: {{ default "" $serviceValues.customerTrackingId | quote }}
 SPACEFX_CORRELATION_ID: {{ default "" $serviceValues.correlationId | quote }}
 SPACEFX_DIR: {{ default "" $globalValues.spacefxDirectories.base | quote }}
+SPACEFX_CONFIG_DIR: {{ default "" $globalValues.spacefxSecretDirectory | quote }}
 SPACEFX_SECRET_DIR: {{ default "" $globalValues.spacefxSecretDirectory | quote }}
 APP_CONTEXT: {{ default "" $serviceValues.appContext | quote  }}
 {{- range $index, $envvar := $platformDeployment.payloadAppInjections.environmentVariables }}

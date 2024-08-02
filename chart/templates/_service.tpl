@@ -112,6 +112,8 @@ spec:
               value: {{ $globalValues.spacefxDirectories.base }}
             - name: SPACEFX_SECRET_DIR
               value: {{ $globalValues.spacefxSecretDirectory }}
+            - name: SPACEFX_CONFIG_DIR
+              value: {{ $globalValues.spacefxSecretDirectory }}
             - name: DOTNET_SYSTEM_GLOBALIZATION_INVARIANT
               value: "1"
             - name: "DOTNET_USE_POLLING_FILE_WATCHER"
