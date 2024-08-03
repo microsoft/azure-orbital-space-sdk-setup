@@ -5,7 +5,10 @@
 # AppSettings
 {{- if $serviceValues.appsettings.enabled }}
 {{- include "spacefx.appsettings.json" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
-{{- include "spacefx.secrets" (dict "globalValues" $globalValues "serviceValues" $serviceValues "fileServerValues" $allServices.core.fileserver "payloadAppValues" $allServices.payloadapp.payloadapp "buildServiceValues" $allServices.core.buildservice) }}
+{{- end }}
+# Secrets
+{{- if $serviceValues.secrets.enabled }}
+{{- include "spacefx.secrets" (dict "globalValues" $globalValues "serviceValues" $serviceValues "fileServerValues" $allServices.core.fileserver "payloadAppValues" $serviceValues "buildServiceValues" $allServices.core.buildservice) }}
 {{- end }}
 # Annotations
 {{- if $serviceValues.annotations.enabled }}
