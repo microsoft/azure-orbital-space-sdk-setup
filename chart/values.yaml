@@ -113,7 +113,7 @@ global:
   security:
     payloadAppNetworkRestrictionsEnabled: true
     topicRestrictionEnabled: true
-    runAsNonRoot: true
+    forceNonRoot: true
 subcharts:
   dapr:
     enabled: false
@@ -135,6 +135,7 @@ services:
         workingDirectory: /workspaces/exampleapp
       repository: kaniko-project/executor
       tag: v1.20.1-slim
+      runAsUserId: 701
     registry:
       appName: coresvc-registry
       containerCommand:
@@ -155,6 +156,7 @@ services:
       services:
         pypiServerEnabled: true
         registryEnabled: true
+      runAsUserId: 702
       tlsCertificate: /certs/registry.spacefx.local.crt
       tlsKey: /certs/registry.spacefx.local.key
       resources:
@@ -176,6 +178,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 703
       repository: coresvc-switchboard
     fileserver:
       appName: coresvc-fileserver
@@ -193,6 +196,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 704
   platform:
     mts:
       appConfig:
@@ -215,6 +219,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 705
       workingDir: /workspaces/platform-mts
     deployment:
       appName: platform-deployment
@@ -269,6 +274,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 706
       workingDir: /workspace/platform-deployment
     vth:
       appConfig:
@@ -291,6 +297,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 707
       workingDir: /workspaces/vth
   host:
     sensor:
@@ -316,6 +323,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 708
       workingDir: /workspaces/hostsvc-sensor
     link:
       appConfig:
@@ -346,6 +354,7 @@ services:
       enabled: false
       xferVolumes:
         - allxfer
+      runAsUserId: 709
       workingDir: /workspaces/hostsvc-link
     logging:
       appConfig:
@@ -372,6 +381,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 710
       workingDir: /workspaces/hostsvc-logging
     position:
       appName: hostsvc-position
@@ -391,6 +401,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 711
       workingDir: /workspaces/hostsvc-position
   payloadapp:
     payloadappTemplate:

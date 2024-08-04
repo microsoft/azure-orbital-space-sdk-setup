@@ -91,12 +91,36 @@ function deploy_spacefx_service_group(){
     for service in $spacefx_services; do
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.appName' -r" spacefx_service_appName
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.serviceNamespace' -r" spacefx_service_serviceNamespace
+        run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.runAsUserId' -r" spacefx_service_userid
 
         run_a_script "jq -r '.items[] | select(.metadata.name == \"${spacefx_service_appName}\" and (.metadata.namespace == \"${spacefx_service_serviceNamespace}\")) | true' <<< \${services_deployed_cache}" service_deployed
 
         if [[ "${service_deployed}" == "true" ]]; then
             info_log "...service already deployed.  Nothing to do"
             continue
+        fi
+
+        info_log "...checking if user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') exists..."
+        run_a_script "id -u ${spacefx_service_userid}" user_exists --ignore_error
+
+        info_log "...checking if group '${spacefx_service_appName}' (GID: '${spacefx_service_userid}') exists..."
+        run_a_script "id -g ${spacefx_service_userid}" group_exists --ignore_error
+
+        if [[ -n "${group_exists}" ]]; then
+            info_log "...group '${spacefx_service_userid}' exists.  Nothing to do."
+        else
+            info_log "...group '${spacefx_service_userid}' does not exist...creating..."
+            run_a_script "groupadd -r -g ${spacefx_service_userid} ${spacefx_service_appName}" --no_log
+            info_log "...successfully created group '${spacefx_service_appName}' (UID: '${spacefx_service_userid}')."
+        fi
+
+
+        if [[ -n "${user_exists}" ]]; then
+            info_log "...user '${spacefx_service_userid}' exists.  Nothing to do."
+        else
+            info_log "...user '${spacefx_service_userid}' does not exist...creating..."
+            run_a_script "useradd -r -u ${spacefx_service_userid} -g ${spacefx_service_userid} -d /nonexistent -s /usr/sbin/nologin ${spacefx_service_appName}" --no_log
+            info_log "...successfully created user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}')."
         fi
 
         info_log "...adding '${service}'..."

@@ -45,12 +45,12 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       {{- end }}
-      {{- if $globalValues.security.runAsNonRoot }}
+      {{- if $globalValues.security.forceNonRoot }}
 {{- include "spacefx.initcontainers.setperms" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 6 }}
       {{- end }}
       containers:
         - name: {{ $serviceValues.appName | quote }}
-          {{- if $globalValues.security.runAsNonRoot }}
+          {{- if $globalValues.security.forceNonRoot }}
           securityContext:
             runAsUser: 1000
             runAsGroup: 1000
