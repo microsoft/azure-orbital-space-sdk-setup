@@ -6,6 +6,7 @@
 {{- $payloadAppValues := .payloadAppValues }}
 ---
 {{- include "spacefx.appsettings.json" (dict "globalValues" $globalValues "serviceValues" $serviceValues) }}
+---
 {{- include "spacefx.secrets" (dict "globalValues" $globalValues "serviceValues" $serviceValues "fileServerValues" $fileServerValues "payloadAppValues" .payloadAppValues "buildServiceValues" $buildServiceValues) }}
 {{- $imgName := printf "%s/%s:%s" (include "spacefx.servicePrefixCalc" (dict "globalValues" $globalValues)) $serviceValues.repository (include "spacefx.serviceVersionCalc" (dict "globalValues" $globalValues "serviceValues" $serviceValues)) }}
 ---
@@ -147,8 +148,8 @@ spec:
       volumes:
 {{- $appSettingsVolume := printf "%s" (include "spacefx.appsettings.json.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
 {{- printf "- %s" $appSettingsVolume | nindent 8 }}
-{{- $secretsMount := (include "spacefx.secrets.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
-{{- printf "- %s" $secretsMount | nindent 8 }}
+{{- $secretsVolume := (include "spacefx.secrets.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | nindent 2 | trim) }}
+{{- printf "- %s" $secretsVolume | nindent 8 }}
 {{- range $volumeKey, $volumeName := $globalValues.xferVolumes }}
 {{- $fileServerVolume := printf "%s" (include "spacefx.fileserver.clientapp.volume" (dict "globalValues" $globalValues "serviceValues" $serviceValues "volumeName" $volumeName) | nindent 2 | trim) }}
 {{- printf "- %s" $fileServerVolume | nindent 8 }}

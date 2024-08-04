@@ -399,6 +399,8 @@ services:
       annotations:
         enabled: false
         daprEnabled: false
+      secrets:
+        enabled: false
       appsettings:
         enabled: false
       environmentVariables:
