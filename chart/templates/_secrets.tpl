@@ -4,7 +4,6 @@
 {{- $globalValues := .globalValues }}
 {{- $payloadAppValues := .payloadAppValues }}
 {{- $fileServerValues := .fileServerValues }}
----
 apiVersion: v1
 kind: Secret
 metadata:
