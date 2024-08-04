@@ -53,7 +53,7 @@ spec:
           {{- if $globalValues.security.runAsNonRoot }}
           securityContext:
             runAsUser: 1000
-            runASGroup: 1000
+            runAsGroup: 1000
             runAsNonRoot: true
           {{- end }}
           ports:

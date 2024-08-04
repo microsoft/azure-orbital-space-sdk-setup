@@ -20,6 +20,6 @@ initContainers:
 {{- printf "- %s" $fileServerVolumeMount | nindent 5 }}
 {{- end }}
 {{- end }}
-    command: ['sh', '-c', 'chown -R 1000:1000 {{ $mountPaths }}']
+    command: ["sh", "-c", "chown -R 1000:1000 {{ $mountPaths }}"]
 {{- end }}
 
