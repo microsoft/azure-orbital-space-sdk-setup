@@ -113,6 +113,7 @@ global:
   security:
     payloadAppNetworkRestrictionsEnabled: true
     topicRestrictionEnabled: true
+    runAsNonRoot: true
 subcharts:
   dapr:
     enabled: false
