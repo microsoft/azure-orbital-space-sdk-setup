@@ -45,15 +45,15 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       {{- end }}
-      {{- if $globalValues.security.forceNonRoot }}
+      {{- if and ($globalValues.security.forceNonRoot) (ne $serviceValues.serviceNamespace "platformsvc") (ne $serviceValues.serviceNamespace "coresvc") (ne $serviceValues.appName "hostsvc-link") }}
 {{- include "spacefx.initcontainers.setperms" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 6 }}
       {{- end }}
       containers:
         - name: {{ $serviceValues.appName | quote }}
-          {{- if $globalValues.security.forceNonRoot }}
+          {{- if and ($globalValues.security.forceNonRoot) (ne $serviceValues.serviceNamespace "platformsvc") (ne $serviceValues.serviceNamespace "coresvc") (ne $serviceValues.appName "hostsvc-link") }}
           securityContext:
-            runAsUser: 1000
-            runAsGroup: 1000
+            runAsUser: {{ $serviceValues.runAsUserId }}
+            runAsGroup: {{ $serviceValues.runAsUserId }}
             runAsNonRoot: true
           {{- end }}
           ports:

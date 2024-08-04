@@ -86,12 +86,15 @@ function deploy_spacefx_service_group(){
     info_log "Scanning '${service_group}' spacefx services for deploying..."
 
     run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group} | to_entries[] | select(.value.${enabled_filter} == true) | .key' -r" spacefx_services
+    run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.global.security.forceNonRoot' -r" spacefx_forceNonRoot
+
     run_a_script "kubectl --kubeconfig ${KUBECONFIG} get deployments -A -o json" services_deployed_cache --disable_log
 
     for service in $spacefx_services; do
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.appName' -r" spacefx_service_appName
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.serviceNamespace' -r" spacefx_service_serviceNamespace
         run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.services.${service_group}.${service}.runAsUserId' -r" spacefx_service_userid
+
 
         run_a_script "jq -r '.items[] | select(.metadata.name == \"${spacefx_service_appName}\" and (.metadata.namespace == \"${spacefx_service_serviceNamespace}\")) | true' <<< \${services_deployed_cache}" service_deployed
 
@@ -100,28 +103,71 @@ function deploy_spacefx_service_group(){
             continue
         fi
 
-        info_log "...checking if user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') exists..."
-        run_a_script "id -u ${spacefx_service_userid}" user_exists --ignore_error
+        # Create users and groups if the service needs one
+        if [[ "${spacefx_forceNonRoot}" == "true" ]] && [[ "${spacefx_service_userid}" != "null" ]]; then
+            info_log "...checking if user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') exists..."
 
-        info_log "...checking if group '${spacefx_service_appName}' (GID: '${spacefx_service_userid}') exists..."
-        run_a_script "id -g ${spacefx_service_userid}" group_exists --ignore_error
+            # This will return the group_name for the groupID.  i.e. "702"
+            run_a_script "getent group ${spacefx_service_userid}" preexisting_groupid_by_id --ignore_error
 
-        if [[ -n "${group_exists}" ]]; then
-            info_log "...group '${spacefx_service_userid}' exists.  Nothing to do."
-        else
-            info_log "...group '${spacefx_service_userid}' does not exist...creating..."
-            run_a_script "groupadd -r -g ${spacefx_service_userid} ${spacefx_service_appName}" --no_log
-            info_log "...successfully created group '${spacefx_service_appName}' (UID: '${spacefx_service_userid}')."
+            # This will check if a group exists and gets its ID
+            run_a_script "getent group ${spacefx_service_appName}" preexisting_groupid_by_name --ignore_error
+
+
+
+            if [[ -n "${preexisting_groupid_by_name}" ]] && [[ "${preexisting_groupid_by_id}" == "${preexisting_groupid_by_name}" ]]; then
+                info_log "...group '${spacefx_service_appName}' (GID: '${preexisting_groupid_by_id}') already exists.  Nothing to do"
+            else
+                if [[ -n "${preexisting_groupid_by_id}" ]]; then
+                    info "...GID '${spacefx_service_userid}' already in use, but isn't assigned to '${spacefx_service_appName}'.  Attempting to delete..."
+                    run_a_script "getent group ${spacefx_service_userid}" group_to_del
+                    run_a_script "groupdel -f ${group_to_del}"
+                    info "...successfully deleted previous group '${group_to_del}' (GID: '${username_to_del}')"
+                fi
+
+                if [[ -n "${preexisting_groupid_by_name}" ]]; then
+                    info "...Group '${spacefx_service_appName}' already in use, but isn't assigned to '${spacefx_service_userid}'.  Attempting to delete..."
+                    run_a_script "groupdel -f ${spacefx_service_appName}"
+                    info "...successfully deleted previous group '${spacefx_service_appName}'"
+                fi
+
+                info_log "...creating group '${spacefx_service_appName}' with GID '${spacefx_service_userid}'..."
+                run_a_script "groupadd -r -g ${spacefx_service_userid} ${spacefx_service_appName}" --no_log
+                info_log "...successfully created group '${spacefx_service_appName}' (GID: '${spacefx_service_userid}')."
+            fi
+
+
+            # This will return a user id if the userid exists.  i.e. "701"
+            run_a_script "id -u ${spacefx_service_userid}" preexisting_userid --ignore_error
+
+            # This will return the user id for the username.  i.e. "702"
+            run_a_script "id -u ${spacefx_service_appName}" preexisting_userid_for_username --ignore_error
+
+            if [[ -n "${preexisting_userid_for_username}" ]] && [[ "${preexisting_userid}" == "${preexisting_userid_for_username}" ]]; then
+                info_log "...user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') already exists.  Nothing to do"
+            else
+                if [[ -n "${preexisting_userid}" ]]; then
+                    info "...UID '${spacefx_service_userid}' already in use, but isn't assigned to '${spacefx_service_appName}'.  Attempting to delete..."
+                    run_a_script "getent passwd ${spacefx_service_userid}" username_to_del
+                    run_a_script "userdel -f ${username_to_del}"
+                    info "...successfully deleted previous user '${username_to_del}' (UID: '${username_to_del}')"
+                fi
+
+                if [[ -n "${preexisting_userid_for_username}" ]]; then
+                    info "...Username '${spacefx_service_appName}' already in use, but isn't assigned to '${spacefx_service_userid}'.  Attempting to delete..."
+                    run_a_script "userdel -f ${spacefx_service_appName}"
+                    info "...successfully deleted previous user '${spacefx_service_appName}' (UID: '${preexisting_userid_for_username}')"
+                fi
+
+                info_log "...creating user '${spacefx_service_appName}' with UID '${spacefx_service_userid}'..."
+                run_a_script "useradd -r -u ${spacefx_service_userid} -g ${spacefx_service_appName} -d /nonexistent -s /usr/sbin/nologin ${spacefx_service_appName}" --no_log
+                info_log "...successfully created user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}')."
+            fi
+
+
         fi
 
 
-        if [[ -n "${user_exists}" ]]; then
-            info_log "...user '${spacefx_service_userid}' exists.  Nothing to do."
-        else
-            info_log "...user '${spacefx_service_userid}' does not exist...creating..."
-            run_a_script "useradd -r -u ${spacefx_service_userid} -g ${spacefx_service_userid} -d /nonexistent -s /usr/sbin/nologin ${spacefx_service_appName}" --no_log
-            info_log "...successfully created user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}')."
-        fi
 
         info_log "...adding '${service}'..."
         deploy_group_cmd="${deploy_group_cmd} --set services.${service_group}.${service}.enabled=true \
