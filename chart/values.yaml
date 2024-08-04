@@ -135,6 +135,7 @@ services:
         workingDirectory: /workspaces/exampleapp
       repository: kaniko-project/executor
       tag: v1.20.1-slim
+      runAsUserId: 701
     registry:
       appName: coresvc-registry
       containerCommand:
@@ -164,6 +165,7 @@ services:
         cpu:
           limit: 1000m
           request: 10m
+      runAsUserId: 702
     switchboard:
       appName: coresvc-switchboard
       serviceNamespace: coresvc
@@ -193,6 +195,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
+      runAsUserId: 703
   platform:
     mts:
       appConfig:
@@ -216,6 +219,7 @@ services:
         hasBase: false
       enabled: false
       workingDir: /workspaces/platform-mts
+      runAsUserId: 704
     deployment:
       appName: platform-deployment
       appHealthChecks: true
@@ -270,6 +274,7 @@ services:
         hasBase: false
       enabled: false
       workingDir: /workspace/platform-deployment
+      runAsUserId: 705
     vth:
       appConfig:
         - name: enableRoutingToMTS
@@ -292,6 +297,7 @@ services:
         hasBase: false
       enabled: false
       workingDir: /workspaces/vth
+      runAsUserId: 706
   host:
     sensor:
       appConfig:
@@ -316,7 +322,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
-      runAsUserId: 705
+      runAsUserId: 707
       workingDir: /workspaces/hostsvc-sensor
     link:
       appConfig:
@@ -373,7 +379,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
-      runAsUserId: 707
+      runAsUserId: 708
       workingDir: /workspaces/hostsvc-logging
     position:
       appName: hostsvc-position
@@ -393,7 +399,7 @@ services:
         enabled: true
         hasBase: false
       enabled: false
-      runAsUserId: 708
+      runAsUserId: 709
       workingDir: /workspaces/hostsvc-position
   payloadapp:
     payloadappTemplate:

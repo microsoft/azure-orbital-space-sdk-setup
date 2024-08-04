@@ -105,14 +105,15 @@ function deploy_spacefx_service_group(){
 
         # Create users and groups if the service needs one
         if [[ "${spacefx_forceNonRoot}" == "true" ]] && [[ "${spacefx_service_userid}" != "null" ]]; then
-            info_log "...checking if user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') exists..."
+            info_log "...checking if group '${spacefx_service_appName}' (GID: '${spacefx_service_userid}') exists..."
 
             # This will return the group_name for the groupID.  i.e. "702"
             run_a_script "getent group ${spacefx_service_userid}" preexisting_groupid_by_id --ignore_error
+            preexisting_groupid_by_id="${preexisting_groupid_by_id%%:*}"
 
             # This will check if a group exists and gets its ID
             run_a_script "getent group ${spacefx_service_appName}" preexisting_groupid_by_name --ignore_error
-
+            preexisting_groupid_by_name="${preexisting_groupid_by_name%%:*}"
 
 
             if [[ -n "${preexisting_groupid_by_name}" ]] && [[ "${preexisting_groupid_by_id}" == "${preexisting_groupid_by_name}" ]]; then
@@ -121,6 +122,8 @@ function deploy_spacefx_service_group(){
                 if [[ -n "${preexisting_groupid_by_id}" ]]; then
                     info "...GID '${spacefx_service_userid}' already in use, but isn't assigned to '${spacefx_service_appName}'.  Attempting to delete..."
                     run_a_script "getent group ${spacefx_service_userid}" group_to_del
+                    group_to_del="${group_to_del%%:*}"
+
                     run_a_script "groupdel -f ${group_to_del}"
                     info "...successfully deleted previous group '${group_to_del}' (GID: '${username_to_del}')"
                 fi
@@ -137,6 +140,8 @@ function deploy_spacefx_service_group(){
             fi
 
 
+            info_log "...checking if user '${spacefx_service_appName}' (UID: '${spacefx_service_userid}') exists..."
+
             # This will return a user id if the userid exists.  i.e. "701"
             run_a_script "id -u ${spacefx_service_userid}" preexisting_userid --ignore_error
 
@@ -149,6 +154,7 @@ function deploy_spacefx_service_group(){
                 if [[ -n "${preexisting_userid}" ]]; then
                     info "...UID '${spacefx_service_userid}' already in use, but isn't assigned to '${spacefx_service_appName}'.  Attempting to delete..."
                     run_a_script "getent passwd ${spacefx_service_userid}" username_to_del
+                    username_to_del="${username_to_del%%:*}"
                     run_a_script "userdel -f ${username_to_del}"
                     info "...successfully deleted previous user '${username_to_del}' (UID: '${username_to_del}')"
                 fi
@@ -272,6 +278,15 @@ function deploy_apps_to_deployment_service(){
     run_a_script "cp -r ${SPACEFX_DIR}/chart ${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart/${SPACEFX_VERSION}"
     info_log "...successfully copied chart to '${SPACEFX_DIR}/xfer/platform-deployment/tmp/chart/${SPACEFX_VERSION}'"
 
+
+    run_a_script "yq '.' ${SPACEFX_DIR}/chart/values.yaml --output-format=json | jq '.global.security.forceNonRoot' -r" spacefx_forceNonRoot
+
+    if [[ "${spacefx_forceNonRoot}" == "true" ]]; then
+        info_log "Updating permissions for '${SPACEFX_DIR}/xfer/platform-deployment' to user 'platform-deployment'..."
+        run_a_script "chown -R platform-deployment:platform-deployment ${SPACEFX_DIR}/xfer/platform-deployment"
+        run_a_script "chmod -R u+rwx ${SPACEFX_DIR}/xfer/platform-deployment"
+        info_log "Permissions successfully updated"
+    fi
 
     info_log "FINISHED: ${FUNCNAME[0]}"
 }
