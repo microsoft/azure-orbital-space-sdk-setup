@@ -45,8 +45,17 @@ spec:
       dnsPolicy: ClusterFirstWithHostNet
       hostNetwork: true
       {{- end }}
+      {{- if and ($globalValues.security.forceNonRoot) (ne $serviceValues.appName "hostsvc-link") }}
+{{- include "spacefx.initcontainers.setperms" (dict "globalValues" $globalValues "serviceValues" $serviceValues) | indent 6 }}
+      {{- end }}
       containers:
         - name: {{ $serviceValues.appName | quote }}
+          {{- if and ($globalValues.security.forceNonRoot) (ne $serviceValues.appName "hostsvc-link") }}
+          securityContext:
+            runAsUser: {{ $serviceValues.runAsUserId }}
+            runAsGroup: {{ $serviceValues.runAsUserId }}
+            runAsNonRoot: true
+          {{- end }}
           ports:
           - name: app-port
             containerPort: 50051
@@ -69,12 +78,6 @@ spec:
             initialDelaySeconds: {{ $globalValues.probes.startup.initialDelaySeconds }}
             timeoutSeconds: {{ $globalValues.probes.startup.timeoutSeconds }}
           {{- end }}
-        {{- end }}
-        {{- if $serviceValues.securityContext }}
-          securityContext:
-        {{- range $index, $securityContext := $serviceValues.securityContext }}
-            {{ $securityContext.name }}: {{ $securityContext.value }}
-        {{- end }}
         {{- end }}
         {{- if $serviceValues.debugShim }}
           image: "{{ $serviceValues.repository }}:latest"

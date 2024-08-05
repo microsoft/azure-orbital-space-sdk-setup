@@ -239,6 +239,10 @@ function toggle_security_restrictions(){
         run_a_script "yq eval '.global.security.topicRestrictionEnabled = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
         info_log "'DEV_ENVIRONMENT' = true.  Allowing Links to Platform-Deployment..."
         run_a_script "yq eval '(.services.host.link.appConfig[] | select(.name == \"allowLinksToDeploymentSvc\") .value) = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+
+        info_log "'DEV_ENVIRONMENT' = true.  Enabling run as root..."
+        run_a_script "yq eval '.global.security.forceNonRoot = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
+
         info_log "...security restrictions configured for development"
     else
         info_log "'DEV_ENVIRONMENT' = false.  Enabling Network Restrictions..."
@@ -250,6 +254,9 @@ function toggle_security_restrictions(){
         info_log "'DEV_ENVIRONMENT' = false.  Disabling Links to Platform-Deployment..."
         run_a_script "yq eval '(.services.host.link.appConfig[] | select(.name == \"allowLinksToDeploymentSvc\") .value) = false' -i \"${SPACEFX_DIR}/chart/values.yaml\""
         info_log "...Network and Topic restrictions successfully enabled."
+
+        info_log "'DEV_ENVIRONMENT' = true.  Enabling run as root..."
+        run_a_script "yq eval '.global.security.forceNonRoot = true' -i \"${SPACEFX_DIR}/chart/values.yaml\""
 
         info_log "...security restrictions configured for production"
     fi

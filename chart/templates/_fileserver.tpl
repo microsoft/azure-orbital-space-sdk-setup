@@ -140,6 +140,20 @@ mountPath: {{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeNam
 {{- end }}
 {{- end }}
 
+{{- define "spacefx.fileserver.clientapp.volumemount.mountpath" }}
+{{- $serviceValues := .serviceValues }}
+{{- $globalValues := .globalValues }}
+{{- $volumeName := .volumeName }}
+{{- $shareName := printf "%s-%s" $serviceValues.appName $volumeName }}
+{{- $mountPath := printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
+{{- if and (eq $serviceValues.appName "hostsvc-link") (eq $volumeName "allxfer") }}
+{{ printf "%s/%s" $globalValues.spacefxDirectories.base $volumeName }}
+{{- else }}
+{{ printf "%s/%s/%s" $globalValues.spacefxDirectories.base $volumeName $serviceValues.appName }}
+{{- end }}
+{{- end }}
+
+
 {{- define "spacefx.fileserver.clientapp.volume" }}
 {{- $serviceValues := .serviceValues }}
 {{- $volumeName := .volumeName }}
