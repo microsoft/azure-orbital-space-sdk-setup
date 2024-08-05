@@ -63,6 +63,9 @@ function wait_for_namespace_to_provision(){
             exit 1
         fi
 
+        kubectl get pods -A
+        kubectl get deployments -A
+
         echo "Found incomplete deployments.  Rechecking in 5 seconds"
         sleep 5
     done
