@@ -228,7 +228,7 @@ function _app_install_for_helm(){
             echo "...app '${app_name}' not found at '${source}'.  Starting download from '${url}' to '${destination}'..."
             run_a_script "curl --silent --fail --create-dirs --output ${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz -L ${url}" --disable_log
 
-            run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${ARCHITECTURE}/helm" --disable_log
+            run_a_script "tar -xf '${_helm_install_temp_dir}/helm-${VER_HELM}-linux-${HOST_ARCHITECTURE}.tar.gz' --directory '${_helm_install_temp_dir}' linux-${HOST_ARCHITECTURE}/helm" --disable_log
             run_a_script "mv ${_helm_install_temp_dir}/linux-${HOST_ARCHITECTURE}/helm ${destination}" --disable_log
             run_a_script "rm ${_helm_install_temp_dir} -rf" --disable_log
         fi
