@@ -31,7 +31,7 @@ jobs:
     - name: Display Ubuntu version
       run: lsb_release -a
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         env_file: ./env/spacefx.env
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
@@ -58,7 +58,7 @@ jobs:
     - name: Display Ubuntu version
       run: lsb_release -a
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         env_file: ./env/spacefx.env
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
