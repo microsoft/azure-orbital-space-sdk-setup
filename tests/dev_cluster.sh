@@ -112,6 +112,9 @@ echo "...running copy_to_spacedev.sh"
 # Copy the scripts ino the entry point for the devcontainer feature
 ${WORKING_DIR}/.vscode/copy_to_spacedev.sh --output-dir ${WORKING_DIR}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
 
+source ${WORKING_DIR}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup/env/spacefx.env
+ [[ "${SPACEFX_CHANNEL}" != "stable" ]] && VERSION="${VERSION}-${SPACEFX_CHANNEL}"
+
 echo "...building the devcontainer feature..."
 # Build the devcontainer feature
 devcontainer features package --force-clean-output-folder ${WORKING_DIR}/.devcontainer/features --output-folder ${WORKING_DIR}/output/spacefx-dev

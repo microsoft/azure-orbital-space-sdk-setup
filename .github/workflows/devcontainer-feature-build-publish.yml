@@ -12,6 +12,7 @@ on:
     push:
         branches:
         - main
+        - '[0-9]*.[0-9]*.[0-9]*-nightly'
 
 
 env:
@@ -55,6 +56,9 @@ jobs:
         # Copy the scripts ino the entry point for the devcontainer feature
         echo "Copying all files to /var/spacedev..."
         ./.vscode/copy_to_spacedev.sh --output-dir ./.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup
+        
+        SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
+        [[ "${SPACEFX_CHANNEL}" != "stable" ]] && SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}-${SPACEFX_CHANNEL}"
 
         echo "...Cleaning './.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup/chart/certs'..."
         # Remove the certs that might've been generated
@@ -66,9 +70,10 @@ jobs:
         echo "Building the devcontainer feature..."
         devcontainer features package --force-clean-output-folder ./.devcontainer/features --output-folder ./output/spacefx-dev
 
+
         # Push the devcontainer feature tarball to the registry
         echo "Pushing the devcontainer feature tarball to the registry..."
-        oras push ${{ env.REGISTRY }}/${{ env.FEATURE }}:${SPACEFX_VERSION} \
+        oras push ${{ env.REGISTRY }}/${{ env.FEATURE }}:${SPACEFX_VERSION_CHANNEL_TAG} \
             --config /dev/null:application/vnd.devcontainers \
             --annotation org.opencontainers.image.source=https://github.com/microsoft/azure-orbital-space-sdk-setup \
                     ${{ env.ARTIFACT_PATH }}:application/vnd.devcontainers.layer.v1+tar
