@@ -5,6 +5,7 @@ on:
     push:
       branches:
         - main
+        - '[0-9]*.[0-9]*.[0-9]*-nightly'
 
 jobs:
   build-spacefx-base-image-amd64:
@@ -14,13 +15,13 @@ jobs:
       packages: write
 
     steps:
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@0.11.0-nightly
       with: 
         docker-file: /var/spacedev/build/spacesdk-base/Dockerfile.spacesdk-base
         architecture: amd64
@@ -35,13 +36,13 @@ jobs:
       packages: write
 
     steps:
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/run-build-container-image@0.11.0-nightly
       with: 
         docker-file: ./build/spacesdk-base/Dockerfile.spacesdk-base
         architecture: arm64
@@ -57,7 +58,7 @@ jobs:
       packages: write
 
     steps:
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
@@ -106,7 +107,7 @@ jobs:
       packages: write
 
     steps:
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
@@ -155,7 +156,7 @@ jobs:
       packages: write
 
     steps:
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
         GIT_HUB_USER_TOKEN: ${{ secrets.GIT_HUB_USER_TOKEN }}
@@ -166,6 +167,9 @@ jobs:
       run: |
         echo "Sourcing environment variables..."
         source ./env/spacefx.env
+
+        SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}"
+        [[ "${SPACEFX_CHANNEL}" != "stable" ]] && SPACEFX_VERSION_CHANNEL_TAG="${SPACEFX_VERSION}-${SPACEFX_CHANNEL}"
 
         # Build the SpaceSDK-Jetson-DeviceQuery Versions
         CUDA_VERSIONS=("11.4" "12.2")
@@ -178,6 +182,7 @@ jobs:
                 --repo-dir ${PWD} \
                 --no-spacefx-dev \
                 --app-name spacesdk-jetson-devicequery \
+                --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
                 --annotation-config azure-orbital-space-sdk-setup.yaml
 
             /var/spacedev/build/build_containerImage.sh \
@@ -187,6 +192,7 @@ jobs:
                 --repo-dir ${PWD} \
                 --no-spacefx-dev \
                 --app-name spacesdk-jetson-devicequery \
+                --build-arg SDK_VERSION="${SPACEFX_VERSION_CHANNEL_TAG}" \
                 --annotation-config azure-orbital-space-sdk-setup.yaml
         done
 

@@ -31,7 +31,7 @@ jobs:
     - name: Display Ubuntu version
       run: lsb_release -a
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         env_file: ./env/spacefx.env
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
@@ -39,7 +39,7 @@ jobs:
         SETUP_REPO_URL: ${{ secrets.SETUP_REPO_URL }}
         VER_DOCKER_MAX: ${{ inputs.VER_DOCKER_MAX }}
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/switch-smb@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/switch-smb@0.11.0-nightly
       with:
         REPO_DIR: "${PWD}"
         VALUE: "true"
@@ -63,7 +63,7 @@ jobs:
     - name: Display Ubuntu version
       run: lsb_release -a
 
-    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@main
+    - uses: microsoft/azure-orbital-space-sdk-github-actions/composite-actions/initialize@0.11.0-nightly
       with:
         env_file: ./env/spacefx.env
         GIT_HUB_USER_NAME: ${{ secrets.GIT_HUB_USER_NAME }}
