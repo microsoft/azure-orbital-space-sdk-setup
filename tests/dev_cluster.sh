@@ -169,6 +169,13 @@ wait_for_namespace_to_provision --namespace coresvc
 wait_for_namespace_to_provision --namespace hostsvc
 wait_for_namespace_to_provision --namespace platformsvc
 
+echo "Checking for artifacts.yaml in /var/spacedev/config..."
+artifact_yaml="/var/spacedev/config/artifacts.yaml"
+if [[ ! -f "${artifact_yaml}" ]]; then
+    echo "artifacts.yaml not found in /var/spacedev/config. Please ensure the file is present."
+    exit 1
+fi
+
 echo ""
 echo ""
 echo ""
