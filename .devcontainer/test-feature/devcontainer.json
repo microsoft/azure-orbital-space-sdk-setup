@@ -10,7 +10,8 @@
 		"ghcr.io/microsoft/azure-orbital-space-sdk/spacefx-dev:0.11.0_test_do_not_use-nightly": {
 			"app_name": "spacesdk-setup",
 			"app_type": "none",
-			"extract_setup_files": "false"
+			"extract_setup_files": "false",
+			"addl_config_yamls":"/workspaces/azure-orbital-space-sdk-setup/.devcontainer/artifacts.yaml"
 		}
 	},
 	"hostRequirements": {
@@ -104,5 +105,5 @@
 		}
 	},
 	"remoteUser": "root",
-	"initializeCommand": "${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output-dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup"
+	"initializeCommand": "bash ${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh --output-dir ${localWorkspaceFolder}/.devcontainer/features/spacefx-dev/azure-orbital-space-sdk-setup ; bash ${localWorkspaceFolder}/.vscode/copy_to_spacedev.sh"
 }

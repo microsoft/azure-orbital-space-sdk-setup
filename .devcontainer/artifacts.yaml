@@ -1,0 +1,19 @@
+config:
+  containerRegistries:
+    - url: ghcr.io
+      repositoryPrefix: microsoft/azure-orbital-space-sdk
+      push_enabled: true
+      pull_enabled: true
+      login_enabled: false
+      login_username_file: ${HOME}/.ssh/ghcr_username
+      login_password_file: ${HOME}/.ssh/ghcr_password
+    - url: testdoesnotexist.azurecr.io
+      push_enabled: false
+      pull_enabled: true
+      login_enabled: false
+  extraBuildArtifacts:
+    - file: testartifact.txt
+      directory: tmp/test
+      repository: test
+      tag: 0.11.0
+   

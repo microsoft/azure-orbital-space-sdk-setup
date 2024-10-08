@@ -74,7 +74,36 @@ function pull_config_yamls(){
     info_log "START: ${FUNCNAME[0]}"
 
 
+     if [[ ${#ADDL_CONFIG_YAMLS[@]} -eq 0 ]]; then
+        info_log "...no additional yamls specified in devcontainer.json.  Nothing to do"
+        info_log "END: ${FUNCNAME[0]}"
+        return
+    fi
 
+    for config_yaml in "${ADDL_CONFIG_YAMLS[@]}"; do
+        if [[ -z "${config_yaml}" ]]; then
+            continue
+        fi
+
+        # debug_log "Container Working Dir: ${CONTAINER_WORKING_DIR}"
+        # debug_log "Host Folder: ${HOST_FOLDER}"
+        # config_yaml=${config_yaml//$CONTAINER_WORKING_DIR/$HOST_FOLDER}
+
+        info_log "checking for ${config_yaml}"
+
+        if [[ ! -f "${config_yaml}" ]]; then
+            exit_with_error "Unable to find config yaml '${config_yaml}'.  Please check your path and rebuild devcontainer.  Path must be from devcontainer's perspective"
+        fi
+
+        info_log "...adding config yaml'${config_yaml}' to ${SPACEFX_DIR}/config..."
+
+        run_a_script "basename ${config_yaml}" config_yaml_filename
+
+        info_log "Copying '${config_yaml}' to '${SPACEFX_DIR}/config/${config_yaml_filename}'..."
+        run_a_script "cp ${config_yaml} ${SPACEFX_DIR}/config/${config_yaml_filename}"
+        info_log "...successfully copied '${config_yaml}' to '${SPACEFX_DIR}/config/${config_yaml_filename}'"
+
+    done
 
 
     info_log "END: ${FUNCNAME[0]}"

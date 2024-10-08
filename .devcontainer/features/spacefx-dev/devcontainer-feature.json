@@ -1,7 +1,7 @@
 {
   "name": "Microsoft Azure Orbital Space SDK - DevContainer Feature",
   "id": "spacefx-dev",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "description": "Deploys the environmental configuration used for developing payload application and plugins within the Azure Orbital Framework",
   "documentationURL": "https://github.com/microsoft/azure-orbital-space-sdk-setup",
   "options": {
