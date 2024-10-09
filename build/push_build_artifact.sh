@@ -129,7 +129,7 @@ function check_for_preset_config() {
 
     run_a_script "jq -r '.config.buildArtifacts[] | select(.file == \"${fileName}\") | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --ignore_error --disable_log
 
-    # We don't have the artifact in the main build artifacts.  Look in extraArtifacts
+    # We don't have the artifact in the main build artifacts.  Look in extraBuildArtifacts
     if [[ -z "${build_artifact}" ]]; then
         run_a_script "jq -r '.config.extraBuildArtifacts[] | select(.file == \"${fileName}\") | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --ignore_error --disable_log
     fi
