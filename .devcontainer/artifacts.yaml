@@ -12,8 +12,8 @@ config:
       pull_enabled: true
       login_enabled: false
   extraBuildArtifacts:
-    - file: testartifact.txt
-      directory: tmp/test
-      repository: test
-      tag: 0.11.0
+    - file: push-build-artifact-test.txt
+      directory: tmp
+      repository: buildartifacts/txt/push-build-artifact-test
+      tag: 0.11.0-nightly
    
