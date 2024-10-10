@@ -302,6 +302,8 @@ function main() {
     DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}"
     DEST_SPACEFX_TAG="${SPACEFX_VERSION}"
 
+    run_a_script "basename ${ARTIFACT}" fileName --disable_log
+
     # Look in extraBuildArtifacts to see if a specfic tag is required
     run_a_script "jq -r '.config.extraBuildArtifacts // empty | map(select(.file == \"${fileName}\")) | if length > 0 then .[0] | @base64 else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --disable_log --ignore_error
 
@@ -309,6 +311,7 @@ function main() {
     if [[ -n "${build_artifact}" ]]; then
         info_log "..found '${fileName}' in build artifacts."
          DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}"
+         DEST_SPACEFX_TAG="${ARTIFACT_VERSION}"
     else
         # artifact is not static, check if we have a tag suffix from our config file
         run_a_script "jq -r 'if (.config | has(\"tagSuffix\")) then .config.tagSuffix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" tag_suffix --disable_log
