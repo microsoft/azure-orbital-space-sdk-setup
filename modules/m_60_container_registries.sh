@@ -239,8 +239,12 @@ function find_registry_for_image(){
             login_to_container_registry --container_registry "${container_registry}" --container_registry_username_file "${login_username_file}" --container_registry_password_file "${login_password_file}"
         fi
 
+        debug_log "Running 'regctl image manifest ${container_registry}/${_find_registry_for_image_repo}'"
         run_a_script "regctl image manifest ${container_registry}/${_find_registry_for_image_repo}" _find_registry_for_image_result --ignore_error --disable_log
+        debug_log "_find_registry_for_image_result:"
+        debug_log "${_find_registry_for_image_result}"
 
+        
         if [[ "${_find_registry_for_image_result}" == *"unauthorized"* ]]; then
             exit_with_error "Unauthorized to access image to container registry '${container_registry}'.  Please login with docker login '${container_registry}', regctl registry login '${container_registry}' --user <username> --pass <password>, or use the config login_username_file and login_password_file configuration options"
         fi
