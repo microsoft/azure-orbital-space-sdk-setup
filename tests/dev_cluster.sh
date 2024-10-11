@@ -176,6 +176,13 @@ if [[ ! -f "${artifact_yaml}" ]]; then
     exit 1
 fi
 
+echo "Checking for push-build-artifact-test.txt in /var/spacedev/tmp"
+artifact="/var/spacedev/tmp/push-build-artifact-test.txt"
+if [[ ! -f "${artifact}" ]]; then
+    echo "push-build-artifact-test.txt not found in /var/spacedev/tmp. Please ensure the artifact exists and is configured correctly within artifacts.yaml."
+    exit 1
+fi
+
 echo ""
 echo ""
 echo ""

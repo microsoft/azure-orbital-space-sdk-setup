@@ -129,7 +129,7 @@ function check_for_preset_config() {
 
     run_a_script "jq -r '.config.buildArtifacts[] | select(.file == \"${fileName}\") | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --ignore_error --disable_log
 
-    # We don't have the artifact in the main build artifacts.  Look in extraArtifacts
+    # We don't have the artifact in the main build artifacts.  Look in extraBuildArtifacts
     if [[ -z "${build_artifact}" ]]; then
         run_a_script "jq -r '.config.extraBuildArtifacts[] | select(.file == \"${fileName}\") | @base64' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --ignore_error --disable_log
     fi
@@ -302,14 +302,25 @@ function main() {
     DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}"
     DEST_SPACEFX_TAG="${SPACEFX_VERSION}"
 
-    # Check if we have a tag suffix from our config file
-    run_a_script "jq -r 'if (.config | has(\"tagSuffix\")) then .config.tagSuffix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" tag_suffix --disable_log
+    run_a_script "basename ${ARTIFACT}" fileName --disable_log
 
-    if [[ -n "${tag_suffix}" ]]; then
-        DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}${tag_suffix}"
-        DEST_SPACEFX_TAG="${SPACEFX_VERSION}${tag_suffix}"
+    # Look in extraBuildArtifacts to see if a specfic tag is required
+    run_a_script "jq -r '.config.extraBuildArtifacts // empty | map(select(.file == \"${fileName}\")) | if length > 0 then .[0] | @base64 else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --disable_log --ignore_error
+
+    # Found the in extraBuildArtifacts, confirmed static artifact
+    if [[ -n "${build_artifact}" ]]; then
+        info_log "..found '${fileName}' in build artifacts."
+         DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}"
+         DEST_SPACEFX_TAG="${ARTIFACT_VERSION}"
+    else
+        # artifact is not static, check if we have a tag suffix from our config file
+        run_a_script "jq -r 'if (.config | has(\"tagSuffix\")) then .config.tagSuffix else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" tag_suffix --disable_log
+
+        if [[ -n "${tag_suffix}" ]]; then
+            DEST_ARTIFACT_TAG="${ARTIFACT_VERSION}${tag_suffix}"
+            DEST_SPACEFX_TAG="${SPACEFX_VERSION}${tag_suffix}"
+        fi
     fi
-
 
     write_parameter_to_log DEST_ARTIFACT_TAG
     write_parameter_to_log DEST_SPACEFX_TAG

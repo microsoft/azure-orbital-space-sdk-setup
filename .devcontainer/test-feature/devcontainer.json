@@ -11,7 +11,8 @@
 			"app_name": "spacesdk-setup",
 			"app_type": "none",
 			"extract_setup_files": "false",
-			"addl_config_yamls":"/workspaces/azure-orbital-space-sdk-setup/.devcontainer/artifacts.yaml"
+			"addl_config_yamls":"/workspaces/azure-orbital-space-sdk-setup/.devcontainer/artifacts.yaml",
+			"download_artifacts": "push-build-artifact-test.txt"
 		}
 	},
 	"hostRequirements": {

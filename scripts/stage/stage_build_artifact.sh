@@ -166,8 +166,8 @@ function download_artifact() {
     run_a_script "jq -r '.config.buildArtifacts // empty | map(select(.file == \"${fileName}\")) | if length > 0 then .[0] | @base64 else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --disable_log --ignore_error
 
     if [[ -z "${build_artifact}" ]]; then
-        # We don't have the artifact in the main build artifacts.  Look in extraArtifacts
-        run_a_script "jq -r '.config.extraArtifacts // empty | map(select(.file == \"${fileName}\")) | if length > 0 then .[0] | @base64 else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --disable_log --ignore_error
+        # We don't have the artifact in the main build artifacts.  Look in extraBuildArtifacts
+        run_a_script "jq -r '.config.extraBuildArtifacts // empty | map(select(.file == \"${fileName}\")) | if length > 0 then .[0] | @base64 else \"\" end' ${SPACEFX_DIR}/tmp/config/spacefx-config.json" build_artifact --disable_log --ignore_error
     fi
 
     # Found the artifact - parse the values
@@ -196,10 +196,11 @@ function download_artifact() {
         exit_with_error "Unable to find a registry for '${artifact_repo}:${artifact_tag}'"
     fi
 
-    info_log "Found '${fileName}' in registry '${artifact_registry}' (${artifact_registry}/${artifact_repo}:${artifact_tag})"
+    info_log "Found '${fileName}' in registry '${artifact_registry}'"
+
+    get_image_name --registry "${artifact_registry}" --repo "${artifact_repo}" --result artifact_full_image_name
 
     if [[ "${static_artifact}" == "false" ]]; then
-        get_image_name --registry "${artifact_registry}" --repo "${artifact_repo}" --result artifact_full_image_name
 
         run_a_script "regctl manifest get ${artifact_full_image_name}:${artifact_tag} --format '{{json .}}'" artifact_manifest
 
@@ -212,14 +213,12 @@ function download_artifact() {
         debug_log "Found manifest for architecture '${ARCHITECTURE}'."
         run_a_script "jq -r '.manifests[] | select(.artifactType == \"application/vnd.spacefx.${ARCHITECTURE}.buildartifact\") | .annotations.\"org.spacefx.artifact.directory\"' <<< \${artifact_manifest}" artifact_directory
         run_a_script "jq -r '.manifests[] | select(.artifactType == \"application/vnd.spacefx.${ARCHITECTURE}.buildartifact\") | .annotations.\"org.spacefx.artifact.hash\"' <<< \${artifact_manifest}" artifact_hash
-    else
-        artifact_full_image_name="${artifact_repo}/${artifact_repo}:${artifact_tag}"
     fi
 
     info_log "Artifact:         ${fileName}"
-    info_log "Full Image Name:  ${artifact_full_image_name}"
+    info_log "Full Image Name:  ${artifact_full_image_name}:${artifact_tag}"
     info_log "Directory:        ${artifact_directory}"
-    info_log "Hash:             ${artifact_hash}"
+    info_log "Remote Hash:      ${artifact_hash}"
     info_log "Repository:       ${artifact_repo}"
     info_log "Tag:              ${artifact_tag}"
     info_log "Static Artifact:  ${static_artifact}"
@@ -229,14 +228,18 @@ function download_artifact() {
 
     info_log "Local Hash:       ${local_artifact_hash}"
 
-    if [[ "${artifact_hash}" == "${local_artifact_hash}" ]]; then
+    if [[ -n "${local_file_hash}" ]] && [[ "${artifact_hash}" == "${local_artifact_hash}" ]]; then
         info_log "Hash for '${SPACEFX_DIR}/${artifact_directory}/${fileName}' matches container registry hash ('${local_artifact_hash}' = '${artifact_hash}').  Nothing to do."
         return
     fi
 
-    info_log "Hash for '${SPACEFX_DIR}/${artifact_directory}/${fileName}' doesn't match container registry hash ('${local_artifact_hash}' <> '${artifact_hash}')."
-    info_log "Downloading '${artifact_full_image_name}:${artifact_tag}' to '${SPACEFX_DIR}/${artifact_directory}/${fileName}'..."
+    if [[ -z "${local_file_hash}" ]]; then
+        info_log "Local hash for '${SPACEFX_DIR}/${artifact_directory}/${fileName} is empty."
+    else
+        info_log "Hash for '${SPACEFX_DIR}/${artifact_directory}/${fileName}' doesn't match container registry hash ('${local_artifact_hash}' <> '${artifact_hash}')."
+    fi
 
+    info_log "Downloading '${artifact_full_image_name}:${artifact_tag}' to '${SPACEFX_DIR}/${artifact_directory}/${fileName}'..."
 
     run_a_script "regctl artifact get ${artifact_full_image_name}:${artifact_tag} --output ${SPACEFX_DIR}/${artifact_directory} --filter-artifact-type application/vnd.spacefx.${ARCHITECTURE}.buildartifact"
     info_log "...successfully downloaded '${artifact_full_image_name}:${artifact_tag}' to '${SPACEFX_DIR}/${artifact_directory}/${fileName}'."
