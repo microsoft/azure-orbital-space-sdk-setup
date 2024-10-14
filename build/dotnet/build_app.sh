@@ -409,6 +409,7 @@ function main() {
     write_parameter_to_log BUILDDATE_VALUE
     write_parameter_to_log CONTAINER_BUILD
     write_parameter_to_log ANNOTATION_CONFIG
+    write_parameter_to_log BUILD_FROM_GITHUB
     write_parameter_to_log PUSH_ENABLED
 
     if [[ -n "${ANNOTATION_CONFIG}" ]]; then
@@ -492,7 +493,7 @@ function main() {
         local extra_cmds=""
         [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
 
-        [[ "${BUILD_FROM_GITHUB}" == false ]] && extra_cmds="${extra_cmds} --build-from-github"
+        [[ "${BUILD_FROM_GITHUB}" == true ]] && extra_cmds="${extra_cmds} --build-from-github"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
                         --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \

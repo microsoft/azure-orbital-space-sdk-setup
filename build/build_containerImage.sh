@@ -348,6 +348,7 @@ function main() {
     write_parameter_to_log APP_NAME
     write_parameter_to_log DOCKERFILE
     write_parameter_to_log REPO_DIR
+    write_parameter_to_log BUILD_FROM_GITHUB
     write_parameter_to_log PUSH_ENABLED
 
     for i in "${!BUILD_ARGS[@]}"; do
