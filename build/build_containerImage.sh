@@ -28,6 +28,7 @@ REPO_DIR=""
 BUILD_ARGS=""
 EXTRA_PKGS=""
 ANNOTATION_CONFIG=""
+BUILD_FROM_GITHUB=false
 BUILDDATE_VALUE=$(date -u +'%Y%m%dT%H%M%S')
 DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 SPACEFX_DEV_ENABLED=true
@@ -52,6 +53,7 @@ function show_help() {
    echo "--no-spacefx-dev                   [OPTIONAL] Disable spacefx-dev feature provisioning if present.  Useful in CI/CD pipelines to speed up builds that are coming from ./build/dotnet/build_app.sh"
    echo "--no-push                          [OPTIONAL] Do not push the built container image to the container registry.  Useful to locally build and test a container image without pushing it to the registry."
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
+   echo "--build-from-github                [OPTIONAL] If the destination container registry is different from ghcr.io/microsoft, this will force the container image to be built from the ghcr.io/microsoft container image"
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
    exit 1
@@ -115,6 +117,9 @@ while [[ "$#" -gt 0 ]]; do
             REPO_DIR=$1
             # Removing the trailing slash if there is one
             REPO_DIR=${REPO_DIR%/}
+            ;;
+        --build-from-github)
+            BUILD_FROM_GITHUB=true
             ;;
         *) echo "Unknown parameter passed: $1"; show_help ;;
     esac
@@ -269,7 +274,7 @@ function build_prod_image_container(){
     info_log "...adding tag '${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}'";
     fullTagCmd+=" --tag ${DEST_REPO}:${IMAGE_TAG}_${ARCHITECTURE}"
 
-    info_log "...adding tag '${DEST_CONTAINER_REGISTRY}/:${IMAGE_TAG}'";
+    info_log "...adding tag '${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}'";
     fullTagCmd+=" --tag ${DEST_CONTAINER_REGISTRY}/${DEST_REPO}:${IMAGE_TAG}"
 
     info_log "...adding tag '${DEST_REPO}:${IMAGE_TAG}'";
@@ -278,7 +283,17 @@ function build_prod_image_container(){
     buildArgs+="--build-arg APP_NAME=\"${APP_NAME}\" "
     labelArgs="--label \"org.app_name=${APP_NAME}\" "
 
-    buildArgs+="--build-arg CONTAINER_REGISTRY=\"${DEST_CONTAINER_REGISTRY}\" "
+    if [[ "${BUILD_FROM_GITHUB}" == true ]]; then
+        info_log "BUILD_FROM_GITHUB is true.  Building from microsoft maintined ghcr.io container image"
+        # Extract the repositoryPrefix from the ghcr.io entry
+        repository_prefix=$(jq -r '.config.containerRegistries[] | select(.url == "ghcr.io") | .repositoryPrefix' "${SPACEFX_DIR}/tmp/config/spacefx-config.json")
+        BUILD_CONTAINER_REGISTRY="ghcr.io/${repository_prefix}"
+
+        write_parameter_to_log BUILD_CONTAINER_REGISTRY
+        buildArgs+="--build-arg CONTAINER_REGISTRY=\"${BUILD_CONTAINER_REGISTRY}\" "
+    else
+        buildArgs+="--build-arg CONTAINER_REGISTRY=\"${DEST_CONTAINER_REGISTRY}\" "
+    fi
 
     buildArgs+="--build-arg APP_VERSION=\"${IMAGE_TAG}\" "
     labelArgs+="--label \"org.spacefx.app_version=${IMAGE_TAG}\" "

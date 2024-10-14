@@ -26,6 +26,7 @@ DEVCONTAINER_JSON_FILE=".devcontainer/devcontainer.json"
 APP_NAME=""
 CONTAINER_ID=""
 DEVCONTAINER_JSON=""
+BUILD_FROM_GITHUB=false
 PUSH_ENABLED=true
 ############################################################
 # Help                                                     #
@@ -45,6 +46,7 @@ function show_help() {
    echo "--nuget-project | -n               [OPTIONAL] Relative path to a nuget project for the service (if applicable) from within the devcontainer.  Will generate a nuget package in the output directory.  Can be passed multiple times"
    echo "--no-container-build               [OPTIONAL] Do not build a container image.  This will only build nuget packages"
    echo "--devcontainer-json                [OPTIONAL] Change the path to the devcontainer.json file.  Default is '.devcontainer/devcontainer.json' in the --repo-dir path"
+   echo "--build-from-github                [OPTIONAL] If the destination container registry is different from ghcr.io/microsoft, this will force the container image to be built from the ghcr.io/microsoft container image"
    echo "--no-push                          [OPTIONAL] Do not push the built container image to the container registry.  Useful to locally build and test a container image without pushing it to the registry."
    echo "--help | -h                        [OPTIONAL] Help script (this screen)"
    echo
@@ -106,6 +108,9 @@ while [[ "$#" -gt 0 ]]; do
         -o|--output-dir)
             shift
             OUTPUT_DIR=$1
+            ;;
+        --build-from-github)
+            BUILD_FROM_GITHUB=true
             ;;
         *) echo "Unknown parameter passed: $1"; show_help ;;
     esac
@@ -486,6 +491,8 @@ function main() {
 
         local extra_cmds=""
         [[ "${PUSH_ENABLED}" == false ]] && extra_cmds="${extra_cmds} --no-push"
+
+        [[ "${BUILD_FROM_GITHUB}" == false ]] && extra_cmds="${extra_cmds} --build-from-github"
 
         run_a_script "${SPACEFX_DIR}/build/build_containerImage.sh \
                         --dockerfile ${SPACEFX_DIR}/build/dotnet/Dockerfile.app-base \
