@@ -26,7 +26,7 @@ jobs:
   test-prod:
     runs-on: ${{ inputs.WORKFLOW_AGENT }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
 
     - name: Display Ubuntu version
       run: lsb_release -a
@@ -58,7 +58,7 @@ jobs:
     runs-on: ${{ inputs.WORKFLOW_AGENT }}
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@0717577d45739eb3c851188b29f50ed6c0b2194e # v2.8.0
 
     - name: Display Ubuntu version
       run: lsb_release -a
